@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  STUDENT
+  STAFF
+  SUPER_ADMIN
+}
+
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  EXPIRED
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  password           String
+  fullName           String
+
+  role               Role               @default(GUEST)
+  toolsSubscription  SubscriptionStatus @default(NONE)
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  price       Float
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
