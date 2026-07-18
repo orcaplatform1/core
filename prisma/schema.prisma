@@ -20,11 +20,152 @@ model User {
 }
 
 model Program {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+
+  modules Module[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lesson {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  quizzes     Quiz[]
+  moduleId    String
+  module      Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quiz {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  questions   Question[]
+
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
   id          String   @id @default(cuid())
   title       String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  answers     Answer[]
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Answer {
+  id        String  @id @default(cuid())
+  text      String
+  isCorrect Boolean @default(false)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuizAttempt {
+  id String @id @default(cuid())
+
+  userId String
+  quizId String
+
+  totalQuestions Int @default(0)
+  correctAnswers Int @default(0)
+  wrongAnswers   Int @default(0)
+
+  percentage Int @default(0)
+
+  score Int @default(0)
+
+  passed Boolean @default(false)
+
+  grade QuizGrade?
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuizAnswer {
+  id String @id @default(cuid())
+
+  quizAttemptId String
+
+  questionId String
+
+  selectedAnswerId String
+
+  isCorrect Boolean
+
+  timeSpent Int @default(0)
+
+  answeredAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Progress {
+  id String @id @default(cuid())
+
+  userId String
+
+  programId String?
+
+  moduleId String?
+
+  lessonId String?
+
+  quizId String?
+
+  completed Boolean @default(false)
+
+  progress Int @default(0)
+
+  lastAccessAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum QuizGrade {
+  FAILED
+  SUCCESS
+  GOOD
+  EXCELLENT
 }
 
 enum Role {

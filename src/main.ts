@@ -1,6 +1,6 @@
-import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,12 +14,10 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
-
   await app.listen(process.env.PORT ?? 3000);
 
   console.log(
-    `🚀 ORCA Backend çalışıyor: http://localhost:${process.env.PORT ?? 3000}`,
+    `🚀 ORCA Backend running on http://localhost:${process.env.PORT ?? 3000}`,
   );
 }
 
