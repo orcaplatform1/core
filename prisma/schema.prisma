@@ -48,6 +48,7 @@ model Lesson {
   id          String  @id @default(cuid())
   title       String
   description String?
+  order       Int @default(1)
   quizzes     Quiz[]
   moduleId    String
   module      Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -100,20 +101,21 @@ model QuizAttempt {
   userId String
   quizId String
 
+  lessonId String
+  moduleId String
+  programId String
+
   totalQuestions Int @default(0)
   correctAnswers Int @default(0)
-  wrongAnswers   Int @default(0)
-
+  wrongAnswers Int @default(0)
   percentage Int @default(0)
-
   score Int @default(0)
 
   passed Boolean @default(false)
-
   grade QuizGrade?
 
-  startedAt DateTime  @default(now())
-  endedAt   DateTime?
+  startedAt DateTime @default(now())
+  endedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -142,23 +144,19 @@ model Progress {
   id String @id @default(cuid())
 
   userId String
-
   programId String?
-
   moduleId String?
-
   lessonId String?
-
   quizId String?
 
   completed Boolean @default(false)
-
   progress Int @default(0)
 
   lastAccessAt DateTime @default(now())
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
 }
 
 enum QuizGrade {
