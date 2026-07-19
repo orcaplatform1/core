@@ -35,7 +35,7 @@ export class QuizAttemptsService {
     return this.prisma.quizAttempt.update({
       where: { id: attemptId },
       data: {
-        completedAt: new Date(),
+        endedAt: new Date(),
       },
     });
   }

@@ -1,9 +1,7 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -15,6 +13,18 @@ export class UsersController {
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Roles('SUPER_ADMIN', 'STAFF')
+  @Get('banned')
+  findBanned() {
+    return this.usersService.findBanned();
+  }
+
+  @Roles('SUPER_ADMIN', 'STAFF')
+  @Post(':id/unban')
+  unban(@Param('id') id: string) {
+    return this.usersService.unban(id);
   }
 
   @Roles('SUPER_ADMIN', 'STAFF')

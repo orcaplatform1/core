@@ -30,8 +30,10 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  login(@Body() dto: LoginDto, @Req() req: Request) {
+    const ip = req.ip || '';
+    const userAgent = req.headers['user-agent'] || '';
+    return this.authService.login(dto, ip, userAgent);
   }
 
   @UseGuards(JwtAuthGuard)

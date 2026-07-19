@@ -15,6 +15,15 @@ model User {
   fullName          String
   role              Role               @default(GUEST)
   toolsSubscription SubscriptionStatus @default(NONE)
+
+  currentStreak     Int      @default(0)
+  longestStreak     Int      @default(0)
+  lastActivityDate  DateTime?
+
+  sessionId         String?
+  bannedUntil       DateTime?
+  banCount          Int       @default(0)
+
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -23,6 +32,9 @@ model Program {
   id          String  @id @default(cuid())
   title       String
   description String?
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   modules Module[]
 
@@ -159,6 +171,159 @@ model Progress {
   @@unique([userId, lessonId])
 }
 
+model Certificate {
+  id        String   @id @default(cuid())
+  userId    String
+  programId String
+  code      String   @unique
+  issuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, programId])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  status    SubscriptionStatus @default(ACTIVE)
+  startedAt DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  programId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, programId])
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  userId     String
+  amount     Float
+  currency   String
+  method     PaymentMethod
+  status     PaymentStatus @default(PENDING)
+  receiptUrl String?
+  approvedAt DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  programs  Program[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String
+  users       UserBadge[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  createdAt      DateTime     @default(now())
+}
+
+model SimulationAccount {
+  id        String           @id @default(cuid())
+  userId    String           @unique
+  balance   Float            @default(10000)
+  trades    SimulatedTrade[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model SimulatedTrade {
+  id         String            @id @default(cuid())
+  accountId  String
+  account    SimulationAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  symbol     String
+  direction  TradeDirection
+  quantity   Float
+  entryPrice Float
+  exitPrice  Float?
+  pnl        Float?
+  status     TradeStatus       @default(OPEN)
+  createdAt  DateTime          @default(now())
+  closedAt   DateTime?
+}
+
+model HistoricalCandle {
+  id        String    @id @default(cuid())
+  symbol    String
+  assetType AssetType @default(CRYPTO)
+  timestamp DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float?
+
+  @@unique([symbol, timestamp])
+  @@index([symbol, timestamp])
+}
+
+model BacktestTrade {
+  id         String            @id @default(cuid())
+  userId     String
+  symbol     String
+  direction  TradeDirection
+  quantity   Float
+  entryPrice Float
+  entryDate  DateTime
+  exitPrice  Float?
+  exitDate   DateTime?
+  pnl        Float?
+  status     TradeStatus       @default(OPEN)
+  createdAt  DateTime          @default(now())
+}
+
+model LoginLog {
+  id         String   @id @default(cuid())
+  userId     String
+  ip         String?
+  userAgent  String?
+  loggedInAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 enum QuizGrade {
   FAILED
   SUCCESS
@@ -177,4 +342,46 @@ enum SubscriptionStatus {
   NONE
   ACTIVE
   EXPIRED
+}
+
+enum PaymentMethod {
+  CARD
+  CRYPTO
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MessageRole {
+  USER
+  MENTOR
+}
+
+enum TradeDirection {
+  BUY
+  SELL
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+}
+
+enum AssetType {
+  CRYPTO
+  FOREX
+}
+
+model LiveLesson {
+  id              String   @id @default(cuid())
+  title           String
+  scheduledAt     DateTime
+  durationMinutes Int
+  discordLink     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
