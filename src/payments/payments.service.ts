@@ -2,19 +2,41 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 
+const STAFF_DISCOUNT_RATE = 0.15;
+const STAFF_COMMISSION_RATE = 0.05;
+
 @Injectable()
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreatePaymentDto) {
+    let finalAmount = dto.amount;
+    let discountApplied: number | null = null;
+    let referredByStaffId: string | null = null;
+
+    if (dto.promoCode) {
+      const staff = await this.prisma.user.findUnique({
+        where: { promoCode: dto.promoCode },
+      });
+
+      if (staff && staff.role === 'STAFF') {
+        discountApplied = Math.round(dto.amount * STAFF_DISCOUNT_RATE * 100) / 100;
+        finalAmount = dto.amount - discountApplied;
+        referredByStaffId = staff.id;
+      }
+    }
+
     return this.prisma.payment.create({
       data: {
         userId,
-        amount: dto.amount,
+        amount: finalAmount,
         currency: dto.currency,
         method: dto.method as any,
         receiptUrl: dto.receiptUrl,
         status: 'PENDING',
+        promoCodeUsed: dto.promoCode,
+        discountApplied,
+        referredByStaffId,
       },
     });
   }
@@ -68,6 +90,30 @@ export class PaymentsService {
       if (!existing) {
         await this.prisma.enrollment.create({
           data: { userId: payment.userId, programId: program.id },
+        });
+      }
+    }
+
+    if (payment.referredByStaffId) {
+      const commissionAmount = Math.round(payment.amount * STAFF_COMMISSION_RATE * 100) / 100;
+
+      await this.prisma.commission.create({
+        data: {
+          staffId: payment.referredByStaffId,
+          paymentId: payment.id,
+          amount: commissionAmount,
+          rate: STAFF_COMMISSION_RATE,
+        },
+      });
+
+      const lead = await this.prisma.lead.findFirst({
+        where: { staffPromoCode: payment.promoCodeUsed ?? '', convertedUserId: null },
+      });
+
+      if (lead) {
+        await this.prisma.lead.update({
+          where: { id: lead.id },
+          data: { convertedUserId: payment.userId },
         });
       }
     }

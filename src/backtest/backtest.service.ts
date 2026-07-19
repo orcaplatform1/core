@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenBacktestTradeDto } from './dto/open-backtest-trade.dto';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class BacktestService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   private async getPriceAt(symbol: string, date: Date): Promise<number> {
     const candle = await this.prisma.historicalCandle.findFirst({
@@ -60,7 +64,7 @@ export class BacktestService {
         ? (exitPrice - trade.entryPrice) * trade.quantity
         : (trade.entryPrice - exitPrice) * trade.quantity;
 
-    return this.prisma.backtestTrade.update({
+    const updated = await this.prisma.backtestTrade.update({
       where: { id: tradeId },
       data: {
         exitPrice,
@@ -69,6 +73,14 @@ export class BacktestService {
         status: 'CLOSED',
       },
     });
+
+    const closedCount = await this.prisma.backtestTrade.count({
+      where: { userId, status: 'CLOSED' },
+    });
+
+    await this.badgesService.checkAndGrant(userId, 'BACKTEST_COUNT', closedCount);
+
+    return updated;
   }
 
   async getMyTrades(userId: string) {

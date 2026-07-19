@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ManageService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async getDashboard() {
     const [
@@ -56,5 +60,94 @@ export class ManageService {
         createdAt: true,
       },
     });
+  }
+
+  async broadcastAnnouncement(title: string, message: string, link?: string) {
+    const users = await this.prisma.user.findMany({ select: { id: true } });
+    const userIds = users.map((u) => u.id);
+
+    await this.notificationsService.createForManyUsers(userIds, {
+      type: 'ANNOUNCEMENT',
+      title,
+      message,
+      link,
+    });
+
+    return { message: `${userIds.length} kullanıcıya duyuru gönderildi.` };
+  }
+
+  private async generatePromoCode(fullName: string): Promise<string> {
+    const base = fullName
+      .split(' ')[0]
+      .toUpperCase()
+      .replace(/[^A-ZÇĞİÖŞÜ]/g, '');
+
+    let attempt = 1;
+    let code = `${base}${attempt}`;
+
+    while (await this.prisma.user.findUnique({ where: { promoCode: code } })) {
+      attempt++;
+      code = `${base}${attempt}`;
+    }
+
+    return code;
+  }
+
+  async makeStaff(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+
+    if (user.role === 'STAFF') {
+      throw new BadRequestException('Bu kullanıcı zaten personel.');
+    }
+
+    const promoCode = await this.generatePromoCode(user.fullName);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { role: 'STAFF', promoCode },
+      select: { id: true, fullName: true, role: true, promoCode: true },
+    });
+  }
+
+  async getStaffPerformance() {
+    const staffMembers = await this.prisma.user.findMany({
+      where: { role: 'STAFF' },
+      select: { id: true, fullName: true, promoCode: true },
+    });
+
+    const results = [];
+
+    for (const staff of staffMembers) {
+      const [testsGiven, conversions, payments, commissions] = await Promise.all([
+        this.prisma.lead.count({ where: { staffPromoCode: staff.promoCode ?? '' } }),
+        this.prisma.lead.count({
+          where: { staffPromoCode: staff.promoCode ?? '', convertedUserId: { not: null } },
+        }),
+        this.prisma.payment.count({
+          where: { referredByStaffId: staff.id, status: 'APPROVED' },
+        }),
+        this.prisma.commission.aggregate({
+          where: { staffId: staff.id },
+          _sum: { amount: true },
+        }),
+      ]);
+
+      results.push({
+        staffId: staff.id,
+        fullName: staff.fullName,
+        promoCode: staff.promoCode,
+        testsGiven,
+        conversions,
+        notConvertedYet: testsGiven - conversions,
+        totalSales: payments,
+        totalCommission: commissions._sum.amount ?? 0,
+      });
+    }
+
+    return results;
   }
 }

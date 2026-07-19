@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 
 function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EXCELLENT' {
   if (percentage < 70) return 'FAILED';
@@ -10,7 +11,10 @@ function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EX
 
 @Injectable()
 export class QuizAttemptsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   private async expireIfStale(attempt: any, timeLimitMinutes: number) {
     if (attempt.endedAt) return attempt;
@@ -104,7 +108,7 @@ export class QuizAttemptsService {
     const grade = calculateGrade(percentage);
     const passed = percentage >= 70;
 
-    return this.prisma.quizAttempt.update({
+    const updated = await this.prisma.quizAttempt.update({
       where: { id: attemptId },
       data: {
         totalQuestions,
@@ -117,6 +121,16 @@ export class QuizAttemptsService {
         endedAt: new Date(),
       },
     });
+
+    if (passed) {
+      const passedCount = await this.prisma.quizAttempt.count({
+        where: { userId: attempt.userId, passed: true },
+      });
+
+      await this.badgesService.checkAndGrant(attempt.userId, 'QUIZ_PASS_COUNT', passedCount);
+    }
+
+    return updated;
   }
 
   async findAll() {

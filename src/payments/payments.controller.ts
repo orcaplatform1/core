@@ -24,7 +24,7 @@ export class PaymentsController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Get()
   findAll() {
     return this.paymentsService.findAll();
@@ -36,14 +36,14 @@ export class PaymentsController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Post(':id/approve')
   approve(@Param('id') id: string) {
     return this.paymentsService.approve(id);
   }
 
   @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Post(':id/reject')
   reject(@Param('id') id: string) {
     return this.paymentsService.reject(id);

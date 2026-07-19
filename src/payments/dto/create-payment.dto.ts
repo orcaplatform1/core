@@ -13,4 +13,8 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   receiptUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  promoCode?: string;
 }

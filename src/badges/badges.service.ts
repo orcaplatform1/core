@@ -11,6 +11,8 @@ export class BadgesService {
       data: {
         name: dto.name,
         description: dto.description,
+        triggerType: (dto.triggerType as any) ?? 'CUSTOM',
+        requiredCount: dto.requiredCount ?? 1,
       },
     });
   }
@@ -35,12 +37,45 @@ export class BadgesService {
     });
   }
 
-  async findMine(userId: string) {
-    return this.prisma.userBadge.findMany({
-      where: { userId },
-      include: { badge: true },
-      orderBy: { earnedAt: 'desc' },
+  async checkAndGrant(userId: string, triggerType: string, currentCount: number) {
+    const eligibleBadges = await this.prisma.badge.findMany({
+      where: {
+        triggerType: triggerType as any,
+        requiredCount: { lte: currentCount },
+      },
     });
+
+    for (const badge of eligibleBadges) {
+      const already = await this.prisma.userBadge.findUnique({
+        where: { userId_badgeId: { userId, badgeId: badge.id } },
+      });
+
+      if (!already) {
+        await this.prisma.userBadge.create({
+          data: { userId, badgeId: badge.id },
+        });
+      }
+    }
+  }
+
+  async findMine(userId: string) {
+    const allBadges = await this.prisma.badge.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const earned = await this.prisma.userBadge.findMany({
+      where: { userId },
+    });
+
+    const earnedMap = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
+
+    return allBadges.map((badge) => ({
+      id: badge.id,
+      name: badge.name,
+      description: badge.description,
+      locked: !earnedMap.has(badge.id),
+      earnedAt: earnedMap.get(badge.id) ?? null,
+    }));
   }
 
   async remove(id: string) {

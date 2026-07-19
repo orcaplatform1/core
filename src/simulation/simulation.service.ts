@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenTradeDto } from './dto/open-trade.dto';
+import { BadgesService } from '../badges/badges.service';
 
 const STARTING_BALANCE = 10000;
 
 @Injectable()
 export class SimulationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   private async getOrCreateAccount(userId: string) {
     let account = await this.prisma.simulationAccount.findUnique({ where: { userId } });
@@ -28,13 +32,6 @@ export class SimulationService {
         'Piyasa verisi API bağlantısı henüz yapılandırılmadı (MARKET_DATA_API_KEY eksik).',
       );
     }
-
-    // Piyasa verisi API çağrısı buraya gelecek (key eklendiğinde aktif olacak):
-    // const response = await fetch(`https://api.marketdata-provider.com/price/${symbol}`, {
-    //   headers: { Authorization: `Bearer ${apiKey}` },
-    // });
-    // const data = await response.json();
-    // return data.price;
 
     throw new ServiceUnavailableException('Piyasa verisi API entegrasyonu tamamlanmadı.');
   }
@@ -89,6 +86,12 @@ export class SimulationService {
       where: { id: account.id },
       data: { balance: { increment: pnl } },
     });
+
+    const closedCount = await this.prisma.simulatedTrade.count({
+      where: { accountId: account.id, status: 'CLOSED' },
+    });
+
+    await this.badgesService.checkAndGrant(userId, 'SIMULATION_COUNT', closedCount);
 
     return updated;
   }

@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class StreakService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   async ping(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -35,7 +39,7 @@ export class StreakService {
 
     const newLongest = Math.max(newStreak, user.longestStreak);
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         currentStreak: newStreak,
@@ -46,7 +50,20 @@ export class StreakService {
         currentStreak: true,
         longestStreak: true,
         lastActivityDate: true,
+        streakGoalDays: true,
       },
+    });
+
+    await this.badgesService.checkAndGrant(userId, 'STREAK_DAYS', newStreak);
+
+    return updated;
+  }
+
+  async updateGoal(userId: string, streakGoalDays: number) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { streakGoalDays },
+      select: { streakGoalDays: true },
     });
   }
 }

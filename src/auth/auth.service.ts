@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomUUID, randomInt } from 'crypto';
+import { randomUUID } from 'crypto';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -39,6 +39,31 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  private async linkLeadIfExists(userId: string, phone: string | undefined) {
+    if (!phone) return;
+
+    const lead = await this.prisma.lead.findUnique({ where: { phone } });
+
+    if (!lead) return;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        financialProfile: lead.financialProfile,
+        referredByStaffId: lead.staffPromoCode
+          ? (await this.prisma.user.findUnique({ where: { promoCode: lead.staffPromoCode } }))?.id
+          : undefined,
+      },
+    });
+
+    if (!lead.convertedUserId) {
+      await this.prisma.lead.update({
+        where: { id: lead.id },
+        data: { convertedUserId: userId },
+      });
+    }
   }
 
   async register(dto: RegisterDto) {
@@ -77,10 +102,9 @@ export class AuthService {
       },
     });
 
-    const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
+    await this.linkLeadIfExists(user.id, dto.phone);
 
-    // E-posta doğrulama linki gönderme buraya gelecek (EMAIL_API_KEY eklendiğinde):
-    // await sendVerificationEmail(user.email, emailVerificationToken);
+    const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
 
     return { token: accessToken, refreshToken, user };
   }
@@ -139,6 +163,10 @@ export class AuthService {
       throw new ForbiddenException(
         'Bugün çok fazla farklı cihazdan giriş denemesi tespit edildi. Şifre paylaşımı şüphesiyle hesabınız 3 gün süreyle kısıtlandı.',
       );
+    }
+
+    if (user.phone) {
+      await this.linkLeadIfExists(user.id, user.phone);
     }
 
     const sessionId = randomUUID();
@@ -211,8 +239,6 @@ export class AuthService {
         message: 'Şifre sıfırlama isteği alındı ancak email servisi henüz yapılandırılmadı.',
       };
     }
-
-    // Şifre sıfırlama emaili gönderme buraya gelecek
 
     return { message: 'Eğer bu email kayıtlıysa, sıfırlama bağlantısı gönderildi.' };
   }
@@ -294,6 +320,8 @@ export class AuthService {
 
     const phoneTaken = await this.prisma.user.findUnique({ where: { phone } });
     if (phoneTaken) throw new ConflictException('Bu telefon numarası zaten kayıtlı.');
+
+    await this.linkLeadIfExists(userId, phone);
 
     return this.prisma.user.update({
       where: { id: userId },

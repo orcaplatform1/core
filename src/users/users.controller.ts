@@ -18,21 +18,21 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Get('banned')
   findBanned() {
     return this.usersService.findBanned();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Post(':id/unban')
   unban(@Param('id') id: string) {
     return this.usersService.unban(id);
@@ -50,7 +50,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findById(id);

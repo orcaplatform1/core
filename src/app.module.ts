@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -25,10 +26,15 @@ import { BacktestModule } from './backtest/backtest.module';
 import { LiveLessonsModule } from './live-lessons/live-lessons.module';
 import { ManageModule } from './manage/manage.module';
 import { StatsModule } from './stats/stats.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SearchModule } from './search/search.module';
+import { FinancialTestModule } from './financial-test/financial-test.module';
+import { ScannerModule } from './scanner/scanner.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -54,6 +60,10 @@ import { StatsModule } from './stats/stats.module';
     LiveLessonsModule,
     ManageModule,
     StatsModule,
+    NotificationsModule,
+    SearchModule,
+    FinancialTestModule,
+    ScannerModule,
   ],
 })
 export class AppModule {}

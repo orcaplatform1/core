@@ -15,21 +15,21 @@ export class LiveLessonsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Post()
   create(@Body() dto: CreateLiveLessonDto) {
     return this.liveLessonsService.create(dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Get()
   findAll() {
     return this.liveLessonsService.findAll();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SUPER_ADMIN', 'STAFF')
+  @Roles('SUPER_ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.liveLessonsService.remove(id);

@@ -33,6 +33,10 @@ model User {
   passwordResetExpires     DateTime?
   refreshTokenHash         String?
 
+  dailyGoalLessons   Int @default(1)
+  weeklyGoalLessons  Int @default(5)
+  streakGoalDays     Int @default(30)
+
   currentStreak     Int      @default(0)
   longestStreak     Int      @default(0)
   lastActivityDate  DateTime?
@@ -42,8 +46,32 @@ model User {
   bannedUntil       DateTime?
   banCount          Int       @default(0)
 
+  promoCode         String? @unique
+  referredByStaffId String?
+  financialProfile  FinancialProfile?
+
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+}
+
+model Lead {
+  id               String   @id @default(cuid())
+  phone            String   @unique
+  financialProfile FinancialProfile
+  answers          Json?
+  staffPromoCode   String?
+  convertedUserId  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Commission {
+  id        String   @id @default(cuid())
+  staffId   String
+  paymentId String
+  amount    Float
+  rate      Float
+  createdAt DateTime @default(now())
 }
 
 model Program {
@@ -253,6 +281,11 @@ model Payment {
   status     PaymentStatus @default(PENDING)
   receiptUrl String?
   approvedAt DateTime?
+
+  promoCodeUsed     String?
+  discountApplied   Float?
+  referredByStaffId String?
+
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
@@ -269,6 +302,8 @@ model Badge {
   id          String      @id @default(cuid())
   name        String      @unique
   description String
+  triggerType BadgeTriggerType @default(CUSTOM)
+  requiredCount Int @default(1)
   users       UserBadge[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -375,6 +410,30 @@ model LiveLesson {
   updatedAt       DateTime @updatedAt
 }
 
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+}
+
+model StatsSnapshot {
+  id           String   @id @default(cuid())
+  userId       String
+  weekStart    DateTime
+  overallScore Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, weekStart])
+}
+
 enum QuizGrade {
   FAILED
   SUCCESS
@@ -442,4 +501,47 @@ enum OccupationType {
   OZEL_SEKTOR
   KAMU
   YONETICI
+}
+
+enum NotificationType {
+  NEW_LESSON
+  NEW_PROGRAM
+  QUIZ_RESULT
+  AI_SUGGESTION
+  CERTIFICATE_READY
+  ANNOUNCEMENT
+  LIVE_LESSON_REMINDER
+  SYSTEM
+}
+
+enum BadgeTriggerType {
+  FIRST_LESSON
+  QUIZ_PASS_COUNT
+  STREAK_DAYS
+  BACKTEST_COUNT
+  SIMULATION_COUNT
+  CUSTOM
+}
+
+enum FinancialProfile {
+  BASLANGIC
+  ORTA
+  ILERI
+  UZMAN
+}
+
+model ScanResult {
+  id        String   @id @default(cuid())
+  results   Json
+  createdAt DateTime @default(now())
+}
+
+model WinRateCache {
+  id             String         @id @default(cuid())
+  symbol         String
+  direction      TradeDirection
+  winRatePercent Int?
+  calculatedAt   DateTime       @default(now())
+
+  @@unique([symbol, direction])
 }
