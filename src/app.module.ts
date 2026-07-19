@@ -23,6 +23,8 @@ import { MentorModule } from './mentor/mentor.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { BacktestModule } from './backtest/backtest.module';
 import { LiveLessonsModule } from './live-lessons/live-lessons.module';
+import { ManageModule } from './manage/manage.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { LiveLessonsModule } from './live-lessons/live-lessons.module';
     SimulationModule,
     BacktestModule,
     LiveLessonsModule,
+    ManageModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

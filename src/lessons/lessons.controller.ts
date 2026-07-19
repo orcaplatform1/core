@@ -35,4 +35,15 @@ export class LessonsController {
   create(@Body() dto: CreateLessonDto) {
     return this.lessonsService.create(dto);
   }
+
+  @Post(':id/resources')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  addResource(
+    @Param('id') id: string,
+    @Body('name') name: string,
+    @Body('url') url: string,
+  ) {
+    return this.lessonsService.addResource(id, name, url);
+  }
 }

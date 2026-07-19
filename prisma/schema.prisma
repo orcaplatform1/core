@@ -10,15 +10,33 @@ datasource db {
 
 model User {
   id                String             @id @default(cuid())
-  email             String             @unique
-  password          String
+  email             String?            @unique
+  phone             String?            @unique
+  password          String?
   fullName          String
+  username          String?            @unique
+  avatarUrl         String?
+  bio               String?
+  dateOfBirth       DateTime?
+  education         EducationLevel?
+  occupation        OccupationType?
   role              Role               @default(GUEST)
   toolsSubscription SubscriptionStatus @default(NONE)
+
+  googleId          String?  @unique
+  appleId           String?  @unique
+  profileComplete   Boolean  @default(true)
+
+  emailVerified            Boolean   @default(false)
+  emailVerificationToken   String?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  refreshTokenHash         String?
 
   currentStreak     Int      @default(0)
   longestStreak     Int      @default(0)
   lastActivityDate  DateTime?
+  lastLoginAt       DateTime?
 
   sessionId         String?
   bannedUntil       DateTime?
@@ -46,6 +64,7 @@ model Module {
   id          String  @id @default(cuid())
   title       String
   description String?
+  order       Int @default(1)
 
   programId String
   program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
@@ -61,6 +80,12 @@ model Lesson {
   title       String
   description String?
   order       Int @default(1)
+
+  videoUrl        String?
+  pdfUrl          String?
+  durationSeconds Int?
+
+  resources   LessonResource[]
   quizzes     Quiz[]
   moduleId    String
   module      Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
@@ -69,11 +94,23 @@ model Lesson {
   updatedAt DateTime @updatedAt
 }
 
+model LessonResource {
+  id       String @id @default(cuid())
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  name     String
+  url      String
+
+  createdAt DateTime @default(now())
+}
+
 model Quiz {
   id          String     @id @default(cuid())
   title       String
   description String?
   questions   Question[]
+
+  timeLimitMinutes Int @default(20)
 
   lessonId String
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -125,6 +162,7 @@ model QuizAttempt {
 
   passed Boolean @default(false)
   grade QuizGrade?
+  expired Boolean @default(false)
 
   startedAt DateTime @default(now())
   endedAt DateTime?
@@ -150,6 +188,8 @@ model QuizAnswer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([quizAttemptId, questionId])
 }
 
 model Progress {
@@ -173,6 +213,7 @@ model Progress {
 
 model Certificate {
   id        String   @id @default(cuid())
+  number    Int      @unique @default(autoincrement())
   userId    String
   programId String
   code      String   @unique
@@ -324,6 +365,16 @@ model LoginLog {
   @@index([userId])
 }
 
+model LiveLesson {
+  id              String   @id @default(cuid())
+  title           String
+  scheduledAt     DateTime
+  durationMinutes Int
+  discordLink     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 enum QuizGrade {
   FAILED
   SUCCESS
@@ -376,12 +427,19 @@ enum AssetType {
   FOREX
 }
 
-model LiveLesson {
-  id              String   @id @default(cuid())
-  title           String
-  scheduledAt     DateTime
-  durationMinutes Int
-  discordLink     String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+enum EducationLevel {
+  ILKOGRETIM
+  LISE
+  ONLISANS
+  LISANS
+  DOKTORA
+}
+
+enum OccupationType {
+  OGRENCI
+  ISSIZ
+  SERBEST_MESLEK
+  OZEL_SEKTOR
+  KAMU
+  YONETICI
 }

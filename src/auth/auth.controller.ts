@@ -37,6 +37,56 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('refresh')
+  refresh(@Req() req: Request, @Body('refreshToken') refreshToken: string) {
+    const userId = (req.user as any).id;
+    return this.authService.refresh(userId, refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.authService.logout(userId);
+  }
+
+  @Post('password-reset/request')
+  requestPasswordReset(@Body('email') email: string) {
+    return this.authService.requestPasswordReset(email);
+  }
+
+  @Post('password-reset/confirm')
+  resetPassword(@Body('token') token: string, @Body('newPassword') newPassword: string) {
+    return this.authService.resetPassword(token, newPassword);
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('google')
+  googleLogin(@Body('idToken') idToken: string) {
+    return this.authService.googleLogin(idToken);
+  }
+
+  @Post('apple')
+  appleLogin(@Body('idToken') idToken: string, @Body('fullName') fullName?: string) {
+    return this.authService.appleLogin(idToken, fullName);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('complete-profile')
+  completeProfile(
+    @Req() req: Request,
+    @Body('username') username: string,
+    @Body('phone') phone: string,
+  ) {
+    const userId = (req.user as any).id;
+    return this.authService.completeProfile(userId, username, phone);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@Req() req: Request) {
     return req.user;

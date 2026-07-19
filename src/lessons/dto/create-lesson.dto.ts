@@ -1,6 +1,7 @@
 import {
   IsString,
   IsOptional,
+  IsInt,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -15,6 +16,18 @@ export class CreateLessonDto {
   @IsString()
   @MaxLength(1000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  pdfUrl?: string;
+
+  @IsOptional()
+  @IsInt()
+  durationSeconds?: number;
 
   @IsString()
   @MinLength(1)
