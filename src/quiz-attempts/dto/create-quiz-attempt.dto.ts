@@ -17,6 +17,15 @@ export class CreateQuizAttemptDto {
   @IsString()
   quizId!: string;
 
+  @IsString()
+  lessonId!: string;
+
+  @IsString()
+  moduleId!: string;
+
+  @IsString()
+  programId!: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuizAnswerDto)

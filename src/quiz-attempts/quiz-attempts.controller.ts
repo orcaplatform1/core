@@ -13,6 +13,16 @@ export class QuizAttemptsController {
     return this.quizAttemptsService.create('', createQuizAttemptDto);
   }
 
+  @Post('start')
+  start(@Body() createQuizAttemptDto: CreateQuizAttemptDto) {
+    return this.quizAttemptsService.create('', createQuizAttemptDto);
+  }
+
+  @Post('finish')
+  finish(@Body() body: { attemptId: string }) {
+    return this.quizAttemptsService.findOne(body.attemptId);
+  }
+
   @Get()
   findAll() {
     return this.quizAttemptsService.findAll();
