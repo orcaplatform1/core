@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
@@ -57,6 +57,22 @@ export class MentorService {
     return 'CREDIT';
   }
 
+  private async ensureLessonAccess(userId: string, lessonId: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: { module: { select: { programId: true } } },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Ders bulunamadı.');
+    }
+    const enrolled = await this.prisma.enrollment.findUnique({
+      where: { userId_programId: { userId, programId: lesson.module.programId } },
+    });
+    if (!enrolled) {
+      throw new ForbiddenException('Bu derse erişiminiz yok.');
+    }
+  }
+
   private async getOrCreateConversation(userId: string) {
     const existing = await this.prisma.conversation.findUnique({
       where: { userId },
@@ -77,15 +93,17 @@ export class MentorService {
 
   async sendMessage(userId: string, dto: CreateMessageDto) {
     await this.ensureAccess(userId);
+    if (dto.lessonId) {
+      await this.ensureLessonAccess(userId, dto.lessonId);
+    }
     const quotaSource = await this.checkAndConsumeQuota(userId);
-
     const conversation = await this.getOrCreateConversation(userId);
-
     await this.prisma.message.create({
       data: {
         conversationId: conversation.id,
         role: 'USER',
         content: dto.content,
+        lessonId: dto.lessonId,
       },
     });
 
@@ -96,19 +114,42 @@ export class MentorService {
         conversationId: conversation.id,
         role: 'MENTOR',
         content: aiReply,
+        lessonId: dto.lessonId,
       },
     });
 
     return { message: mentorMessage, quotaSource };
   }
 
-  async getHistory(userId: string) {
+  async getHistory(userId: string, lessonId?: string) {
     await this.ensureAccess(userId);
     const conversation = await this.prisma.conversation.findUnique({
       where: { userId },
-      include: { messages: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        messages: {
+          where: lessonId ? { lessonId } : undefined,
+          orderBy: { createdAt: 'asc' },
+        },
+      },
     });
     return conversation?.messages ?? [];
+  }
+
+  async getDiscussedLessons(userId: string) {
+    await this.ensureAccess(userId);
+    const conversation = await this.prisma.conversation.findUnique({ where: { userId } });
+    if (!conversation) return [];
+    const rows = await this.prisma.message.findMany({
+      where: { conversationId: conversation.id, lessonId: { not: null } },
+      select: { lessonId: true },
+      distinct: ['lessonId'],
+    });
+    const ids = rows.map((r) => r.lessonId).filter((id): id is string => !!id);
+    if (ids.length === 0) return [];
+    return this.prisma.lesson.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, title: true, moduleId: true },
+    });
   }
 
   async getQuotaStatus(userId: string) {

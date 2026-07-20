@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { MentorService } from './mentor.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -16,9 +16,15 @@ export class MentorController {
   }
 
   @Get('history')
-  getHistory(@Req() req: Request) {
+  getHistory(@Req() req: Request, @Query('lessonId') lessonId?: string) {
     const userId = (req.user as any).id;
-    return this.mentorService.getHistory(userId);
+    return this.mentorService.getHistory(userId, lessonId);
+  }
+
+  @Get('lessons')
+  getDiscussedLessons(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.mentorService.getDiscussedLessons(userId);
   }
 
   @Get('quota')
