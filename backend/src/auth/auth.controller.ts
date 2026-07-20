@@ -11,6 +11,14 @@ import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ConfirmPhoneVerificationDto } from './dto/confirm-phone-verification.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
+import { AppleLoginDto } from './dto/apple-login.dto';
+import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
@@ -38,9 +46,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('refresh')
-  refresh(@Req() req: Request, @Body('refreshToken') refreshToken: string) {
+  refresh(@Req() req: Request, @Body() dto: RefreshTokenDto) {
     const userId = (req.user as any).id;
-    return this.authService.refresh(userId, refreshToken);
+    return this.authService.refresh(userId, dto.refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -58,18 +66,18 @@ export class AuthController {
   }
 
   @Post('password-reset/request')
-  requestPasswordReset(@Body('email') email: string) {
-    return this.authService.requestPasswordReset(email);
+  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(dto.email);
   }
 
   @Post('password-reset/confirm')
-  resetPassword(@Body('token') token: string, @Body('newPassword') newPassword: string) {
-    return this.authService.resetPassword(token, newPassword);
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Post('verify-email')
-  verifyEmail(@Body('token') token: string) {
-    return this.authService.verifyEmail(token);
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.token);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -81,31 +89,29 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('phone-verification/confirm')
-  confirmPhoneVerification(@Req() req: Request, @Body('code') code: string) {
+  confirmPhoneVerification(@Req() req: Request, @Body() dto: ConfirmPhoneVerificationDto) {
     const userId = (req.user as any).id;
-    return this.authService.confirmPhoneVerification(userId, code);
+    return this.authService.confirmPhoneVerification(userId, dto.code);
   }
 
   @Post('google')
-  googleLogin(@Body('idToken') idToken: string) {
-    return this.authService.googleLogin(idToken);
+  googleLogin(@Body() dto: GoogleLoginDto) {
+    return this.authService.googleLogin(dto.idToken);
   }
 
   @Post('apple')
-  appleLogin(@Body('idToken') idToken: string, @Body('fullName') fullName?: string) {
-    return this.authService.appleLogin(idToken, fullName);
+  appleLogin(@Body() dto: AppleLoginDto) {
+    return this.authService.appleLogin(dto.idToken, dto.fullName);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('complete-profile')
   completeProfile(
     @Req() req: Request,
-    @Body('username') username: string,
-    @Body('phone') phone: string,
-    @Body('gender') gender: string,
+    @Body() dto: CompleteProfileDto,
   ) {
     const userId = (req.user as any).id;
-    return this.authService.completeProfile(userId, username, phone, gender);
+    return this.authService.completeProfile(userId, dto.username, dto.phone, dto.gender);
   }
 
   @UseGuards(JwtAuthGuard)

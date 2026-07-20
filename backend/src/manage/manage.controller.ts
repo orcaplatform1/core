@@ -4,6 +4,7 @@ import { ManageService } from './manage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { BroadcastAnnouncementDto } from './dto/broadcast-announcement.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('SUPER_ADMIN')
@@ -34,13 +35,10 @@ export class ManageController {
   @Post('announcements')
   broadcastAnnouncement(
     @Req() req: Request,
-    @Body('title') title: string,
-    @Body('message') message: string,
-    @Body('target') target: 'ALL' | 'PAID' | 'FREE',
-    @Body('link') link?: string,
+    @Body() dto: BroadcastAnnouncementDto,
   ) {
     const actorId = (req.user as any).id;
-    return this.manageService.broadcastAnnouncement(title, message, target, actorId, link);
+    return this.manageService.broadcastAnnouncement(dto.title, dto.message, dto.target, actorId, dto.link);
   }
 
   @Post('staff/:id')

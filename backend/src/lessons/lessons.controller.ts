@@ -18,6 +18,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { AddResourceDto } from './dto/add-resource.dto';
 
 @Controller('lessons')
 export class LessonsController {
@@ -65,11 +66,10 @@ export class LessonsController {
   addResource(
     @Req() req: Request,
     @Param('id') id: string,
-    @Body('name') name: string,
-    @Body('url') url: string,
+    @Body() dto: AddResourceDto,
   ) {
     const actorId = (req.user as any).id;
-    return this.lessonsService.addResource(id, name, url, actorId);
+    return this.lessonsService.addResource(id, dto.name, dto.url, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -5,6 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AdminUpdateIdentityDto } from './dto/admin-update-identity.dto';
 
 @Controller('users')
 export class UsersController {
@@ -59,11 +60,10 @@ export class UsersController {
   adminUpdateIdentity(
     @Req() req: Request,
     @Param('id') id: string,
-    @Body('fullName') fullName?: string,
-    @Body('username') username?: string,
+    @Body() dto: AdminUpdateIdentityDto,
   ) {
     const actorId = (req.user as any).id;
-    return this.usersService.adminUpdateIdentity(id, fullName, username, actorId);
+    return this.usersService.adminUpdateIdentity(id, dto.fullName, dto.username, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

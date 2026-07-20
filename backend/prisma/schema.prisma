@@ -59,6 +59,7 @@ model User {
   quizAttempts      QuizAttempt[]
   progress          Progress[]
   certificates      Certificate[]
+  invoices          Invoice[]
   subscriptions     Subscription[]
   enrollments       Enrollment[]
   loginLogs         LoginLog[]
@@ -324,11 +325,25 @@ model Payment {
   discountApplied   Float?
   referredByStaffId String?
   referredByStaff   User?    @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
+  invoice    Invoice?
 
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   @@index([userId])
   @@index([status])
+}
+model Invoice {
+  id        String   @id @default(cuid())
+  number    Int      @unique @default(autoincrement())
+  paymentId String   @unique
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  amount    Float
+  currency  String
+  issuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Category {

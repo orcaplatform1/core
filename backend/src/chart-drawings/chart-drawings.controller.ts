@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Body, Query, UseGuards, Req } from '@nes
 import { Request } from 'express';
 import { ChartDrawingsService } from './chart-drawings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SaveChartDrawingDto } from './dto/save-chart-drawing.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chart-drawings')
@@ -11,12 +12,10 @@ export class ChartDrawingsController {
   @Post()
   save(
     @Req() req: Request,
-    @Body('symbol') symbol: string,
-    @Body('context') context: string,
-    @Body('drawings') drawings: any,
+    @Body() dto: SaveChartDrawingDto,
   ) {
     const userId = (req.user as any).id;
-    return this.chartDrawingsService.save(userId, symbol, context, drawings);
+    return this.chartDrawingsService.save(userId, dto.symbol, dto.context, dto.drawings);
   }
 
   @Get()

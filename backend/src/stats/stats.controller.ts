@@ -4,6 +4,7 @@ import { StatsService } from './stats.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { UpdateGoalsDto } from './dto/update-goals.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('stats')
@@ -50,10 +51,9 @@ export class StatsController {
   @Patch('me/goals')
   updateGoals(
     @Req() req: Request,
-    @Body('dailyGoalLessons') dailyGoalLessons?: number,
-    @Body('weeklyGoalLessons') weeklyGoalLessons?: number,
+    @Body() dto: UpdateGoalsDto,
   ) {
     const userId = (req.user as any).id;
-    return this.statsService.updateGoals(userId, dailyGoalLessons, weeklyGoalLessons);
+    return this.statsService.updateGoals(userId, dto.dailyGoalLessons, dto.weeklyGoalLessons);
   }
 }

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nest
 import { Request } from 'express';
 import { QuizAttemptsService } from './quiz-attempts.service';
 import { CreateQuizAttemptDto } from './dto/create-quiz-attempt.dto';
+import { FinishQuizAttemptDto } from './dto/finish-quiz-attempt.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,8 +20,8 @@ export class QuizAttemptsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('finish')
-  finish(@Body('attemptId') attemptId: string) {
-    return this.quizAttemptsService.finish(attemptId);
+  finish(@Body() dto: FinishQuizAttemptDto) {
+    return this.quizAttemptsService.finish(dto.attemptId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

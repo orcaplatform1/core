@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, UnauthorizedExcepti
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { createHmac, randomUUID } from 'crypto';
+import { InvoicesService } from '../invoices/invoices.service';
 
 const STAFF_DISCOUNT_RATE = 0.15;
 const STAFF_COMMISSION_RATE = 0.05;
@@ -14,7 +15,10 @@ const MENTOR_CREDIT_PRICES: Record<number, number> = {
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly invoicesService: InvoicesService,
+  ) {}
 
   private async createBinancePayOrder(paymentId: string, amount: number, currency: string) {
     const apiKey = process.env.BINANCE_PAY_API_KEY;
@@ -234,6 +238,7 @@ export class PaymentsService {
         data: { mentorCredits: { increment: payment.creditAmount } },
       });
 
+      await this.invoicesService.createForPayment(payment.id);
       return updated;
     }
 
@@ -275,6 +280,7 @@ export class PaymentsService {
       }
     }
 
+    await this.invoicesService.createForPayment(payment.id);
     return updated;
   }
 

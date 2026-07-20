@@ -2,6 +2,7 @@ import { Controller, Post, Patch, Body, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { StreakService } from './streak.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateStreakGoalDto } from './dto/update-streak-goal.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('streak')
@@ -15,8 +16,8 @@ export class StreakController {
   }
 
   @Patch('goal')
-  updateGoal(@Req() req: Request, @Body('streakGoalDays') streakGoalDays: number) {
+  updateGoal(@Req() req: Request, @Body() dto: UpdateStreakGoalDto) {
     const userId = (req.user as any).id;
-    return this.streakService.updateGoal(userId, streakGoalDays);
+    return this.streakService.updateGoal(userId, dto.streakGoalDays);
   }
 }

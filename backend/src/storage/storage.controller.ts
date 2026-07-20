@@ -3,6 +3,7 @@ import { StorageService } from './storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { GetUploadUrlDto } from './dto/get-upload-url.dto';
 
 @Controller('storage')
 export class StorageController {
@@ -11,13 +12,8 @@ export class StorageController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post('upload-url')
-  getUploadUrl(
-    @Body('fileName') fileName: string,
-    @Body('contentType') contentType: string,
-    @Body('folder') folder: 'videos' | 'pdfs' | 'resources',
-    @Body('fileSizeBytes') fileSizeBytes: number,
-  ) {
-    return this.storageService.getUploadUrl(fileName, contentType, folder, fileSizeBytes);
+  getUploadUrl(@Body() dto: GetUploadUrlDto) {
+    return this.storageService.getUploadUrl(dto.fileName, dto.contentType, dto.folder, dto.fileSizeBytes);
   }
 
   @UseGuards(JwtAuthGuard)

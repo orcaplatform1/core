@@ -41,6 +41,7 @@ import { PagesModule } from './pages/pages.module';
 import { FooterModule } from './footer/footer.module';
 import { SitemapModule } from './sitemap/sitemap.module';
 import { SecurityLogModule } from './security-log/security-log.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { SecurityLogModule } from './security-log/security-log.module';
     FooterModule,
     SitemapModule,
     SecurityLogModule,
+    InvoicesModule,
   ],
   providers: [
     {
