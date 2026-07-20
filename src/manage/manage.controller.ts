@@ -15,6 +15,11 @@ export class ManageController {
     return this.manageService.getDashboard();
   }
 
+  @Get('users/gender-stats')
+  getGenderStats() {
+    return this.manageService.getGenderStats();
+  }
+
   @Get('payments/pending')
   getPendingPayments() {
     return this.manageService.getPendingPayments();
@@ -29,9 +34,10 @@ export class ManageController {
   broadcastAnnouncement(
     @Body('title') title: string,
     @Body('message') message: string,
+    @Body('target') target: 'ALL' | 'PAID' | 'FREE',
     @Body('link') link?: string,
   ) {
-    return this.manageService.broadcastAnnouncement(title, message, link);
+    return this.manageService.broadcastAnnouncement(title, message, target, link);
   }
 
   @Post('staff/:id')

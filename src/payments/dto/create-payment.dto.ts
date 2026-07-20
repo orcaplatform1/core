@@ -11,6 +11,10 @@ export class CreatePaymentDto {
   method!: string;
 
   @IsOptional()
+  @IsIn(['BINANCE', 'OKX', 'BYBIT'])
+  cryptoProvider?: string;
+
+  @IsOptional()
   @IsString()
   receiptUrl?: string;
 

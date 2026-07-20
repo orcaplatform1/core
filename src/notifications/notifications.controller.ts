@@ -35,6 +35,24 @@ export class NotificationsController {
     return this.notificationsService.markAllAsRead(userId);
   }
 
+  @Get('me/inbox')
+  findMyAnnouncements(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.notificationsService.findMyAnnouncements(userId);
+  }
+
+  @Get('me/inbox/unread-count')
+  unreadAnnouncementCount(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.notificationsService.unreadAnnouncementCount(userId);
+  }
+
+  @Post('inbox/read-all')
+  markAllAnnouncementsAsRead(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.notificationsService.markAllAnnouncementsAsRead(userId);
+  }
+
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN', 'STAFF')
   @Post()

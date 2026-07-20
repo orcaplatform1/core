@@ -16,9 +16,9 @@ model User {
   fullName          String
   username          String?            @unique
   avatarUrl         String?
-  bio               String?
   dateOfBirth       DateTime?
   education         EducationLevel?
+  gender            Gender?
   occupation        OccupationType?
   role              Role               @default(GUEST)
   toolsSubscription SubscriptionStatus @default(NONE)
@@ -29,6 +29,9 @@ model User {
 
   emailVerified            Boolean   @default(false)
   emailVerificationToken   String?
+  phoneVerified             Boolean   @default(false)
+  phoneVerificationCode     String?
+  phoneVerificationExpires  DateTime?
   passwordResetToken       String?
   passwordResetExpires     DateTime?
   refreshTokenHash         String?
@@ -50,6 +53,22 @@ model User {
   referredByStaffId String?
   financialProfile  FinancialProfile?
 
+  payments          Payment[]        @relation("PaymentBuyer")
+  referredPayments  Payment[]        @relation("PaymentReferrer")
+  quizAttempts      QuizAttempt[]
+  progress          Progress[]
+  certificates      Certificate[]
+  subscriptions     Subscription[]
+  enrollments       Enrollment[]
+  loginLogs         LoginLog[]
+  backtestTrades    BacktestTrade[]
+  notifications     Notification[]
+  statsSnapshots    StatsSnapshot[]
+  userBadges        UserBadge[]
+  commissionsEarned Commission[]
+  conversation      Conversation?
+  simulationAccount SimulationAccount?
+
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 }
@@ -68,6 +87,7 @@ model Lead {
 model Commission {
   id        String   @id @default(cuid())
   staffId   String
+  staff     User     @relation(fields: [staffId], references: [id], onDelete: Cascade)
   paymentId String
   amount    Float
   rate      Float
@@ -78,6 +98,9 @@ model Program {
   id          String  @id @default(cuid())
   title       String
   description String?
+  coverImageUrl String?
+  level ProgramLevel?
+  durationHours Int?
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
@@ -151,6 +174,7 @@ model Question {
   id          String   @id @default(cuid())
   title       String
   description String?
+  explanation String?
   answers     Answer[]
 
   quizId String
@@ -176,6 +200,7 @@ model QuizAttempt {
   id String @id @default(cuid())
 
   userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizId String
 
   lessonId String
@@ -224,6 +249,7 @@ model Progress {
   id String @id @default(cuid())
 
   userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   programId String?
   moduleId String?
   lessonId String?
@@ -243,8 +269,10 @@ model Certificate {
   id        String   @id @default(cuid())
   number    Int      @unique @default(autoincrement())
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
   programId String
   code      String   @unique
+  studentName String?
   issuedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -255,6 +283,7 @@ model Certificate {
 model Subscription {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   status    SubscriptionStatus @default(ACTIVE)
   startedAt DateTime @default(now())
   expiresAt DateTime
@@ -265,6 +294,7 @@ model Subscription {
 model Enrollment {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   programId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -275,6 +305,7 @@ model Enrollment {
 model Payment {
   id         String        @id @default(cuid())
   userId     String
+  user       User          @relation("PaymentBuyer", fields: [userId], references: [id], onDelete: Restrict)
   amount     Float
   currency   String
   method     PaymentMethod
@@ -282,9 +313,11 @@ model Payment {
   receiptUrl String?
   approvedAt DateTime?
 
+  cryptoProvider    CryptoProvider?
   promoCodeUsed     String?
   discountApplied   Float?
   referredByStaffId String?
+  referredByStaff   User?    @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
 
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -312,6 +345,7 @@ model Badge {
 model UserBadge {
   id       String   @id @default(cuid())
   userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   badgeId  String
   badge    Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
   earnedAt DateTime @default(now())
@@ -322,6 +356,7 @@ model UserBadge {
 model Conversation {
   id        String    @id @default(cuid())
   userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  Message[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -339,6 +374,7 @@ model Message {
 model SimulationAccount {
   id        String           @id @default(cuid())
   userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   balance   Float            @default(10000)
   trades    SimulatedTrade[]
   createdAt DateTime         @default(now())
@@ -378,6 +414,7 @@ model HistoricalCandle {
 model BacktestTrade {
   id         String            @id @default(cuid())
   userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol     String
   direction  TradeDirection
   quantity   Float
@@ -393,6 +430,7 @@ model BacktestTrade {
 model LoginLog {
   id         String   @id @default(cuid())
   userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ip         String?
   userAgent  String?
   loggedInAt DateTime @default(now())
@@ -413,6 +451,7 @@ model LiveLesson {
 model Notification {
   id        String           @id @default(cuid())
   userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   title     String
   message   String
@@ -426,12 +465,37 @@ model Notification {
 model StatsSnapshot {
   id           String   @id @default(cuid())
   userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   weekStart    DateTime
   overallScore Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@unique([userId, weekStart])
+}
+
+model ScanResult {
+  id        String   @id @default(cuid())
+  results   Json
+  createdAt DateTime @default(now())
+}
+
+model WinRateCache {
+  id             String         @id @default(cuid())
+  symbol         String
+  direction      TradeDirection
+  winRatePercent Int?
+  calculatedAt   DateTime       @default(now())
+
+  @@unique([symbol, direction])
+}
+
+model Quote {
+  id         String @id @default(cuid())
+  order      Int    @unique
+  text       String
+  author     String
+  profession String
 }
 
 enum QuizGrade {
@@ -530,18 +594,31 @@ enum FinancialProfile {
   UZMAN
 }
 
-model ScanResult {
-  id        String   @id @default(cuid())
-  results   Json
-  createdAt DateTime @default(now())
+enum CryptoProvider {
+  BINANCE
+  OKX
+  BYBIT
 }
 
-model WinRateCache {
-  id             String         @id @default(cuid())
-  symbol         String
-  direction      TradeDirection
-  winRatePercent Int?
-  calculatedAt   DateTime       @default(now())
+enum Gender {
+  ERKEK
+  KADIN
+}
 
-  @@unique([symbol, direction])
+enum ProgramLevel {
+  BASLANGIC
+  ORTA
+  ILERI
+}
+
+model ChartDrawing {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  context   String
+  drawings  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, symbol, context])
 }

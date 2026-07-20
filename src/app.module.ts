@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
@@ -30,11 +32,21 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
 import { FinancialTestModule } from './financial-test/financial-test.module';
 import { ScannerModule } from './scanner/scanner.module';
+import { StorageModule } from './storage/storage.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -64,6 +76,15 @@ import { ScannerModule } from './scanner/scanner.module';
     SearchModule,
     FinancialTestModule,
     ScannerModule,
+    StorageModule,
+    QuotesModule,
+    ChartDrawingsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
+import PDFDocument = require('pdfkit');
+import * as QRCode from 'qrcode';
 
 @Injectable()
 export class CertificatesService {
@@ -21,20 +23,14 @@ export class CertificatesService {
       const progress = await this.prisma.progress.findUnique({
         where: { userId_lessonId: { userId, lessonId: lesson.id } },
       });
-
-      if (!progress || !progress.completed) {
-        return false;
-      }
+      if (!progress || !progress.completed) return false;
     }
 
     for (const quiz of quizzes) {
       const passedAttempt = await this.prisma.quizAttempt.findFirst({
         where: { userId, quizId: quiz.id, passed: true },
       });
-
-      if (!passedAttempt) {
-        return false;
-      }
+      if (!passedAttempt) return false;
     }
 
     return true;
@@ -57,11 +53,14 @@ export class CertificatesService {
       );
     }
 
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
     const created = await this.prisma.certificate.create({
       data: {
         userId,
         programId: dto.programId,
         code: 'PENDING',
+        studentName: user?.fullName ?? 'Öğrenci',
       },
     });
 
@@ -74,44 +73,29 @@ export class CertificatesService {
   }
 
   async findAll() {
-    return this.prisma.certificate.findMany({
-      orderBy: { number: 'asc' },
-    });
+    return this.prisma.certificate.findMany({ orderBy: { number: 'asc' } });
   }
 
   async findOne(id: string) {
     const cert = await this.prisma.certificate.findUnique({ where: { id } });
-
-    if (!cert) {
-      throw new NotFoundException('Sertifika bulunamadı.');
-    }
-
+    if (!cert) throw new NotFoundException('Sertifika bulunamadı.');
     return cert;
   }
 
   async verify(code: string) {
     const cert = await this.prisma.certificate.findUnique({ where: { code } });
+    if (!cert) return { valid: false };
 
-    if (!cert) {
-      return { valid: false };
-    }
-
-    const [user, program] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: cert.userId },
-        select: { fullName: true },
-      }),
-      this.prisma.program.findUnique({
-        where: { id: cert.programId },
-        select: { title: true },
-      }),
-    ]);
+    const program = await this.prisma.program.findUnique({
+      where: { id: cert.programId },
+      select: { title: true },
+    });
 
     return {
       valid: true,
       code: cert.code,
       number: cert.number,
-      studentName: user?.fullName,
+      studentName: cert.studentName,
       programTitle: program?.title,
       issuedAt: cert.issuedAt,
     };
@@ -119,15 +103,94 @@ export class CertificatesService {
 
   async remove(id: string) {
     const exists = await this.prisma.certificate.findUnique({ where: { id } });
+    if (!exists) throw new BadRequestException('Sertifika bulunamadı.');
+    await this.prisma.certificate.delete({ where: { id } });
+    return { message: 'Silindi.' };
+  }
 
-    if (!exists) {
-      throw new BadRequestException('Sertifika bulunamadı.');
+  async generatePdf(id: string, requestingUserId: string): Promise<Buffer> {
+    const cert = await this.prisma.certificate.findUnique({ where: { id } });
+
+    if (!cert) throw new NotFoundException('Sertifika bulunamadı.');
+
+    if (cert.userId !== requestingUserId) {
+      const requester = await this.prisma.user.findUnique({ where: { id: requestingUserId } });
+      if (requester?.role !== 'SUPER_ADMIN') {
+        throw new BadRequestException('Bu sertifikayı görüntüleme yetkiniz yok.');
+      }
     }
 
-    await this.prisma.certificate.delete({ where: { id } });
+    const program = await this.prisma.program.findUnique({
+      where: { id: cert.programId },
+      select: { title: true },
+    });
 
-    return {
-      message: 'Silindi.',
-    };
+    const verifyUrl = `https://traders.tr/verify/${cert.code}`;
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 200 });
+    const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 50 });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.rect(0, 0, doc.page.width, doc.page.height).fill('#050b16');
+
+      doc
+        .fillColor('#ffffff')
+        .fontSize(36)
+        .font('Helvetica-Bold')
+        .text('ORCA', 0, 60, { align: 'center' });
+
+      doc
+        .fontSize(14)
+        .font('Helvetica')
+        .fillColor('#a0aec0')
+        .text('Yeni Nesil Finans Eğitim Platformu', 0, 105, { align: 'center' });
+
+      doc
+        .fontSize(28)
+        .fillColor('#ffffff')
+        .font('Helvetica-Bold')
+        .text('Başarı Sertifikası', 0, 160, { align: 'center' });
+
+      doc
+        .fontSize(16)
+        .fillColor('#cbd5e0')
+        .font('Helvetica')
+        .text('Bu sertifika,', 0, 220, { align: 'center' });
+
+      doc
+        .fontSize(26)
+        .fillColor('#4299e1')
+        .font('Helvetica-Bold')
+        .text(cert.studentName ?? 'Öğrenci', 0, 250, { align: 'center' });
+
+      doc
+        .fontSize(16)
+        .fillColor('#cbd5e0')
+        .font('Helvetica')
+        .text(`kişisinin "${program?.title ?? 'Program'}" programını başarıyla tamamladığını belgeler.`, 80, 295, {
+          align: 'center',
+          width: doc.page.width - 160,
+        });
+
+      doc
+        .fontSize(11)
+        .fillColor('#718096')
+        .text(`Sertifika No: ${cert.code}`, 80, 400)
+        .text(`Veriliş Tarihi: ${cert.issuedAt.toLocaleDateString('tr-TR')}`, 80, 418);
+
+      doc.image(qrBuffer, doc.page.width - 200, 340, { width: 120 });
+      doc
+        .fontSize(9)
+        .fillColor('#718096')
+        .text('Doğrulamak için taratın', doc.page.width - 200, 465, { width: 120, align: 'center' });
+
+      doc.end();
+    });
   }
 }

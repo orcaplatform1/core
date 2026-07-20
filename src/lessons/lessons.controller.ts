@@ -1,19 +1,23 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma/enums';
 
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
 
 @Controller('lessons')
 export class LessonsController {
@@ -24,26 +28,49 @@ export class LessonsController {
     return this.lessonsService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.lessonsService.findById(id);
+  findOne(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as any).id;
+    return this.lessonsService.findById(userId, id);
   }
 
-  @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN)
+  @Roles('SUPER_ADMIN')
+  @Post()
   create(@Body() dto: CreateLessonDto) {
     return this.lessonsService.create(dto);
   }
 
-  @Post(':id/resources')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateLessonDto) {
+    return this.lessonsService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.lessonsService.remove(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post(':id/resources')
   addResource(
     @Param('id') id: string,
     @Body('name') name: string,
     @Body('url') url: string,
   ) {
     return this.lessonsService.addResource(id, name, url);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Delete('resources/:resourceId')
+  removeResource(@Param('resourceId') resourceId: string) {
+    return this.lessonsService.removeResource(resourceId);
   }
 }

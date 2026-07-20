@@ -1,18 +1,27 @@
-import {
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsString, IsOptional, IsIn, IsInt, Min } from 'class-validator';
 
 export class CreateProgramDto {
   @IsString()
-  @MinLength(3)
-  @MaxLength(100)
   title!: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @IsOptional()
+  @IsIn(['BASLANGIC', 'ORTA', 'ILERI'])
+  level?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  durationHours?: number;
 }

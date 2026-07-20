@@ -11,7 +11,32 @@ export class StatsService {
     return d;
   }
 
+  private lockedStatsResponse() {
+    return {
+      locked: true,
+      unlockMessage:
+        '🔒 İstatistiklerin seni bekliyor! Bir eğitim satın aldığın anda finans skorun, quiz başarı oranın, backtest performansın ve kişisel gelişim raporun burada canlanmaya başlayacak. Potansiyelini görmeye hazır mısın?',
+      overallScore: 0,
+      previousWeekScore: null,
+      educationCompletionRate: 0,
+      quizSuccessRate: 0,
+      backtestSuccessRate: 0,
+      simulationReturnRate: 0,
+      badgeCount: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      dailyGoal: { target: 1, completed: 0 },
+      weeklyGoal: { target: 5, completed: 0 },
+    };
+  }
+
   async getMyStats(userId: string) {
+    const enrollmentCount = await this.prisma.enrollment.count({ where: { userId } });
+
+    if (enrollmentCount === 0) {
+      return this.lockedStatsResponse();
+    }
+
     const [progressRows, quizAttempts, backtestTrades, simTrades, badges, user] =
       await Promise.all([
         this.prisma.progress.findMany({ where: { userId } }),
@@ -81,6 +106,8 @@ export class StatsService {
     });
 
     return {
+      locked: false,
+      unlockMessage: null,
       overallScore,
       previousWeekScore: previousSnapshot?.overallScore ?? null,
       educationCompletionRate,
@@ -102,6 +129,9 @@ export class StatsService {
   }
 
   async getCategoryBreakdown(userId: string) {
+    const enrollmentCount = await this.prisma.enrollment.count({ where: { userId } });
+    if (enrollmentCount === 0) return [];
+
     const categories = await this.prisma.category.findMany({
       include: {
         programs: {

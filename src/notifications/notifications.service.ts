@@ -32,7 +32,7 @@ export class NotificationsService {
 
   async findMine(userId: string) {
     return this.prisma.notification.findMany({
-      where: { userId },
+      where: { userId, type: { not: 'ANNOUNCEMENT' } },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -40,7 +40,22 @@ export class NotificationsService {
 
   async unreadCount(userId: string) {
     const count = await this.prisma.notification.count({
-      where: { userId, read: false },
+      where: { userId, read: false, type: { not: 'ANNOUNCEMENT' } },
+    });
+
+    return { count };
+  }
+
+  async findMyAnnouncements(userId: string) {
+    return this.prisma.notification.findMany({
+      where: { userId, type: 'ANNOUNCEMENT' },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async unreadAnnouncementCount(userId: string) {
+    const count = await this.prisma.notification.count({
+      where: { userId, read: false, type: 'ANNOUNCEMENT' },
     });
 
     return { count };
@@ -65,10 +80,19 @@ export class NotificationsService {
 
   async markAllAsRead(userId: string) {
     await this.prisma.notification.updateMany({
-      where: { userId, read: false },
+      where: { userId, read: false, type: { not: 'ANNOUNCEMENT' } },
       data: { read: true },
     });
 
     return { message: 'Tümü okundu olarak işaretlendi.' };
+  }
+
+  async markAllAnnouncementsAsRead(userId: string) {
+    await this.prisma.notification.updateMany({
+      where: { userId, read: false, type: 'ANNOUNCEMENT' },
+      data: { read: true },
+    });
+
+    return { message: 'Tüm duyurular okundu olarak işaretlendi.' };
   }
 }

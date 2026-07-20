@@ -17,6 +17,20 @@ export class UsersController {
     return this.usersService.updateProfile(userId, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me/export')
+  exportMyData(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.usersService.exportMyData(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/delete')
+  requestAccountDeletion(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.usersService.requestAccountDeletion(userId);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Get()

@@ -50,6 +50,13 @@ export class AuthController {
     return this.authService.logout(userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('devices')
+  getDevices(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.authService.getMyDevices(userId);
+  }
+
   @Post('password-reset/request')
   requestPasswordReset(@Body('email') email: string) {
     return this.authService.requestPasswordReset(email);
@@ -63,6 +70,20 @@ export class AuthController {
   @Post('verify-email')
   verifyEmail(@Body('token') token: string) {
     return this.authService.verifyEmail(token);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('phone-verification/request')
+  requestPhoneVerification(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.authService.requestPhoneVerification(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('phone-verification/confirm')
+  confirmPhoneVerification(@Req() req: Request, @Body('code') code: string) {
+    const userId = (req.user as any).id;
+    return this.authService.confirmPhoneVerification(userId, code);
   }
 
   @Post('google')
@@ -81,9 +102,10 @@ export class AuthController {
     @Req() req: Request,
     @Body('username') username: string,
     @Body('phone') phone: string,
+    @Body('gender') gender: string,
   ) {
     const userId = (req.user as any).id;
-    return this.authService.completeProfile(userId, username, phone);
+    return this.authService.completeProfile(userId, username, phone, gender);
   }
 
   @UseGuards(JwtAuthGuard)

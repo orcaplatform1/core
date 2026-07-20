@@ -9,6 +9,16 @@ export class ManageService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  async getGenderStats() {
+    const [male, female, total] = await Promise.all([
+      this.prisma.user.count({ where: { gender: 'ERKEK' } }),
+      this.prisma.user.count({ where: { gender: 'KADIN' } }),
+      this.prisma.user.count(),
+    ]);
+
+    return { male, female, unspecified: total - male - female, total };
+  }
+
   async getDashboard() {
     const [
       totalUsers,
@@ -62,9 +72,32 @@ export class ManageService {
     });
   }
 
-  async broadcastAnnouncement(title: string, message: string, link?: string) {
-    const users = await this.prisma.user.findMany({ select: { id: true } });
-    const userIds = users.map((u) => u.id);
+  async broadcastAnnouncement(
+    title: string,
+    message: string,
+    target: 'ALL' | 'PAID' | 'FREE',
+    link?: string,
+  ) {
+    let userIds: string[];
+
+    if (target === 'ALL') {
+      const users = await this.prisma.user.findMany({ select: { id: true } });
+      userIds = users.map((u) => u.id);
+    } else {
+      const enrolledUserIds = await this.prisma.enrollment.findMany({
+        select: { userId: true },
+        distinct: ['userId'],
+      });
+      const enrolledSet = new Set(enrolledUserIds.map((e) => e.userId));
+
+      const allUsers = await this.prisma.user.findMany({ select: { id: true } });
+
+      if (target === 'PAID') {
+        userIds = allUsers.filter((u) => enrolledSet.has(u.id)).map((u) => u.id);
+      } else {
+        userIds = allUsers.filter((u) => !enrolledSet.has(u.id)).map((u) => u.id);
+      }
+    }
 
     await this.notificationsService.createForManyUsers(userIds, {
       type: 'ANNOUNCEMENT',
@@ -73,7 +106,7 @@ export class ManageService {
       link,
     });
 
-    return { message: `${userIds.length} kullanıcıya duyuru gönderildi.` };
+    return { message: `${userIds.length} kullanıcıya duyuru gönderildi.`, target };
   }
 
   private async generatePromoCode(fullName: string): Promise<string> {
@@ -108,7 +141,7 @@ export class ManageService {
 
     return this.prisma.user.update({
       where: { id: userId },
-      data: { role: 'STAFF', promoCode },
+      data: { role: 'STAFF', promoCode, avatarUrl: 'https://traders.tr/avatars/admin-staff.png' },
       select: { id: true, fullName: true, role: true, promoCode: true },
     });
   }

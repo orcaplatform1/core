@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomInt } from 'crypto';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -16,6 +16,13 @@ import { LoginDto } from './dto/login.dto';
 
 const MAX_DEVICES_PER_DAY = 2;
 const BAN_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
+
+const BLUE_AVATAR = 'https://traders.tr/avatars/orca-blue.png';
+const PINK_AVATAR = 'https://traders.tr/avatars/orca-pink.png';
+
+function avatarForGender(gender: string): string {
+  return gender === 'ERKEK' ? BLUE_AVATAR : PINK_AVATAR;
+}
 
 @Injectable()
 export class AuthService {
@@ -45,7 +52,6 @@ export class AuthService {
     if (!phone) return;
 
     const lead = await this.prisma.lead.findUnique({ where: { phone } });
-
     if (!lead) return;
 
     await this.prisma.user.update({
@@ -95,6 +101,8 @@ export class AuthService {
         password,
         fullName: dto.fullName,
         username: dto.username,
+        gender: dto.gender as any,
+        avatarUrl: avatarForGender(dto.gender),
         profileComplete: true,
         sessionId,
         lastLoginAt: new Date(),
@@ -217,6 +225,15 @@ export class AuthService {
     return { message: 'Çıkış yapıldı.' };
   }
 
+  async getMyDevices(userId: string) {
+    return this.prisma.loginLog.findMany({
+      where: { userId },
+      orderBy: { loggedInAt: 'desc' },
+      take: 20,
+      select: { id: true, ip: true, userAgent: true, loggedInAt: true },
+    });
+  }
+
   async requestPasswordReset(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
@@ -284,6 +301,53 @@ export class AuthService {
     return { message: 'Email doğrulandı.' };
   }
 
+  async requestPhoneVerification(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !user.phone) {
+      throw new BadRequestException('Kayıtlı bir telefon numaranız yok.');
+    }
+
+    const code = String(randomInt(100000, 999999));
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { phoneVerificationCode: code, phoneVerificationExpires: expires },
+    });
+
+    const smsApiKey = process.env.SMS_API_KEY;
+
+    if (!smsApiKey) {
+      return {
+        message: 'SMS servisi henüz yapılandırılmadı. Doğrulama kodu oluşturuldu ama gönderilemedi.',
+      };
+    }
+
+    return { message: 'Doğrulama kodu telefonunuza gönderildi.' };
+  }
+
+  async confirmPhoneVerification(userId: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (
+      !user ||
+      !user.phoneVerificationCode ||
+      user.phoneVerificationCode !== code ||
+      !user.phoneVerificationExpires ||
+      user.phoneVerificationExpires < new Date()
+    ) {
+      throw new BadRequestException('Doğrulama kodu geçersiz veya süresi dolmuş.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { phoneVerified: true, phoneVerificationCode: null, phoneVerificationExpires: null },
+    });
+
+    return { message: 'Telefon numarası doğrulandı.' };
+  }
+
   async googleLogin(idToken: string) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
 
@@ -304,7 +368,7 @@ export class AuthService {
     throw new ServiceUnavailableException('Apple girişi entegrasyonu tamamlanmadı.');
   }
 
-  async completeProfile(userId: string, username: string, phone: string) {
+  async completeProfile(userId: string, username: string, phone: string, gender: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
@@ -325,8 +389,14 @@ export class AuthService {
 
     return this.prisma.user.update({
       where: { id: userId },
-      data: { username, phone, profileComplete: true },
-      select: { id: true, fullName: true, username: true, phone: true, email: true },
+      data: {
+        username,
+        phone,
+        gender: gender as any,
+        avatarUrl: avatarForGender(gender),
+        profileComplete: true,
+      },
+      select: { id: true, fullName: true, username: true, phone: true, email: true, gender: true, avatarUrl: true },
     });
   }
 

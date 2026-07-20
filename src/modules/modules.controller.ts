@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -12,10 +14,10 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma/enums';
 
 import { ModulesService } from './modules.service';
 import { CreateModuleDto } from './dto/create-module.dto';
+import { UpdateModuleDto } from './dto/update-module.dto';
 
 @Controller('modules')
 export class ModulesController {
@@ -39,10 +41,24 @@ export class ModulesController {
     return { unlocked };
   }
 
-  @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN)
+  @Roles('SUPER_ADMIN')
+  @Post()
   create(@Body() dto: CreateModuleDto) {
     return this.modulesService.create(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateModuleDto) {
+    return this.modulesService.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.modulesService.remove(id);
   }
 }
