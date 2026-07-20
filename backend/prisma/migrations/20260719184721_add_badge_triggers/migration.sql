@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "BadgeTriggerType" AS ENUM ('FIRST_LESSON', 'QUIZ_PASS_COUNT', 'STREAK_DAYS', 'BACKTEST_COUNT', 'SIMULATION_COUNT', 'CUSTOM');
+
+-- AlterTable
+ALTER TABLE "Badge" ADD COLUMN     "requiredCount" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "triggerType" "BadgeTriggerType" NOT NULL DEFAULT 'CUSTOM';
