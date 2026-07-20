@@ -44,21 +44,24 @@ export class ModulesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post()
-  create(@Body() dto: CreateModuleDto) {
-    return this.modulesService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateModuleDto) {
+    const actorId = (req.user as any).id;
+    return this.modulesService.create(dto, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateModuleDto) {
-    return this.modulesService.update(id, dto);
+  update(@Req() req: Request, @Param('id') id: string, @Body() dto: UpdateModuleDto) {
+    const actorId = (req.user as any).id;
+    return this.modulesService.update(id, dto, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.modulesService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.modulesService.remove(id, actorId);
   }
 }

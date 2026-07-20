@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -34,8 +34,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.usersService.findAll(page ? parseInt(page) : 1, limit ? parseInt(limit) : 20);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,19 +48,22 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post(':id/unban')
-  unban(@Param('id') id: string) {
-    return this.usersService.unban(id);
+  unban(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.usersService.unban(id, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id/identity')
   adminUpdateIdentity(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body('fullName') fullName?: string,
     @Body('username') username?: string,
   ) {
-    return this.usersService.adminUpdateIdentity(id, fullName, username);
+    const actorId = (req.user as any).id;
+    return this.usersService.adminUpdateIdentity(id, fullName, username, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

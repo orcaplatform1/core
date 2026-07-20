@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class ModulesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   async findAll() {
     return this.prisma.module.findMany({
@@ -15,16 +19,22 @@ export class ModulesService {
     return this.prisma.module.findUnique({ where: { id } });
   }
 
-  async create(data: { title: string; description?: string; programId: string; order?: number }) {
-    return this.prisma.module.create({ data });
+  async create(data: { title: string; description?: string; programId: string; order?: number }, actorId: string) {
+    const created = await this.prisma.module.create({ data });
+    await this.auditLogService.log(actorId, 'MODULE_CREATE', 'Module', created.id);
+    return created;
   }
 
-  async update(id: string, data: { title?: string; description?: string; order?: number }) {
-    return this.prisma.module.update({ where: { id }, data });
+  async update(id: string, data: { title?: string; description?: string; order?: number }, actorId: string) {
+    const updated = await this.prisma.module.update({ where: { id }, data });
+    await this.auditLogService.log(actorId, 'MODULE_UPDATE', 'Module', id);
+    return updated;
   }
 
-  async remove(id: string) {
-    return this.prisma.module.delete({ where: { id } });
+  async remove(id: string, actorId: string) {
+    await this.prisma.module.delete({ where: { id } });
+    await this.auditLogService.log(actorId, 'MODULE_DELETE', 'Module', id);
+    return { message: 'Silindi.' };
   }
 
   async isUnlocked(userId: string, moduleId: string): Promise<boolean> {

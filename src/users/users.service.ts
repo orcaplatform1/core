@@ -1,26 +1,48 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
-  async findAll() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        avatarUrl: true,
-        gender: true,
-        email: true,
-        role: true,
-        toolsSubscription: true,
-        createdAt: true,
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+          avatarUrl: true,
+          gender: true,
+          email: true,
+          role: true,
+          toolsSubscription: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-    });
+    };
   }
 
   async findById(id: string) {
@@ -88,14 +110,14 @@ export class UsersService {
     });
   }
 
-  async unban(id: string) {
+  async unban(id: string, actorId?: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { bannedUntil: null },
       select: {
@@ -106,20 +128,32 @@ export class UsersService {
         banCount: true,
       },
     });
+
+    if (actorId) {
+      await this.auditLogService.log(actorId, 'USER_UNBAN', 'User', id);
+    }
+
+    return updated;
   }
 
-  async adminUpdateIdentity(id: string, fullName?: string, username?: string) {
+  async adminUpdateIdentity(id: string, fullName?: string, username?: string, actorId?: string) {
     const exists = await this.prisma.user.findUnique({ where: { id } });
 
     if (!exists) {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data: { fullName, username },
       select: { id: true, fullName: true, username: true },
     });
+
+    if (actorId) {
+      await this.auditLogService.log(actorId, 'USER_IDENTITY_UPDATE', 'User', id, { fullName, username });
+    }
+
+    return updated;
   }
 
   async exportMyData(userId: string) {
@@ -193,6 +227,8 @@ export class UsersService {
         appleId: null,
       },
     });
+
+    await this.auditLogService.log(userId, 'ACCOUNT_SELF_DELETE', 'User', userId);
 
     return {
       message: 'Hesabınız anonimleştirildi. Yasal saklama süresi gereken ödeme/sertifika kayıtları (10 yıl) korunur, ancak kişisel bilgileriniz silindi.',

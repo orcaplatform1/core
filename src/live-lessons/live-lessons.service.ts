@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { CreateLiveLessonDto } from './dto/create-live-lesson.dto';
 
 @Injectable()
 export class LiveLessonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
-  async create(dto: CreateLiveLessonDto) {
-    return this.prisma.liveLesson.create({
+  async create(dto: CreateLiveLessonDto, actorId: string) {
+    const created = await this.prisma.liveLesson.create({
       data: {
         title: dto.title,
         scheduledAt: new Date(dto.scheduledAt),
@@ -15,6 +19,8 @@ export class LiveLessonsService {
         discordLink: dto.discordLink,
       },
     });
+    await this.auditLogService.log(actorId, 'LIVE_LESSON_CREATE', 'LiveLesson', created.id);
+    return created;
   }
 
   async findAll() {
@@ -23,7 +29,7 @@ export class LiveLessonsService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId: string) {
     const exists = await this.prisma.liveLesson.findUnique({ where: { id } });
 
     if (!exists) {
@@ -31,6 +37,7 @@ export class LiveLessonsService {
     }
 
     await this.prisma.liveLesson.delete({ where: { id } });
+    await this.auditLogService.log(actorId, 'LIVE_LESSON_DELETE', 'LiveLesson', id);
 
     return { message: 'Silindi.' };
   }

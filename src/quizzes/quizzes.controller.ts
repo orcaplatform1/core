@@ -6,8 +6,10 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -33,21 +35,24 @@ export class QuizzesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  create(@Body() dto: CreateQuizDto) {
-    return this.quizzesService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateQuizDto) {
+    const actorId = (req.user as any).id;
+    return this.quizzesService.create(dto, actorId);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  update(@Param('id') id: string, @Body() dto: UpdateQuizDto) {
-    return this.quizzesService.update(id, dto);
+  update(@Req() req: Request, @Param('id') id: string, @Body() dto: UpdateQuizDto) {
+    const actorId = (req.user as any).id;
+    return this.quizzesService.update(id, dto, actorId);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  remove(@Param('id') id: string) {
-    return this.quizzesService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.quizzesService.remove(id, actorId);
   }
 }

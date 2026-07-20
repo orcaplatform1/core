@@ -35,6 +35,11 @@ import { ScannerModule } from './scanner/scanner.module';
 import { StorageModule } from './storage/storage.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { PagesModule } from './pages/pages.module';
+import { FooterModule } from './footer/footer.module';
+import { SitemapModule } from './sitemap/sitemap.module';
+import { SecurityLogModule } from './security-log/security-log.module';
 
 @Module({
   imports: [
@@ -79,6 +84,11 @@ import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
     StorageModule,
     QuotesModule,
     ChartDrawingsModule,
+    AuditLogModule,
+    PagesModule,
+    FooterModule,
+    SitemapModule,
+    SecurityLogModule,
   ],
   providers: [
     {

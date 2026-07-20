@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class ManageService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async getGenderStats() {
@@ -76,6 +78,7 @@ export class ManageService {
     title: string,
     message: string,
     target: 'ALL' | 'PAID' | 'FREE',
+    actorId: string,
     link?: string,
   ) {
     let userIds: string[];
@@ -106,6 +109,12 @@ export class ManageService {
       link,
     });
 
+    await this.auditLogService.log(actorId, 'ANNOUNCEMENT_BROADCAST', 'Notification', undefined, {
+      title,
+      target,
+      recipientCount: userIds.length,
+    });
+
     return { message: `${userIds.length} kullanıcıya duyuru gönderildi.`, target };
   }
 
@@ -126,7 +135,7 @@ export class ManageService {
     return code;
   }
 
-  async makeStaff(userId: string) {
+  async makeStaff(userId: string, actorId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
@@ -139,11 +148,15 @@ export class ManageService {
 
     const promoCode = await this.generatePromoCode(user.fullName);
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { role: 'STAFF', promoCode, avatarUrl: 'https://traders.tr/avatars/admin-staff.png' },
       select: { id: true, fullName: true, role: true, promoCode: true },
     });
+
+    await this.auditLogService.log(actorId, 'USER_PROMOTE_TO_STAFF', 'User', userId, { promoCode });
+
+    return updated;
   }
 
   async getStaffPerformance() {

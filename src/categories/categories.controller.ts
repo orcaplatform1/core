@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -12,8 +13,9 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post()
-  create(@Body() dto: CreateCategoryDto) {
-    return this.categoriesService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateCategoryDto) {
+    const actorId = (req.user as any).id;
+    return this.categoriesService.create(dto, actorId);
   }
 
   @Get()
@@ -29,7 +31,8 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.categoriesService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.categoriesService.remove(id, actorId);
   }
 }

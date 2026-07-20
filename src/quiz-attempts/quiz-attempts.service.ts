@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadgesService } from '../badges/badges.service';
 
 function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EXCELLENT' {
   if (percentage < 70) return 'FAILED';
@@ -11,10 +10,7 @@ function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EX
 
 @Injectable()
 export class QuizAttemptsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly badgesService: BadgesService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private async expireIfStale(attempt: any, timeLimitMinutes: number) {
     if (attempt.endedAt) return attempt;
@@ -108,7 +104,7 @@ export class QuizAttemptsService {
     const grade = calculateGrade(percentage);
     const passed = percentage >= 70;
 
-    const updated = await this.prisma.quizAttempt.update({
+    return this.prisma.quizAttempt.update({
       where: { id: attemptId },
       data: {
         totalQuestions,
@@ -121,22 +117,29 @@ export class QuizAttemptsService {
         endedAt: new Date(),
       },
     });
-
-    if (passed) {
-      const passedCount = await this.prisma.quizAttempt.count({
-        where: { userId: attempt.userId, passed: true },
-      });
-
-      await this.badgesService.checkAndGrant(attempt.userId, 'QUIZ_PASS_COUNT', passedCount);
-    }
-
-    return updated;
   }
 
-  async findAll() {
-    return this.prisma.quizAttempt.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.quizAttempt.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.quizAttempt.count(),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

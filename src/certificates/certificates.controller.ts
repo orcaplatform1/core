@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { Request } from 'express';
 import { CertificatesService } from './certificates.service';
@@ -46,11 +46,5 @@ export class CertificatesController {
     });
 
     res.end(pdfBuffer);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.certificatesService.remove(id);
   }
 }

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { LiveLessonsService } from './live-lessons.service';
 import { CreateLiveLessonDto } from './dto/create-live-lesson.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,8 +18,9 @@ export class LiveLessonsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post()
-  create(@Body() dto: CreateLiveLessonDto) {
-    return this.liveLessonsService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateLiveLessonDto) {
+    const actorId = (req.user as any).id;
+    return this.liveLessonsService.create(dto, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,7 +33,8 @@ export class LiveLessonsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.liveLessonsService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.liveLessonsService.remove(id, actorId);
   }
 }

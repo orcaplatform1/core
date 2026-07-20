@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 import { CreateBadgeDto } from './dto/create-badge.dto';
 
 @Injectable()
 export class BadgesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
-  async create(dto: CreateBadgeDto) {
-    return this.prisma.badge.create({
+  async create(dto: CreateBadgeDto, actorId: string) {
+    const created = await this.prisma.badge.create({
       data: {
         name: dto.name,
         description: dto.description,
@@ -15,6 +19,8 @@ export class BadgesService {
         requiredCount: dto.requiredCount ?? 1,
       },
     });
+    await this.auditLogService.log(actorId, 'BADGE_CREATE', 'Badge', created.id);
+    return created;
   }
 
   async findAll() {
@@ -23,7 +29,7 @@ export class BadgesService {
     });
   }
 
-  async grant(userId: string, badgeId: string) {
+  async grant(userId: string, badgeId: string, actorId: string) {
     const existing = await this.prisma.userBadge.findUnique({
       where: { userId_badgeId: { userId, badgeId } },
     });
@@ -32,9 +38,11 @@ export class BadgesService {
       throw new BadRequestException('Bu rozet zaten verilmiş.');
     }
 
-    return this.prisma.userBadge.create({
+    const granted = await this.prisma.userBadge.create({
       data: { userId, badgeId },
     });
+    await this.auditLogService.log(actorId, 'BADGE_GRANT', 'UserBadge', granted.id, { userId, badgeId });
+    return granted;
   }
 
   async checkAndGrant(userId: string, triggerType: string, currentCount: number) {
@@ -78,7 +86,7 @@ export class BadgesService {
     }));
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId: string) {
     const exists = await this.prisma.badge.findUnique({ where: { id } });
 
     if (!exists) {
@@ -86,6 +94,7 @@ export class BadgesService {
     }
 
     await this.prisma.badge.delete({ where: { id } });
+    await this.auditLogService.log(actorId, 'BADGE_DELETE', 'Badge', id);
 
     return { message: 'Silindi.' };
   }

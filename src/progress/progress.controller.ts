@@ -1,34 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { ProgressService } from './progress.service';
-import { CreateProgressDto } from './dto/create-progress.dto';
 import { UpdateProgressDto } from './dto/update-progress.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('progress')
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
-  @Post()
-  create(@Body() createProgressDto: CreateProgressDto) {
-    return this.progressService.create(createProgressDto);
+  @Post('watch')
+  updateWatchProgress(@Req() req: Request, @Body() dto: UpdateProgressDto) {
+    const userId = (req.user as any).id;
+    return this.progressService.updateWatchProgress(userId, dto);
   }
 
-  @Get()
-  findAll() {
-    return this.progressService.findAll();
+  @Get('me')
+  findMine(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.progressService.findMine(userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.progressService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProgressDto: UpdateProgressDto) {
-    return this.progressService.update(+id, updateProgressDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.progressService.remove(+id);
+  @Get('lesson/:lessonId')
+  findByLesson(@Req() req: Request, @Param('lessonId') lessonId: string) {
+    const userId = (req.user as any).id;
+    return this.progressService.findByLesson(userId, lessonId);
   }
 }

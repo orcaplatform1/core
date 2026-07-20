@@ -101,13 +101,6 @@ export class CertificatesService {
     };
   }
 
-  async remove(id: string) {
-    const exists = await this.prisma.certificate.findUnique({ where: { id } });
-    if (!exists) throw new BadRequestException('Sertifika bulunamadı.');
-    await this.prisma.certificate.delete({ where: { id } });
-    return { message: 'Silindi.' };
-  }
-
   async generatePdf(id: string, requestingUserId: string): Promise<Buffer> {
     const cert = await this.prisma.certificate.findUnique({ where: { id } });
 

@@ -38,39 +38,45 @@ export class LessonsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post()
-  create(@Body() dto: CreateLessonDto) {
-    return this.lessonsService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateLessonDto) {
+    const actorId = (req.user as any).id;
+    return this.lessonsService.create(dto, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateLessonDto) {
-    return this.lessonsService.update(id, dto);
+  update(@Req() req: Request, @Param('id') id: string, @Body() dto: UpdateLessonDto) {
+    const actorId = (req.user as any).id;
+    return this.lessonsService.update(id, dto, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.lessonsService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.lessonsService.remove(id, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post(':id/resources')
   addResource(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body('name') name: string,
     @Body('url') url: string,
   ) {
-    return this.lessonsService.addResource(id, name, url);
+    const actorId = (req.user as any).id;
+    return this.lessonsService.addResource(id, name, url, actorId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete('resources/:resourceId')
-  removeResource(@Param('resourceId') resourceId: string) {
-    return this.lessonsService.removeResource(resourceId);
+  removeResource(@Req() req: Request, @Param('resourceId') resourceId: string) {
+    const actorId = (req.user as any).id;
+    return this.lessonsService.removeResource(resourceId, actorId);
   }
 }

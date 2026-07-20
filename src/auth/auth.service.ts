@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID, randomInt } from 'crypto';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { SecurityLogService } from '../security-log/security-log.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -29,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly securityLogService: SecurityLogService,
   ) {}
 
   private async issueTokens(userId: string, email: string | null, role: string, sessionId: string) {
@@ -123,6 +125,7 @@ export class AuthService {
     });
 
     if (!user) {
+      await this.securityLogService.log('LOGIN_FAILED_UNKNOWN_EMAIL', undefined, ip, userAgent, { email: dto.email });
       throw new UnauthorizedException('Email veya şifre hatalı');
     }
 
@@ -141,6 +144,7 @@ export class AuthService {
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
 
     if (!passwordMatch) {
+      await this.securityLogService.log('LOGIN_FAILED_WRONG_PASSWORD', user.id, ip, userAgent);
       throw new UnauthorizedException('Email veya şifre hatalı');
     }
 
@@ -168,9 +172,15 @@ export class AuthService {
         },
       });
 
+      await this.securityLogService.log('ACCOUNT_AUTO_BANNED_DEVICE_LIMIT', user.id, ip, userAgent);
+
       throw new ForbiddenException(
         'Bugün çok fazla farklı cihazdan giriş denemesi tespit edildi. Şifre paylaşımı şüphesiyle hesabınız 3 gün süreyle kısıtlandı.',
       );
+    }
+
+    if (isNewDevice) {
+      await this.securityLogService.log('NEW_DEVICE_LOGIN', user.id, ip, userAgent);
     }
 
     if (user.phone) {
@@ -188,6 +198,8 @@ export class AuthService {
       data: { userId: user.id, ip, userAgent },
     });
 
+    await this.securityLogService.log('LOGIN_SUCCESS', user.id, ip, userAgent);
+
     const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
 
     return { token: accessToken, refreshToken, user: { ...user, sessionId } };
@@ -203,6 +215,7 @@ export class AuthService {
     const isValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
 
     if (!isValid) {
+      await this.securityLogService.log('REFRESH_TOKEN_INVALID', userId);
       throw new UnauthorizedException('Geçersiz refresh token.');
     }
 
@@ -280,6 +293,8 @@ export class AuthService {
         sessionId: null,
       },
     });
+
+    await this.securityLogService.log('PASSWORD_RESET', user.id);
 
     return { message: 'Şifre başarıyla değiştirildi. Lütfen tekrar giriş yapın.' };
   }
@@ -389,13 +404,7 @@ export class AuthService {
 
     return this.prisma.user.update({
       where: { id: userId },
-      data: {
-        username,
-        phone,
-        gender: gender as any,
-        avatarUrl: avatarForGender(gender),
-        profileComplete: true,
-      },
+      data: { username, phone, gender: gender as any, avatarUrl: avatarForGender(gender), profileComplete: true },
       select: { id: true, fullName: true, username: true, phone: true, email: true, gender: true, avatarUrl: true },
     });
   }

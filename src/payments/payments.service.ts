@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { createHmac, randomUUID } from 'crypto';
@@ -75,8 +75,6 @@ export class PaymentsService {
     const signature = createHmac('sha256', secretKey).update(payload).digest('hex');
 
     try {
-      // Not: Gerçek Bybit Pay endpoint/imza formatı, API key alındığında
-      // resmi Bybit Pay dokümantasyonuna göre doğrulanıp güncellenmeli.
       const response = await fetch('https://api.bybit.com/v5/pay/order/create', {
         method: 'POST',
         headers: {
@@ -166,10 +164,27 @@ export class PaymentsService {
     });
   }
 
-  async findAll() {
-    return this.prisma.payment.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAll(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.payment.count(),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {
@@ -178,7 +193,7 @@ export class PaymentsService {
     return payment;
   }
 
-  async approve(id: string) {
+  async approve(id: string, actorId?: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id } });
     if (!payment) throw new BadRequestException('Ödeme bulunamadı.');
     if (payment.status === 'APPROVED') throw new BadRequestException('Bu ödeme zaten onaylanmış.');
@@ -229,13 +244,49 @@ export class PaymentsService {
     return updated;
   }
 
-  async reject(id: string) {
+  async reject(id: string, actorId?: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id } });
     if (!payment) throw new BadRequestException('Ödeme bulunamadı.');
     return this.prisma.payment.update({ where: { id }, data: { status: 'REJECTED' } });
   }
 
-  async handleBinanceWebhook(payload: any) {
+  private verifyBinanceSignature(headers: Record<string, string>, rawBody: string): boolean {
+    const secretKey = process.env.BINANCE_PAY_SECRET_KEY;
+    if (!secretKey) return false;
+
+    const timestamp = headers['binancepay-timestamp'];
+    const nonce = headers['binancepay-nonce'];
+    const receivedSignature = headers['binancepay-signature'];
+
+    if (!timestamp || !nonce || !receivedSignature) return false;
+
+    const payload = `${timestamp}\n${nonce}\n${rawBody}\n`;
+    const expectedSignature = createHmac('sha512', secretKey).update(payload).digest('hex').toUpperCase();
+
+    return expectedSignature === receivedSignature;
+  }
+
+  private verifyBybitSignature(headers: Record<string, string>, rawBody: string): boolean {
+    const secretKey = process.env.BYBIT_PAY_SECRET_KEY;
+    const apiKey = process.env.BYBIT_PAY_API_KEY;
+    if (!secretKey || !apiKey) return false;
+
+    const timestamp = headers['x-bapi-timestamp'];
+    const receivedSignature = headers['x-bapi-sign'];
+
+    if (!timestamp || !receivedSignature) return false;
+
+    const payload = `${timestamp}${apiKey}${rawBody}`;
+    const expectedSignature = createHmac('sha256', secretKey).update(payload).digest('hex');
+
+    return expectedSignature === receivedSignature;
+  }
+
+  async handleBinanceWebhook(headers: Record<string, string>, rawBody: string, payload: any) {
+    if (!this.verifyBinanceSignature(headers, rawBody)) {
+      throw new UnauthorizedException('Geçersiz webhook imzası.');
+    }
+
     const merchantTradeNo = payload?.data?.merchantTradeNo;
     const status = payload?.data?.status;
 
@@ -247,7 +298,11 @@ export class PaymentsService {
     return { returnCode: 'SUCCESS' };
   }
 
-  async handleBybitWebhook(payload: any) {
+  async handleBybitWebhook(headers: Record<string, string>, rawBody: string, payload: any) {
+    if (!this.verifyBybitSignature(headers, rawBody)) {
+      throw new UnauthorizedException('Geçersiz webhook imzası.');
+    }
+
     const merchantOrderId = payload?.merchantOrderId;
     const status = payload?.status;
 

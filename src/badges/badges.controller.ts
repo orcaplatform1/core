@@ -14,8 +14,9 @@ export class BadgesController {
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post()
-  create(@Body() dto: CreateBadgeDto) {
-    return this.badgesService.create(dto);
+  create(@Req() req: Request, @Body() dto: CreateBadgeDto) {
+    const actorId = (req.user as any).id;
+    return this.badgesService.create(dto, actorId);
   }
 
   @Get()
@@ -32,14 +33,16 @@ export class BadgesController {
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN')
   @Post(':id/grant')
-  grant(@Body('userId') userId: string, @Param('id') badgeId: string) {
-    return this.badgesService.grant(userId, badgeId);
+  grant(@Req() req: Request, @Body('userId') userId: string, @Param('id') badgeId: string) {
+    const actorId = (req.user as any).id;
+    return this.badgesService.grant(userId, badgeId, actorId);
   }
 
   @UseGuards(RolesGuard)
   @Roles('SUPER_ADMIN')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.badgesService.remove(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.badgesService.remove(id, actorId);
   }
 }
