@@ -53,4 +53,29 @@ export class ManageController {
   getStaffPerformance() {
     return this.manageService.getStaffPerformance();
   }
+
+  @Get('stats/signups')
+  getSignupsTrend() {
+    return this.manageService.getSignupsTrend();
+  }
+
+  @Get('stats/revenue')
+  getRevenueTrend() {
+    return this.manageService.getRevenueTrend();
+  }
+
+  @Get('stats/top-programs')
+  getTopPrograms() {
+    return this.manageService.getTopPrograms();
+  }
+
+  @Get('stats/completion-rate')
+  getCompletionRate() {
+    return this.manageService.getCompletionRate();
+  }
+
+  @Get('stats/quiz')
+  getQuizStats() {
+    return this.manageService.getQuizStats();
+  }
 }

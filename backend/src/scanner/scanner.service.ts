@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -441,7 +440,6 @@ export class ScannerService {
     return cached?.winRatePercent ?? null;
   }
 
-  @Cron('20 0 * * *')
   async refreshWinRateCache() {
     const cryptoSymbols = await this.prisma.historicalCandle.findMany({
       where: { assetType: 'CRYPTO' }, distinct: ['symbol'], select: { symbol: true },
@@ -625,7 +623,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return this.prisma.scanResult.findFirst({ orderBy: { createdAt: 'desc' } });
   }
 
-  @Cron('15 * * * *')
   async scheduledScan() {
     const results = await this.runFullScan();
     const totalSignals = results.crypto.length + results.forex.length;

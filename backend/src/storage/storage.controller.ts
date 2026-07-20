@@ -15,8 +15,9 @@ export class StorageController {
     @Body('fileName') fileName: string,
     @Body('contentType') contentType: string,
     @Body('folder') folder: 'videos' | 'pdfs' | 'resources',
+    @Body('fileSizeBytes') fileSizeBytes: number,
   ) {
-    return this.storageService.getUploadUrl(fileName, contentType, folder);
+    return this.storageService.getUploadUrl(fileName, contentType, folder, fileSizeBytes);
   }
 
   @UseGuards(JwtAuthGuard)

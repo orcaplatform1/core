@@ -196,4 +196,79 @@ export class ManageService {
 
     return results;
   }
+
+  async getSignupsTrend(days = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    return this.prisma.$queryRaw`
+      SELECT DATE_TRUNC('day', "createdAt")::date AS date, COUNT(*)::int AS count
+      FROM "User"
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY date
+      ORDER BY date ASC
+    `;
+  }
+
+  async getRevenueTrend(days = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    return this.prisma.$queryRaw`
+      SELECT DATE_TRUNC('day', COALESCE("approvedAt", "createdAt"))::date AS date, SUM(amount)::float AS revenue
+      FROM "Payment"
+      WHERE status = 'APPROVED' AND COALESCE("approvedAt", "createdAt") >= ${startDate}
+      GROUP BY date
+      ORDER BY date ASC
+    `;
+  }
+
+  async getTopPrograms(limit = 5) {
+    const grouped = await this.prisma.enrollment.groupBy({
+      by: ['programId'],
+      _count: { _all: true },
+      orderBy: { _count: { programId: 'desc' } },
+      take: limit,
+    });
+    const programIds = grouped.map((g) => g.programId);
+    const programs = await this.prisma.program.findMany({
+      where: { id: { in: programIds } },
+      select: { id: true, title: true },
+    });
+    const programMap = new Map(programs.map((p) => [p.id, p.title]));
+    return grouped.map((g) => ({
+      programId: g.programId,
+      title: programMap.get(g.programId) ?? 'Bilinmeyen Program',
+      enrollmentCount: g._count._all,
+    }));
+  }
+
+  async getCompletionRate() {
+    const [totalLessonProgress, completedLessonProgress] = await Promise.all([
+      this.prisma.progress.count({ where: { lessonId: { not: null } } }),
+      this.prisma.progress.count({ where: { lessonId: { not: null }, completed: true } }),
+    ]);
+    const rate = totalLessonProgress > 0 ? (completedLessonProgress / totalLessonProgress) * 100 : 0;
+    return {
+      totalLessonProgress,
+      completedLessonProgress,
+      completionRatePercent: Math.round(rate * 10) / 10,
+    };
+  }
+
+  async getQuizStats() {
+    const [totalAttempts, passedAttempts, avgScore] = await Promise.all([
+      this.prisma.quizAttempt.count({ where: { expired: false } }),
+      this.prisma.quizAttempt.count({ where: { expired: false, passed: true } }),
+      this.prisma.quizAttempt.aggregate({
+        where: { expired: false },
+        _avg: { score: true },
+      }),
+    ]);
+    const passRate = totalAttempts > 0 ? (passedAttempts / totalAttempts) * 100 : 0;
+    return {
+      totalAttempts,
+      passedAttempts,
+      passRatePercent: Math.round(passRate * 10) / 10,
+      averageScore: Math.round((avgScore._avg.score ?? 0) * 10) / 10,
+    };
+  }
 }
