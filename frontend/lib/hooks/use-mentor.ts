@@ -31,7 +31,7 @@ export function useDiscussedLessons() {
 export function useSendMentorMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { content: string; lessonId?: string }) =>
+    mutationFn: (payload: { content: string; lessonId?: string; imageUrl?: string }) =>
       apiClient<{ message: MentorMessage; quotaSource: string }>("/mentor/message", {
         method: "POST",
         body: payload,

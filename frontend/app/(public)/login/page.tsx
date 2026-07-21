@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { notify } from "@/lib/notify";
+import { useEffect } from "react";
 import { useAuth, ApiError } from "@/context/auth-context";
 import { loginSchema, type LoginFormValues } from "@/lib/schemas/auth";
 import { countryCodes } from "@/lib/data/country-codes";
@@ -29,7 +30,13 @@ const methods = [
 
 export default function GirisPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, user, router]);
   const {
     register,
     handleSubmit,

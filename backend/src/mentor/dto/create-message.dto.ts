@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateMessageDto {
   @IsString()
@@ -7,4 +7,8 @@ export class CreateMessageDto {
   @IsOptional()
   @IsString()
   lessonId?: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }

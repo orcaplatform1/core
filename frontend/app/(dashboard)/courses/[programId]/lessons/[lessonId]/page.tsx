@@ -2,7 +2,8 @@
 
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Download, Lock } from "lucide-react";
+import { FileText, Download } from "lucide-react";
+import { ErrorCard } from "@/components/errors/error-card";
 import { toast } from "sonner";
 import { useLesson, useMyProgress } from "@/lib/hooks/use-curriculum";
 import { useAllQuizzes } from "@/lib/hooks/use-quiz";
@@ -37,10 +38,11 @@ export default function LessonPage({
 
   if (error || !lesson) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card py-20 text-center">
-        <Lock className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Bu derse erişim sağlanamadı.</p>
-      </div>
+      <ErrorCard
+        code="403"
+        description="Bu derse erişim sağlanamadı — programı satın almış olman gerekiyor."
+        redirectTo={`/programs/${programId}`}
+      />
     );
   }
 

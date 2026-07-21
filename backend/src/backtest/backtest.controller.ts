@@ -17,13 +17,18 @@ export class BacktestController {
   }
 
   @Get('candles')
-  getCandles(@Query('symbol') symbol: string, @Query('from') from: string, @Query('to') to: string) {
-    return this.backtestService.getCandles(symbol, from, to);
+  getCandles(
+    @Query('symbol') symbol: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('timeframe') timeframe?: string,
+  ) {
+    return this.backtestService.getCandles(symbol, from, to, timeframe || '1d');
   }
 
   @Post('candles/refresh')
   refreshSymbol(@Body() dto: RefreshSymbolDto) {
-    return this.backtestService.refreshSymbol(dto.symbol);
+    return this.backtestService.refreshSymbol(dto.symbol, dto.timeframe || '1d');
   }
 
   @Post('trades')

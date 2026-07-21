@@ -104,6 +104,7 @@ export class MentorService {
         role: 'USER',
         content: dto.content,
         lessonId: dto.lessonId,
+        imageUrl: dto.imageUrl,
       },
     });
 

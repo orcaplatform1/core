@@ -1,6 +1,7 @@
 import {
   type LucideIcon,
   LayoutDashboard,
+  Bell,
   GraduationCap,
   Bot,
   LineChart,
@@ -53,6 +54,7 @@ export const studentNav: NavSection[] = [
   {
     title: "Hesap",
     items: [
+      { label: "Bildirimler", href: "/notifications", icon: Bell },
       { label: "Abonelik", href: "/subscription", icon: CreditCard },
       { label: "Profil", href: "/profile", icon: User },
     ],

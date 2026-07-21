@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useEffect } from "react";
 import { useAuth, ApiError } from "@/context/auth-context";
 import { registerSchema, type RegisterFormValues } from "@/lib/schemas/auth";
 import { countryCodes } from "@/lib/data/country-codes";
@@ -33,7 +34,13 @@ const basicFields = [
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, user, router]);
   const [step, setStep] = useState<"basics" | "gender">("basics");
   const {
     register,

@@ -1,5 +1,4 @@
 "use client";
-
 import { apiClient } from "@/lib/api-client";
 
 export async function uploadReceipt(file: File): Promise<string> {
@@ -15,13 +14,33 @@ export async function uploadReceipt(file: File): Promise<string> {
       },
     }
   );
-
   const res = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": file.type },
     body: file,
   });
   if (!res.ok) throw new Error("Yükleme başarısız");
+  return key;
+}
 
+export async function uploadChartSnapshot(blob: Blob): Promise<string> {
+  const { uploadUrl, key } = await apiClient<{ uploadUrl: string; key: string }>(
+    "/storage/upload-url",
+    {
+      method: "POST",
+      body: {
+        fileName: `chart-${Date.now()}.png`,
+        contentType: "image/png",
+        folder: "chart-snapshots",
+        fileSizeBytes: blob.size,
+      },
+    }
+  );
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": "image/png" },
+    body: blob,
+  });
+  if (!res.ok) throw new Error("Grafik yüklenemedi");
   return key;
 }

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const publicLinks = [
   { label: "Ana Sayfa", href: "/" },
@@ -22,6 +24,7 @@ const publicLinks = [
 
 export function SiteNavbar() {
   const [open, setOpen] = useState(false);
+  const { user, logout, isLoading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 h-[72px] w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,11 +48,35 @@ export function SiteNavbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" render={<Link href="/login">Giriş</Link>} />
-          <Button
-            className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
-            render={<Link href="/register">Kayıt Ol</Link>}
-          />
+          {isLoading ? (
+            <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />
+          ) : user ? (
+            <>
+              <Link href="/profile" className="flex items-center gap-2">
+                <Avatar className="size-8">
+                  <AvatarImage src={user.avatarUrl ?? undefined} alt={user.fullName} />
+                  <AvatarFallback>{user.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-foreground">{user.fullName}</span>
+              </Link>
+              <Button
+                className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
+                render={
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
+                  </Link>
+                }
+              />
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" render={<Link href="/login">Giriş</Link>} />
+              <Button
+                className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
+                render={<Link href="/register">Kayıt Ol</Link>}
+              />
+            </>
+          )}
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -89,16 +116,49 @@ export function SiteNavbar() {
                 </Link>
               ))}
               <Separator />
-              <Button
-                variant="outline"
-                className="mt-2"
-                onClick={() => setOpen(false)}
-                render={<Link href="/login">Giriş</Link>}
-              />
-              <Button
-                onClick={() => setOpen(false)}
-                render={<Link href="/register">Kayıt Ol</Link>}
-              />
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-lg px-3 py-2.5">
+                    <Avatar className="size-8">
+                      <AvatarImage src={user.avatarUrl ?? undefined} alt={user.fullName} />
+                      <AvatarFallback>{user.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-foreground">{user.fullName}</span>
+                  </div>
+                  <Button
+                    className="mt-2"
+                    onClick={() => setOpen(false)}
+                    render={
+                      <Link href="/dashboard">
+                        <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
+                      </Link>
+                    }
+                  />
+                  <Button
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => {
+                      setOpen(false);
+                      logout();
+                    }}
+                  >
+                    <LogOut className="size-4" /> Çıkış Yap
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => setOpen(false)}
+                    render={<Link href="/login">Giriş</Link>}
+                  />
+                  <Button
+                    onClick={() => setOpen(false)}
+                    render={<Link href="/register">Kayıt Ol</Link>}
+                  />
+                </>
+              )}
             </nav>
           </SheetContent>
         </Sheet>

@@ -407,6 +407,7 @@ model Message {
   role           MessageRole
   content        String
   lessonId       String?
+  imageUrl       String?
   createdAt      DateTime     @default(now())
 }
 
@@ -439,6 +440,7 @@ model HistoricalCandle {
   id        String    @id @default(cuid())
   symbol    String
   assetType AssetType @default(CRYPTO)
+  timeframe String    @default("1d")
   timestamp DateTime
   open      Float
   high      Float
@@ -446,8 +448,8 @@ model HistoricalCandle {
   close     Float
   volume    Float?
 
-  @@unique([symbol, timestamp])
-  @@index([symbol, timestamp])
+  @@unique([symbol, timeframe, timestamp])
+  @@index([symbol, timeframe, timestamp])
 }
 
 model BacktestTrade {

@@ -7,8 +7,8 @@ export class GetUploadUrlDto {
   @IsString()
   contentType!: string;
 
-  @IsIn(['videos', 'pdfs', 'resources', 'receipts'])
-  folder!: 'videos' | 'pdfs' | 'resources' | 'receipts';
+  @IsIn(['videos', 'pdfs', 'resources', 'receipts', 'chart-snapshots'])
+  folder!: 'videos' | 'pdfs' | 'resources' | 'receipts' | 'chart-snapshots';
 
   @IsInt()
   @Min(1)

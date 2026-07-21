@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Bell, LogOut, User } from "lucide-react";
+import { Menu, Bell, LogOut, User, CheckCheck } from "lucide-react";
+import {
+  useMyNotifications,
+  useUnreadCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from "@/lib/hooks/use-notifications";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -25,6 +31,10 @@ export function DashboardTopbar() {
   const sections = studentNav;
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { data: notifications } = useMyNotifications();
+  const { data: unread } = useUnreadCount();
+  const { mutate: markRead } = useMarkNotificationRead();
+  const { mutate: markAllRead } = useMarkAllNotificationsRead();
   const userName = user?.fullName ?? "Kullanici";
   const userAvatarUrl = user?.avatarUrl ?? undefined;
 
@@ -74,10 +84,54 @@ export function DashboardTopbar() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative" aria-label="Bildirimler">
-          <Bell className="size-5" />
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon" className="relative" aria-label="Bildirimler">
+                <Bell className="size-5" />
+                {!!unread?.count && (
+                  <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
+                )}
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <span className="text-sm font-semibold text-foreground">Bildirimler</span>
+              {!!unread?.count && (
+                <button
+                  onClick={() => markAllRead()}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <CheckCheck className="size-3" /> Tümünü okundu işaretle
+                </button>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <div className="max-h-80 overflow-y-auto">
+              {!notifications || notifications.length === 0 ? (
+                <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+                  Henüz bildirimin yok.
+                </p>
+              ) : (
+                notifications.slice(0, 8).map((n) => (
+                  <DropdownMenuItem
+                    key={n.id}
+                    className={`flex flex-col items-start gap-0.5 whitespace-normal py-2 ${
+                      !n.read ? "bg-primary/5" : ""
+                    }`}
+                    onClick={() => !n.read && markRead(n.id)}
+                  >
+                    <span className="text-xs font-medium text-foreground">{n.title}</span>
+                    <span className="text-xs text-muted-foreground">{n.message}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem render={<Link href="/notifications">Tüm Bildirimleri Gör</Link>} />
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger

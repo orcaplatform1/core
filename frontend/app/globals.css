@@ -402,3 +402,105 @@ header {
   background-color: #182338 !important;
   border-color: #3A4D74 !important;
 }
+
+/* ================================================================
+   ORCA — KESİN FİNAL PALET (2026-07-21, son revizyon)
+   Bu blok en sonda olduğu için önceki tüm renk tanımlarının üzerine yazar.
+   ================================================================ */
+:root {
+  --background: #060B16;
+  --dashboard-bg: #08111F;
+  --sidebar: #091222;
+  --sidebar-navy: #091222;
+  --card: #0D1728;
+  --card-inner: #111C30;
+  --card-hover: #152545;
+  --border: #223554;
+  --divider: #1A2740;
+  --border-light: #223554;
+
+  --primary: #355CFF;
+  --hover-blue: #4066FF;
+  --active-blue: #304DFF;
+  --primary-border: rgba(120, 150, 255, 0.22);
+  --electric-lacivert: #2D4DFF;
+  --neon-mavi: #5579FF;
+  --acik-mavi-glow: #6D93FF;
+
+  --glow-outer: rgba(59, 91, 255, 0.20);
+  --glow-inner: rgba(80, 120, 255, 0.12);
+  --glow-border: rgba(70, 100, 255, 0.35);
+
+  --foreground: #F5F8FF;
+  --text-secondary: #D7E1F8;
+  --muted-foreground: #8D9BB6;
+  --text-muted: #8D9BB6;
+  --text-disabled: #66738D;
+
+  --success: #32D66B;
+  --warning: #F39C3D;
+  --orange: #F39C3D;
+  --purple: #8A54FF;
+  --danger: #FF5C5C;
+  --destructive: #FF5C5C;
+
+  --ring: #355CFF;
+  --sidebar-primary: #355CFF;
+  --sidebar-ring: #355CFF;
+  --sidebar-border: #223554;
+  --input: #223554;
+
+  --chart-1: #355CFF;
+  --chart-2: #32D66B;
+  --chart-3: #F39C3D;
+  --chart-4: #8A54FF;
+  --chart-5: #FF5C5C;
+}
+
+body {
+  background: var(--background) !important;
+}
+
+/* Widget/kart — gradient arka plan + üst parlama + gölge */
+.bg-card {
+  background: linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  border: 1px solid rgba(73, 100, 180, 0.25) !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(48, 77, 255, 0.08) !important;
+  border-radius: 20px !important;
+}
+
+/* Buton — verilen tam gradient/border/glow */
+[data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface) {
+  background: linear-gradient(180deg, #3E5FFF 0%, #304DFF 100%) !important;
+  border: 1px solid rgba(120, 150, 255, 0.22) !important;
+  box-shadow: 0 0 22px rgba(60, 95, 255, 0.22) !important;
+  color: #F5F8FF !important;
+}
+[data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface):hover {
+  background: linear-gradient(180deg, #4E6FFF 0%, #4066FF 100%) !important;
+}
+
+/* Dashboard arka planı (sidebar dışındaki içerik alanı) sidebar'dan biraz daha açık */
+main {
+  background: var(--dashboard-bg);
+}
+
+/* ORCA — auth-card gibi daha spesifik (bileşik) seçicilerin yeni paleti
+   ezmemesi için aynı bileşik seçicilerle son bir override */
+.auth-card.bg-card,
+.bg-card.bg-card {
+  background: linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  border-color: rgba(73, 100, 180, 0.25) !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(48, 77, 255, 0.08) !important;
+  border-radius: 22px !important;
+}

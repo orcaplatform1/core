@@ -90,6 +90,7 @@ export type MentorMessage = {
   role: "USER" | "MENTOR";
   content: string;
   lessonId: string | null;
+  imageUrl: string | null;
   createdAt: string;
 };
 
@@ -104,4 +105,47 @@ export type DiscussedLesson = {
   id: string;
   title: string;
   moduleId: string;
+};
+
+export type Notification = {
+  id: string;
+  type:
+    | "NEW_LESSON"
+    | "NEW_PROGRAM"
+    | "QUIZ_RESULT"
+    | "AI_SUGGESTION"
+    | "CERTIFICATE_READY"
+    | "ANNOUNCEMENT"
+    | "LIVE_LESSON_REMINDER"
+    | "SYSTEM";
+  title: string;
+  message: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type BacktestSymbols = { crypto: string[]; forex: string[] };
+
+export type Candle = {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number | null;
+};
+
+export type DrawingTool = "trendline" | "orderblock" | "liquidity";
+export type ChartPoint = { time: number; price: number };
+export type ChartShape = {
+  id: string;
+  tool: DrawingTool;
+  p1: ChartPoint;
+  p2: ChartPoint;
+  color: string;
+};
+export type ChartDrawingData = {
+  shapes: ChartShape[];
+  note: string;
 };
