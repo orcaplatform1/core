@@ -78,23 +78,44 @@ export class UsersService {
       }
     }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-        education: dto.education as any,
-        occupation: dto.occupation as any,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        avatarUrl: true,
-        dateOfBirth: true,
-        education: true,
-        occupation: true,
-      },
-    });
+    const current = await this.prisma.user.findUnique({ where: { id: userId } });
+    const data: any = {
+      dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+      education: dto.education as any,
+      occupation: dto.occupation as any,
+    };
+    if (dto.email && dto.email !== current?.email) {
+      data.email = dto.email;
+      data.emailVerified = false;
+    }
+    if (dto.phone && dto.phone !== current?.phone) {
+      data.phone = dto.phone;
+      data.phoneVerified = false;
+    }
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data,
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+          avatarUrl: true,
+          dateOfBirth: true,
+          education: true,
+          occupation: true,
+          email: true,
+          phone: true,
+          emailVerified: true,
+          phoneVerified: true,
+        },
+      });
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        throw new BadRequestException('Bu email veya telefon numarası zaten kullanımda.');
+      }
+      throw err;
+    }
   }
 
   async findBanned() {

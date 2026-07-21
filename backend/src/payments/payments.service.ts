@@ -12,6 +12,11 @@ const MENTOR_CREDIT_PRICES: Record<number, number> = {
   250: 299,
   500: 499,
 };
+const COINGECKO_IDS: Record<string, string> = {
+  BTC: 'bitcoin',
+  ETH: 'ethereum',
+  BNB: 'binancecoin',
+};
 
 @Injectable()
 export class PaymentsService {
@@ -117,6 +122,45 @@ export class PaymentsService {
     };
   }
 
+  async getProgramPrice(): Promise<number> {
+    const settings = await this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      update: {},
+      create: { id: 'singleton' },
+    });
+    return settings.programPriceTRY;
+  }
+
+  async updateProgramPrice(newPriceTRY: number) {
+    if (!newPriceTRY || newPriceTRY <= 0) {
+      throw new BadRequestException('Geçerli bir fiyat girilmelidir.');
+    }
+    return this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      update: { programPriceTRY: newPriceTRY },
+      create: { id: 'singleton', programPriceTRY: newPriceTRY },
+    });
+  }
+
+  private async fetchCryptoRateTRY(asset: string): Promise<number> {
+    const coinId = COINGECKO_IDS[asset];
+    if (!coinId) {
+      throw new BadRequestException('Desteklenmeyen kripto varlık. Sadece BTC, ETH, BNB kabul edilir.');
+    }
+    try {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=try`,
+      );
+      if (!res.ok) throw new Error('rate fetch failed');
+      const data = await res.json();
+      const rate = data?.[coinId]?.try;
+      if (!rate) throw new Error('rate missing');
+      return rate;
+    } catch {
+      throw new BadRequestException('Kripto kuru şu anda alınamadı, lütfen tekrar dene.');
+    }
+  }
+
   async create(userId: string, dto: CreatePaymentDto) {
     const purpose = dto.purpose ?? 'PROGRAM';
 
@@ -130,10 +174,8 @@ export class PaymentsService {
       finalAmount = MENTOR_CREDIT_PRICES[dto.creditAmount];
       creditAmount = dto.creditAmount;
     } else {
-      if (!dto.amount) {
-        throw new BadRequestException('Tutar belirtilmelidir.');
-      }
-      finalAmount = dto.amount;
+      // Program fiyatı ASLA client'tan alınmaz — DB'deki tek doğru kaynaktan okunur (admin panelden düzenlenebilir).
+      finalAmount = await this.getProgramPrice();
     }
 
     let discountApplied: number | null = null;
@@ -151,6 +193,21 @@ export class PaymentsService {
       }
     }
 
+    let cryptoAsset: string | undefined;
+    let cryptoAmountLocked: number | undefined;
+    let cryptoRateTRY: number | undefined;
+    let cryptoRateLockedAt: Date | undefined;
+
+    if (dto.method === 'CRYPTO') {
+      if (!dto.cryptoAsset) {
+        throw new BadRequestException('Kripto ile ödemede varlık seçimi zorunlu (BTC, ETH veya BNB).');
+      }
+      cryptoAsset = dto.cryptoAsset;
+      cryptoRateTRY = await this.fetchCryptoRateTRY(dto.cryptoAsset);
+      cryptoAmountLocked = Math.round((finalAmount / cryptoRateTRY) * 1e8) / 1e8;
+      cryptoRateLockedAt = new Date();
+    }
+
     const payment = await this.prisma.payment.create({
       data: {
         userId,
@@ -158,6 +215,10 @@ export class PaymentsService {
         currency: dto.currency,
         method: dto.method as any,
         cryptoProvider: dto.cryptoProvider as any,
+        cryptoAsset: cryptoAsset as any,
+        cryptoAmountLocked,
+        cryptoRateTRY,
+        cryptoRateLockedAt,
         receiptUrl: dto.receiptUrl,
         status: 'PENDING',
         promoCodeUsed: dto.promoCode,

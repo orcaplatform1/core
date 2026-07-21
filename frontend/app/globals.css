@@ -1,26 +1,404 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* ORCA custom tokens */
+  --color-hover-blue: var(--hover-blue);
+  --color-active-blue: var(--active-blue);
+  --color-glow-blue: var(--glow-blue);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-purple: var(--purple);
+  --color-divider: var(--divider);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-elevated: var(--elevated);
+  --color-sidebar-navy: var(--sidebar-navy);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* ORCA — tek tema, sadece Dark Mode */
+  --background: #070B16;         /* Midnight Navy */
+  --foreground: #FFFFFF;         /* Primary Text */
+
+  --card: #131D30;               /* Navy Surface */
+  --card-foreground: #FFFFFF;
+
+  --popover: #131D30;            /* Elevated Surface */
+  --popover-foreground: #FFFFFF;
+  --elevated: #131D30;
+
+  --primary: #4F6BFF;            /* Primary Blue */
+  --primary-foreground: #FFFFFF;
+  --hover-blue: #6178FF;
+  --active-blue: #4257F2;
+  --glow-blue: #5169B0;
+
+  --secondary: #0B1323;          /* Deep Navy */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #0B1323;
+  --muted-foreground: #8FA2C4;   /* Muted Text */
+  --text-secondary: #8FA2C4;
+  --text-muted: #72809A;
+  --text-disabled: #56637F;
+
+  --accent: #15223B;
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #FF5D5D;        /* Danger */
+  --danger: #FF5D5D;
+  --success: #35D07F;
+  --warning: #F6B23E;
+  --info: #3B82F6;
+  --purple: #8A5CFF;
+
+  --border: #243252;             /* Soft Border */
+  --input: #243252;
+  --divider: #1A2741;
+  --ring: #4F6BFF;
+
+  --chart-1: #4F6BFF;
+  --chart-2: #35D07F;
+  --chart-3: #F6B23E;
+  --chart-4: #8A5CFF;
+  --chart-5: #FF5D5D;
+
+  --radius: 1rem; /* 16px varsayılan radius */
+
+  --sidebar: #0C1323;            /* Sidebar Navy */
+  --sidebar-navy: #0C1323;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #4F6BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #15223B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #243252;
+  --sidebar-ring: #4F6BFF;
+}
+
+/* ORCA'da tek tema var — .dark class'ı :root ile aynı, dark: varyantlarının kırılmaması için tutuluyor */
+.dark {
+  --background: #070B16;
+  --foreground: #FFFFFF;
+  --card: #131D30;
+  --card-foreground: #FFFFFF;
+  --popover: #131D30;
+  --popover-foreground: #FFFFFF;
+  --primary: #4F6BFF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0B1323;
+  --secondary-foreground: #FFFFFF;
+  --muted: #0B1323;
+  --muted-foreground: #8FA2C4;
+  --accent: #15223B;
+  --accent-foreground: #FFFFFF;
+  --destructive: #FF5D5D;
+  --border: #243252;
+  --input: #243252;
+  --ring: #4F6BFF;
+  --chart-1: #4F6BFF;
+  --chart-2: #35D07F;
+  --chart-3: #F6B23E;
+  --chart-4: #8A5CFF;
+  --chart-5: #FF5D5D;
+  --sidebar: #0C1323;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #4F6BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #15223B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #243252;
+  --sidebar-ring: #4F6BFF;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
+/* ORCA Shadow Sistemi — kartlarda varsayılan mavi tonlu gölge, hover'da bir seviye artar */
+.bg-card {
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.02) inset, 0 8px 28px -10px rgba(4, 8, 20, 0.55);
+  transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+}
+a.bg-card:hover,
+button.bg-card:hover {
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 14px 36px -10px rgba(59, 91, 255, 0.22);
+}
+
+/* ORCA — genişletilmiş token seti (ChatGPT tasarım spesifikasyonu, 2026-07-21) */
+:root {
+  --orange: #FF8C3A;
+  --gray-tone: #72809A;
+
+  --chart-backtest: #8A5CFF;
+  --chart-simulation: #35D07F;
+  --chart-quiz: #F6B23E;
+  --chart-finans: #4F6BFF;
+
+  --icon-bg-blue: #1C2550;
+  --icon-bg-green: #173726;
+  --icon-bg-purple: #2A2147;
+  --icon-bg-orange: #3A2717;
+
+  --badge-gold: #D9A441;
+  --badge-silver: #BFC6D8;
+  --badge-bronze: #B46A42;
+}
+
+.icon-tile-blue { background: var(--icon-bg-blue); color: var(--chart-finans); }
+.icon-tile-green { background: var(--icon-bg-green); color: var(--chart-simulation); }
+.icon-tile-purple { background: var(--icon-bg-purple); color: var(--chart-backtest); }
+.icon-tile-orange { background: var(--icon-bg-orange); color: var(--orange); }
+
+.badge-tier-gold { color: var(--badge-gold); border-color: var(--badge-gold); }
+.badge-tier-silver { color: var(--badge-silver); border-color: var(--badge-silver); }
+.badge-tier-bronze { color: var(--badge-bronze); border-color: var(--badge-bronze); }
+
+/* Component bazlı border-radius kuralları — tüm sayfalarda tutarlı olsun diye
+   data-slot attribute'ları ve .bg-card üzerinden merkezi olarak uygulanıyor */
+.bg-card {
+  border-radius: 20px !important;
+}
+[data-slot="input"],
+[data-slot="select-trigger"],
+textarea {
+  border-radius: 16px !important;
+}
+[data-slot="button"] {
+  border-radius: 14px !important;
+}
+[data-slot="badge"] {
+  border-radius: 12px !important;
+}
+[data-slot="avatar"],
+[data-slot="avatar-image"],
+[data-slot="avatar-fallback"] {
+  border-radius: 999px !important;
+}
+
+/* ORCA — "Demo" karşılaştırma ince ayarları (2026-07-21, 2. tur) */
+:root {
+  --card-refined: #111B2E;
+  --card-refined-border: #233252;
+  --active-menu-bg: #3148E8;
+  --header-bg: #08101D;
+  --header-border: #1E2942;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top, #111C3C 0%, #070D18 35%, #070D18 100%),
+    var(--background);
+  background-attachment: fixed;
+}
+
+.bg-card {
+  background-color: var(--card-refined) !important;
+  border-color: var(--card-refined-border) !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28) !important;
+}
+
+header {
+  background-color: var(--header-bg) !important;
+  border-bottom-color: var(--header-border) !important;
+  backdrop-filter: none !important;
+}
+
+.sidebar-active-item {
+  background-color: var(--active-menu-bg) !important;
+  color: #fff !important;
+}
+
+/* ORCA — Toast Notification System (tüm platformda tek standart) */
+[data-sonner-toast] {
+  min-height: 68px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35) !important;
+  padding: 14px 16px !important;
+  animation-duration: 300ms !important;
+}
+[data-sonner-toast][data-type="success"] {
+  background: #0E1F1A !important;
+  border: 1px solid #2DD881 !important;
+}
+[data-sonner-toast][data-type="success"] [data-icon] { color: #35D07F !important; }
+
+[data-sonner-toast][data-type="error"] {
+  background: #241214 !important;
+  border: 1px solid #E65B68 !important;
+}
+[data-sonner-toast][data-type="error"] [data-icon] { color: #FF5D6E !important; }
+
+[data-sonner-toast][data-type="info"] {
+  background: #111B2F !important;
+  border: 1px solid #4F6BFF !important;
+}
+[data-sonner-toast][data-type="info"] [data-icon] { color: #4F6BFF !important; }
+
+[data-sonner-toast][data-type="warning"] {
+  background: #241E11 !important;
+  border: 1px solid #F6B23E !important;
+}
+[data-sonner-toast][data-type="warning"] [data-icon] { color: #F6B23E !important; }
+
+[data-sonner-toast] [data-title] {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+[data-sonner-toast] [data-description] {
+  color: #A7B8C7 !important;
+}
+
+/* ========================= */
+/* ORCA SURFACE SYSTEM (2026-07-21, final tur) */
+/* ========================= */
+:root {
+  --card-inner: #182338;
+  --card-hover: #1D2942;
+  --border-light: #2D3E61;
+  --primary-border: #7286FF;
+}
+
+/* Ana kart (Dashboard, Login Card vb.) — .bg-card zaten mevcut kuralı override ediyor */
+.bg-card {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28) !important;
+  border-radius: 20px !important;
+}
+
+/* Kart içindeki kutular: input, AI kutusu, tab arkaplanı, progress, liste öğeleri */
+.card-inner {
+  background-color: var(--card-inner);
+  border: 1px solid var(--border);
+}
+
+/* Primary buton */
+[data-slot="button"].btn-primary-surface,
+[data-slot="button"]:not(.social-login-btn):not([class*="variant-secondary"]) {
+  box-shadow: 0 12px 32px rgba(79, 107, 255, 0.32) !important;
+}
+
+/* Input */
+[data-slot="input"] {
+  background-color: var(--card-inner) !important;
+  border-color: var(--border) !important;
+  color: #FFFFFF !important;
+}
+[data-slot="input"]:focus-visible {
+  border-color: #4F6BFF !important;
+  box-shadow: 0 0 0 3px rgba(79, 107, 255, 0.14) !important;
+}
+
+/* Kullanıcı Adı / E-posta / Telefon sekmeleri */
+.method-tab {
+  background-color: var(--card-inner) !important;
+  border-color: var(--border) !important;
+  color: #94A3B8 !important;
+}
+.method-tab:hover {
+  background-color: var(--card-hover) !important;
+  border-color: var(--border-light) !important;
+  color: #FFFFFF !important;
+}
+.method-tab-active {
+  background: #566EFF !important;
+  border-color: #7387FF !important;
+  box-shadow: 0 8px 24px rgba(79, 107, 255, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+/* AI Öneri kutusu */
+.ai-suggestion-box {
+  background-color: var(--card-inner);
+  border: 1px solid var(--border);
+}
+
+/* AI Mentor butonu (özel accent varyant) */
+.btn-ai-mentor {
+  background-color: #3348E8 !important;
+  border: 1px solid #5C73FF !important;
+  box-shadow: 0 10px 28px rgba(51, 72, 232, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+/* Secondary buton */
+[data-slot="button"].variant-secondary-surface {
+  background-color: var(--card-inner) !important;
+  border-color: #2B3B5F !important;
+  color: #FFFFFF !important;
+}
+[data-slot="button"].variant-secondary-surface:hover {
+  background-color: #1E2B44 !important;
+  border-color: #405A8D !important;
+}
+
+/* Google / Apple butonu */
+.social-login-btn {
+  background-color: #101827 !important;
+  border-color: #243252 !important;
+}
+.social-login-btn:hover {
+  background-color: #182338 !important;
+  border-color: #3A4D74 !important;
 }

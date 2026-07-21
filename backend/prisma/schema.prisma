@@ -273,16 +273,14 @@ model Progress {
 model Certificate {
   id        String   @id @default(cuid())
   number    Int      @unique @default(autoincrement())
-  userId    String
+  userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
-  programId String
+  programId String?
   code      String   @unique
   studentName String?
   issuedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@unique([userId, programId])
 }
 
 model Subscription {
@@ -327,10 +325,27 @@ model Payment {
   referredByStaff   User?    @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
   invoice    Invoice?
 
+  cryptoAsset         CryptoAsset?
+  cryptoAmountLocked  Float?
+  cryptoRateTRY       Float?
+  cryptoRateLockedAt  DateTime?
+
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
   @@index([userId])
   @@index([status])
+}
+
+model PlatformSettings {
+  id               String   @id @default("singleton")
+  programPriceTRY  Float    @default(4500)
+  updatedAt        DateTime @updatedAt
+}
+
+enum CryptoAsset {
+  BTC
+  ETH
+  BNB
 }
 model Invoice {
   id        String   @id @default(cuid())
@@ -546,6 +561,7 @@ enum PaymentMethod {
   CARD
   CRYPTO
   BANK_TRANSFER
+  MOBILE
 }
 
 enum PaymentStatus {

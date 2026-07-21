@@ -120,13 +120,22 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, ip: string, userAgent: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    const methodLabels: Record<string, string> = {
+      username: 'Kullanıcı adı hatalı',
+      email: 'E-posta hatalı',
+      phone: 'Telefon numarası hatalı',
+    };
+    const user = await this.prisma.user.findFirst({
+      where:
+        dto.method === 'phone'
+          ? { phone: dto.identifier }
+          : dto.method === 'email'
+            ? { email: { equals: dto.identifier, mode: 'insensitive' } }
+            : { username: { equals: dto.identifier, mode: 'insensitive' } },
     });
-
     if (!user) {
-      await this.securityLogService.log('LOGIN_FAILED_UNKNOWN_EMAIL', undefined, ip, userAgent, { email: dto.email });
-      throw new UnauthorizedException('Email veya şifre hatalı');
+      await this.securityLogService.log('LOGIN_FAILED_UNKNOWN_EMAIL', undefined, ip, userAgent, { identifier: dto.identifier });
+      throw new UnauthorizedException(methodLabels[dto.method] ?? 'Giriş bilgisi hatalı');
     }
 
     if (user.bannedUntil && user.bannedUntil > new Date()) {
@@ -145,7 +154,7 @@ export class AuthService {
 
     if (!passwordMatch) {
       await this.securityLogService.log('LOGIN_FAILED_WRONG_PASSWORD', user.id, ip, userAgent);
-      throw new UnauthorizedException('Email veya şifre hatalı');
+      throw new UnauthorizedException('Şifre hatalı');
     }
 
     const startOfDay = new Date();

@@ -10,6 +10,19 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  @Get('price')
+  async getPrice() {
+    const price = await this.paymentsService.getProgramPrice();
+    return { programPriceTRY: price };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post('price')
+  updatePrice(@Body('programPriceTRY') programPriceTRY: number) {
+    return this.paymentsService.updateProgramPrice(programPriceTRY);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Req() req: Request, @Body() dto: CreatePaymentDto) {

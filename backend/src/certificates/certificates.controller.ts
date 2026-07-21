@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { Request } from 'express';
 import { CertificatesService } from './certificates.service';
-import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('certificates')
@@ -11,9 +10,9 @@ export class CertificatesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  issue(@Req() req: Request, @Body() dto: CreateCertificateDto) {
+  issue(@Req() req: Request) {
     const userId = (req.user as any).id;
-    return this.certificatesService.issue(userId, dto);
+    return this.certificatesService.issue(userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -28,6 +27,13 @@ export class CertificatesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/status')
+  getMyStatus(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.certificatesService.getMyStatus(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.certificatesService.findOne(id);
@@ -38,13 +44,11 @@ export class CertificatesController {
   async downloadPdf(@Req() req: Request, @Res() res: Response, @Param('id') id: string) {
     const userId = (req.user as any).id;
     const pdfBuffer = await this.certificatesService.generatePdf(id, userId);
-
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="orca-sertifika.pdf"`,
       'Content-Length': pdfBuffer.length,
     });
-
     res.end(pdfBuffer);
   }
 }

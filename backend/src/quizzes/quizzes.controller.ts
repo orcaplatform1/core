@@ -27,6 +27,11 @@ export class QuizzesController {
     return this.quizzesService.findAll();
   }
 
+  @Get(':id/take')
+  findForTaking(@Param('id') id: string) {
+    return this.quizzesService.findForTaking(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.quizzesService.findById(id);

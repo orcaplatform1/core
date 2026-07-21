@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 
@@ -17,6 +17,33 @@ export class QuizzesService {
 
   async findById(id: string) {
     return this.prisma.quiz.findUnique({ where: { id } });
+  }
+
+  async findForTaking(id: string) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        timeLimitMinutes: true,
+        lessonId: true,
+        questions: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            answers: {
+              select: { id: true, text: true },
+            },
+          },
+        },
+      },
+    });
+    if (!quiz) {
+      throw new NotFoundException('Quiz bulunamadı.');
+    }
+    return quiz;
   }
 
   async create(data: { title: string; description?: string; lessonId: string; timeLimitMinutes?: number }, actorId: string) {

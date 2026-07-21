@@ -3,7 +3,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
-type Folder = 'videos' | 'pdfs' | 'resources';
+type Folder = 'videos' | 'pdfs' | 'resources' | 'receipts';
 
 const FOLDER_RULES: Record<
   Folder,
@@ -16,6 +16,10 @@ const FOLDER_RULES: Record<
   pdfs: {
     maxBytes: 20 * 1024 * 1024, // 20MB
     allowedTypes: ['application/pdf'],
+  },
+  receipts: {
+    maxBytes: 10 * 1024 * 1024, // 10MB
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
   },
   resources: {
     maxBytes: 50 * 1024 * 1024, // 50MB
