@@ -46,6 +46,7 @@ export class SimulationService {
         symbol: dto.symbol,
         direction: dto.direction as any,
         quantity: dto.quantity,
+        leverage: dto.leverage ?? 1,
         entryPrice: price,
         status: 'OPEN',
       },
@@ -69,8 +70,8 @@ export class SimulationService {
 
     const pnl =
       trade.direction === 'BUY'
-        ? (exitPrice - trade.entryPrice) * trade.quantity
-        : (trade.entryPrice - exitPrice) * trade.quantity;
+        ? (exitPrice - trade.entryPrice) * trade.quantity * trade.leverage
+        : (trade.entryPrice - exitPrice) * trade.quantity * trade.leverage;
 
     const updated = await this.prisma.simulatedTrade.update({
       where: { id: tradeId },

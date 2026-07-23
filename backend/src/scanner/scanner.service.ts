@@ -13,7 +13,10 @@ interface Candle {
 
 interface Setup {
   direction: 'LONG' | 'SHORT';
+  currentPrice: number;
   entry: number;
+  entryZoneTop: number;
+  entryZoneBottom: number;
   stop: number;
   tp1: number;
   tp2: number;
@@ -21,6 +24,10 @@ interface Setup {
   rr: number;
   reasons: string[];
   confidenceScore: number;
+  confirmedCount: number;
+  strength: 'GUCLU' | 'ORTA' | 'RISKLI';
+  stillValid: boolean;
+  distancePercent: number;
 }
 
 const YAHOO_MAP: Record<string, string> = {
@@ -37,6 +44,21 @@ export class ScannerService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  private async fetchTopBinanceSymbols(limit: number): Promise<string[]> {
+    try {
+      const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data
+        .filter((t: any) => t.symbol.endsWith('USDT') && !t.symbol.includes('UPUSDT') && !t.symbol.includes('DOWNUSDT'))
+        .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
+        .slice(0, limit)
+        .map((t: any) => t.symbol);
+    } catch {
+      return [];
+    }
+  }
 
   private async fetchBinanceDaily(symbol: string, limit = 250): Promise<Candle[]> {
     const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=${limit}`;
@@ -199,7 +221,9 @@ export class ScannerService {
   }
 
   private isMitigated(candles: Candle[], fromIndex: number, top: number, bottom: number): boolean {
-    for (let i = fromIndex + 1; i < candles.length; i++) {
+    // Su anki (henuz kapanmamis) mum HARIC tutulur — fiyatin tam su an bolgeye
+    // girmis olmasi "mitigasyon" degil, tam olarak yakaladigimiz giris anidir
+    for (let i = fromIndex + 1; i < candles.length - 1; i++) {
       if (candles[i].low <= top && candles[i].high >= bottom) return true;
     }
     return false;
@@ -217,9 +241,14 @@ export class ScannerService {
     if (swingIndices.length === 0) return false;
     const lastSwingIdx = swingIndices[swingIndices.length - 1];
     const swingLevel = isHigh ? candles[lastSwingIdx].high : candles[lastSwingIdx].low;
-    const lastCandle = candles[candles.length - 1];
-    if (isHigh) return lastCandle.high > swingLevel && lastCandle.close < swingLevel;
-    return lastCandle.low < swingLevel && lastCandle.close > swingLevel;
+    // Son 5 mumun herhangi birinde supurme olustuysa hala gecerli sayilir
+    // (MSS supurmeden birkac mum sonra olustugu icin ikisinin ayni anda
+    // gerceklesmesini beklemek yapisal olarak imkansiza yakindi)
+    const recentCandles = candles.slice(-5);
+    return recentCandles.some((c) => {
+      if (isHigh) return c.high > swingLevel && c.close < swingLevel;
+      return c.low < swingLevel && c.close > swingLevel;
+    });
   }
 
   private rangesOverlap(aTop: number, aBottom: number, bTop: number, bBottom: number): boolean {
@@ -260,163 +289,154 @@ export class ScannerService {
     fundingRate: number | null,
   ): Setup | null {
     if (dailyCandles.length < 60) return null;
-
     const trendDaily = this.getTrend(dailyCandles);
-    if (trendDaily === 'FLAT' || trendDaily !== trend4h) return null;
-
+    if (trendDaily === 'FLAT') return null;
     const direction: 'LONG' | 'SHORT' = trendDaily === 'UP' ? 'LONG' : 'SHORT';
-    const atrValue = this.atr(dailyCandles);
     const bullish = direction === 'LONG';
-
-    const fvgs = this.findFVGs(dailyCandles).filter((f) => f.bullish === bullish);
-    const validFvgs = fvgs.filter(
-      (f) => !this.isMitigated(dailyCandles, f.index, f.top, f.bottom) && this.hasDisplacement(dailyCandles, f.index, atrValue),
-    );
-    if (validFvgs.length === 0) return null;
-
-    const orderBlocks = this.findOrderBlocks(dailyCandles, atrValue, bullish);
-    const validOBs = orderBlocks.filter((ob) => !this.isMitigated(dailyCandles, ob.index, ob.top, ob.bottom));
-    if (validOBs.length === 0) return null;
-
-    let confluenceZone: { top: number; bottom: number } | null = null;
-    for (const fvg of validFvgs.slice().reverse()) {
-      for (const ob of validOBs.slice().reverse()) {
-        if (this.rangesOverlap(fvg.top, fvg.bottom, ob.top, ob.bottom)) {
-          confluenceZone = { top: Math.min(fvg.top, ob.top), bottom: Math.max(fvg.bottom, ob.bottom) };
-          break;
-        }
-      }
-      if (confluenceZone) break;
-    }
-    if (!confluenceZone) return null;
-
-    const entry = (confluenceZone.top + confluenceZone.bottom) / 2;
-
+    const atrValue = this.atr(dailyCandles);
     const swingHighs = this.findSwingHighs(dailyCandles);
     const swingLows = this.findSwingLows(dailyCandles);
 
-    const ote = this.getOTEZone(dailyCandles, swingHighs, swingLows, direction);
-    if (!ote) return null;
-    const inOTE = entry <= ote.top && entry >= ote.bottom;
-    if (!inOTE) return null;
+    // Konsept 1: HTF Bias
+    const htfBiasConfirmed = trendDaily === trend4h;
 
-    const stop = direction === 'LONG' ? confluenceZone.bottom - atrValue * 0.3 : confluenceZone.top + atrValue * 0.3;
+    // Konsept 2: Liquidity Sweep
+    const sweepConfirmed = bullish
+      ? this.findLiquiditySweep(dailyCandles, swingLows, false)
+      : this.findLiquiditySweep(dailyCandles, swingHighs, true);
+
+    // Konsept 3: Market Structure Shift (MSS)
+    const mssConfirmed = this.hasBOS(dailyCandles, direction);
+
+    // Konsept 4: FVG veya Order Block Retest — fiyat hala bolgeye yakin olmali
+    const proximityBuffer = atrValue * 1.5;
+    const lastCloseForZone = dailyCandles[dailyCandles.length - 1].close;
+    const isNearZone = (top: number, bottom: number) =>
+      lastCloseForZone <= top + proximityBuffer && lastCloseForZone >= bottom - proximityBuffer;
+
+    const fvgs = this.findFVGs(dailyCandles).filter((f) => f.bullish === bullish);
+    const validFvgs = fvgs.filter((f) => !this.isMitigated(dailyCandles, f.index, f.top, f.bottom));
+    const orderBlocks = this.findOrderBlocks(dailyCandles, atrValue, bullish);
+    const validOBs = orderBlocks.filter((ob) => !this.isMitigated(dailyCandles, ob.index, ob.top, ob.bottom));
+
+    let zone: { top: number; bottom: number; kind: string } | null = null;
+    outer: for (const fvg of validFvgs.slice().reverse()) {
+      for (const ob of validOBs.slice().reverse()) {
+        if (this.rangesOverlap(fvg.top, fvg.bottom, ob.top, ob.bottom) && isNearZone(Math.min(fvg.top, ob.top), Math.max(fvg.bottom, ob.bottom))) {
+          zone = { top: Math.min(fvg.top, ob.top), bottom: Math.max(fvg.bottom, ob.bottom), kind: 'FVG + Order Block (confluence)' };
+          break outer;
+        }
+      }
+    }
+    if (!zone) {
+      for (const f of validFvgs.slice().reverse()) {
+        if (isNearZone(f.top, f.bottom)) { zone = { top: f.top, bottom: f.bottom, kind: 'Fair Value Gap' }; break; }
+      }
+    }
+    if (!zone) {
+      for (const ob of validOBs.slice().reverse()) {
+        if (isNearZone(ob.top, ob.bottom)) { zone = { top: ob.top, bottom: ob.bottom, kind: 'Order Block' }; break; }
+      }
+    }
+    const fvgObRetestConfirmed = zone !== null;
+
+    const confirmedCount = [htfBiasConfirmed, sweepConfirmed, mssConfirmed, fvgObRetestConfirmed].filter(Boolean).length;
+    if (confirmedCount < 2) return null;
+    if (!zone) return null;
+
+    const entryZoneTop = zone.top;
+    const entryZoneBottom = zone.bottom;
+    const entry = (entryZoneTop + entryZoneBottom) / 2;
+
+    // stillValid: fiyat SU AN tam giris bolgesinin icinde mi (hemen girilebilir mi)
+    const lastCandle = dailyCandles[dailyCandles.length - 1];
+    const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
+    // distancePercent: fiyatin bolgenin en yakin kenarina yuzde kac uzaklikta oldugu (icindeyse 0)
+    let distancePercent = 0;
+    if (lastCandle.close > entryZoneTop) {
+      distancePercent = ((lastCandle.close - entryZoneTop) / entryZoneTop) * 100;
+    } else if (lastCandle.close < entryZoneBottom) {
+      distancePercent = ((entryZoneBottom - lastCandle.close) / entryZoneBottom) * 100;
+    }
+    distancePercent = Math.round(distancePercent * 100) / 100;
+
+    // Fiyat bolgeden %5'ten fazla uzaklassaymis artik anlamsiz, listeye hic girmesin
+    if (!stillValid && distancePercent > 5) return null;
+
+    const stop = bullish ? entryZoneBottom - atrValue * 0.3 : entryZoneTop + atrValue * 0.3;
     const risk = Math.abs(entry - stop);
 
     let mainTarget: number;
-    if (direction === 'LONG') {
+    if (bullish) {
       const nextSwing = swingHighs.length > 0 ? dailyCandles[swingHighs[swingHighs.length - 1]].high : null;
       mainTarget = nextSwing && nextSwing > entry ? nextSwing : entry + risk * 3;
     } else {
       const nextSwing = swingLows.length > 0 ? dailyCandles[swingLows[swingLows.length - 1]].low : null;
       mainTarget = nextSwing && nextSwing < entry ? nextSwing : entry - risk * 3;
     }
-
     const mainReward = Math.abs(mainTarget - entry);
     const rr = risk > 0 ? mainReward / risk : 0;
-    if (rr < 3) return null;
 
-    const tp1 = direction === 'LONG' ? entry + risk * 1.5 : entry - risk * 1.5;
+    const tp1 = bullish ? entry + risk * 1.5 : entry - risk * 1.5;
     const tp2 = mainTarget;
-    const tp3 = direction === 'LONG'
+    const tp3 = bullish
       ? mainTarget + (mainTarget - entry) * 0.5
       : mainTarget - (entry - mainTarget) * 0.5;
 
-    const reasons = [
-      `Trend: ${direction === 'LONG' ? 'Yükseliş' : 'Düşüş'} (günlük + 4H uyumlu)`,
-      'Order Block + Fair Value Gap çakışması (confluence)',
-      'Giriş OTE bölgesinde (%62-79 Fibonacci)',
-    ];
-
-    let confidenceScore = 60;
-
-    const sweepConfirmed = direction === 'LONG'
-      ? this.findLiquiditySweep(dailyCandles, swingLows, false)
-      : this.findLiquiditySweep(dailyCandles, swingHighs, true);
-    if (sweepConfirmed) { reasons.push('Likidite süpürmesi tespit edildi'); confidenceScore += 8; }
-
-    if (this.hasBOS(dailyCandles, direction)) {
-      reasons.push('BOS/CHOCH (yapısal kırılım) teyidi var');
-      confidenceScore += 12;
-    }
-
+    const reasons: string[] = [];
+    reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
+    if (htfBiasConfirmed) reasons.push('HTF Bias: Günlük + 4H trend uyumlu');
+    if (sweepConfirmed) reasons.push('Liquidity Sweep tespit edildi');
+    if (mssConfirmed) reasons.push('Market Structure Shift (MSS) onaylandı');
+    if (fvgObRetestConfirmed) reasons.push(`Retest bölgesi: ${zone.kind}`);
     const weeklyTrend = this.getTrend(weeklyCandles);
-    if (weeklyTrend === trendDaily) {
-      reasons.push('Haftalık zaman dilimi de aynı yönü destekliyor');
-      confidenceScore += 12;
-    }
-
+    if (weeklyTrend === trendDaily) reasons.push('Haftalık zaman dilimi de aynı yönü destekliyor');
     if (fundingRate !== null) {
-      if (direction === 'LONG' && fundingRate < -0.05) {
-        reasons.push(`Funding rate aşırı negatif (${fundingRate.toFixed(3)}%) — short sıkışması potansiyeli`);
-        confidenceScore += 8;
-      } else if (direction === 'SHORT' && fundingRate > 0.05) {
-        reasons.push(`Funding rate aşırı pozitif (${fundingRate.toFixed(3)}%) — long sıkışması potansiyeli`);
-        confidenceScore += 8;
-      }
+      if (bullish && fundingRate < -0.05) reasons.push(`Funding rate aşırı negatif (${fundingRate.toFixed(3)}%)`);
+      else if (!bullish && fundingRate > 0.05) reasons.push(`Funding rate aşırı pozitif (${fundingRate.toFixed(3)}%)`);
     }
+    if (!stillValid) reasons.push('UYARI: Fiyat bölgeden uzaklaşmış olabilir, teyit et');
+
+    const strength: 'GUCLU' | 'ORTA' | 'RISKLI' =
+      confirmedCount === 4 ? 'GUCLU' : confirmedCount === 3 ? 'ORTA' : 'RISKLI';
+    const confidenceScore = confirmedCount * 25;
 
     return {
-      direction, entry, stop, tp1, tp2, tp3,
+      direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
       rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
+      confirmedCount, strength, stillValid, distancePercent,
     };
   }
-
   private async computeHistoricalWinRate(symbol: string, direction: 'LONG' | 'SHORT'): Promise<number | null> {
     const history = await this.prisma.historicalCandle.findMany({
       where: { symbol },
       orderBy: { timestamp: 'asc' },
     });
     if (history.length < 100) return null;
-
     const candles: Candle[] = history.map((h) => ({
       time: h.timestamp.getTime(), open: h.open, high: h.high, low: h.low, close: h.close, volume: h.volume ?? 0,
     }));
-
+    const bullish = direction === 'LONG';
     let wins = 0;
     let total = 0;
-    const bullish = direction === 'LONG';
-
     for (let i = 60; i < candles.length - 20; i++) {
-      const slice = candles.slice(0, i + 1);
-      const trend = this.getTrend(slice);
-      if (trend !== (bullish ? 'UP' : 'DOWN')) continue;
-
-      const atrValue = this.atr(slice);
-      const fvgs = this.findFVGs(slice).filter((f) => f.bullish === bullish);
-      const validFvgs = fvgs.filter((f) => !this.isMitigated(slice, f.index, f.top, f.bottom) && this.hasDisplacement(slice, f.index, atrValue));
-      if (validFvgs.length === 0) continue;
-
-      const obs = this.findOrderBlocks(slice, atrValue, bullish).filter((ob) => !this.isMitigated(slice, ob.index, ob.top, ob.bottom));
-      if (obs.length === 0) continue;
-
-      let zone: { top: number; bottom: number } | null = null;
-      for (const fvg of validFvgs.slice().reverse()) {
-        for (const ob of obs.slice().reverse()) {
-          if (this.rangesOverlap(fvg.top, fvg.bottom, ob.top, ob.bottom)) {
-            zone = { top: Math.min(fvg.top, ob.top), bottom: Math.max(fvg.bottom, ob.bottom) };
-            break;
-          }
-        }
-        if (zone) break;
+      if (i % 20 === 0) {
+        // Event loop'a nefes aldir — yoksa Node.js uzun sure bloke olup
+        // BullMQ'nun kilit yenileme zamanlayicisini bile calistiramiyor
+        await new Promise((resolve) => setImmediate(resolve));
       }
-      if (!zone) continue;
-
-      const entry = (zone.top + zone.bottom) / 2;
-
-      const swingHighs = this.findSwingHighs(slice);
-      const swingLows = this.findSwingLows(slice);
-      const ote = this.getOTEZone(slice, swingHighs, swingLows, direction);
-      if (!ote || entry > ote.top || entry < ote.bottom) continue;
-
-      const stop = bullish ? zone.bottom - atrValue * 0.3 : zone.top + atrValue * 0.3;
-      const risk = Math.abs(entry - stop);
-      const target = bullish ? entry + risk * 3 : entry - risk * 3;
-
+      const slice = candles.slice(0, i + 1);
+      const trendSlice = this.getTrend(slice);
+      if (trendSlice !== (bullish ? 'UP' : 'DOWN')) continue;
+      const weeklySlice = this.toWeekly(slice);
+      // 4H geçmiş verisi ayrı saklanmadığı için günlük trend, HTF Bias onayı yerine kullanılıyor
+      const setup = this.buildSetup(slice, trendSlice, weeklySlice, null);
+      if (!setup || setup.direction !== direction) continue;
       total++;
+      const { entry, stop } = setup;
+      const target = bullish ? entry + Math.abs(entry - stop) * 3 : entry - Math.abs(entry - stop) * 3;
       const future = candles.slice(i + 1, i + 21);
       let hitTarget = false, hitStop = false;
-
       for (const f of future) {
         if (bullish) {
           if (f.low <= stop) { hitStop = true; break; }
@@ -428,11 +448,9 @@ export class ScannerService {
       }
       if (hitTarget && !hitStop) wins++;
     }
-
     if (total < 5) return null;
     return Math.round((wins / total) * 100);
   }
-
   private async getCachedWinRate(symbol: string, direction: 'LONG' | 'SHORT'): Promise<number | null> {
     const cached = await this.prisma.winRateCache.findUnique({
       where: { symbol_direction: { symbol, direction: direction === 'LONG' ? 'BUY' : 'SELL' } },
@@ -504,7 +522,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 400,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -519,9 +537,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   }
 
   async scanCrypto() {
-    const symbols = await this.prisma.historicalCandle.findMany({
-      where: { assetType: 'CRYPTO' }, distinct: ['symbol'], select: { symbol: true },
-    });
+    const symbolList = await this.fetchTopBinanceSymbols(200);
+    const symbols = symbolList.map((s) => ({ symbol: s }));
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
@@ -554,7 +571,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     for (const c of candidates) {
       const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
       if (!tooCorrelated) selected.push(c);
-      if (selected.length === 5) break;
+      if (selected.length === 25) break;
     }
 
     for (const s of selected) {
@@ -602,7 +619,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     for (const c of candidates) {
       const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
       if (!tooCorrelated) selected.push(c);
-      if (selected.length === 5) break;
+      if (selected.length === 25) break;
     }
 
     for (const s of selected) {
@@ -612,9 +629,20 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return selected;
   }
 
+  async getLivePrice(symbol: string): Promise<{ symbol: string; price: number | null }> {
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+      if (!res.ok) return { symbol, price: null };
+      const data = await res.json();
+      return { symbol, price: parseFloat(data.price) };
+    } catch {
+      return { symbol, price: null };
+    }
+  }
+
   async runFullScan() {
-    const [crypto, forex] = await Promise.all([this.scanCrypto(), this.scanForex()]);
-    const results = { crypto, forex, scannedAt: new Date() };
+    const crypto = await this.scanCrypto();
+    const results = { crypto, scannedAt: new Date() };
     await this.prisma.scanResult.create({ data: { results: results as any } });
     return results;
   }
@@ -624,30 +652,163 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   }
 
   async scheduledScan() {
-    const results = await this.runFullScan();
-    const totalSignals = results.crypto.length + results.forex.length;
+    // Bir onceki taramadaki AKTIF (stillValid) sembolleri al ki sadece
+    // YENI aktif sinyallerde bildirim gonderelim, ayni sinyali her 15
+    // dakikada tekrar tekrar bildirim olarak spam etmeyelim
+    const previousScan = await this.prisma.scanResult.findFirst({ orderBy: { createdAt: 'desc' } });
+    const previousActiveSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? [])
+        .filter((c: any) => c.stillValid)
+        .map((c: any) => c.symbol),
+    );
 
-    if (totalSignals === 0) return;
+    const results = await this.runFullScan();
+    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+    const newActiveSignals = activeSignals.filter((c: any) => !previousActiveSymbols.has(c.symbol));
+
+    // "Yeni" degil, "su an acik takip kaydi olmayan" tum aktif sinyalleri takibe al
+    // (onceki taramaya gore yeni degilse de, deploy oncesi zaten aktifse de kacirmasin)
+    const openTracked = await this.prisma.trackedSignal.findMany({
+      where: { status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      select: { symbol: true },
+    });
+    const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
+    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    if (signalsNeedingTracking.length > 0) {
+      await this.createTrackedSignals(signalsNeedingTracking);
+    }
+    await this.updateTrackedSignals();
+
+    if (newActiveSignals.length === 0) return;
 
     const admins = await this.prisma.user.findMany({
       where: { role: 'SUPER_ADMIN' },
       select: { id: true },
     });
 
-    const cryptoSymbols = results.crypto.map((c: any) => c.symbol).join(', ');
-    const forexSymbols = results.forex.map((f: any) => f.symbol).join(', ');
-
-    let message = `Tarama tamamlandı, ${totalSignals} sinyal bulundu.`;
-    if (cryptoSymbols) message += ` Kripto: ${cryptoSymbols}.`;
-    if (forexSymbols) message += ` Forex: ${forexSymbols}.`;
+    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newActiveSignals.length} yeni aktif sinyal: ${symbolList}`;
 
     await this.notificationsService.createForManyUsers(
       admins.map((a) => a.id),
       {
         type: 'SYSTEM',
-        title: 'AI Tarayıcı: Yeni Sinyal',
+        title: 'AI Tarayıcı: Yeni Aktif Sinyal',
         message,
       },
     );
   }
+  async createTrackedSignals(newActiveSignals: any[]) {
+    for (const s of newActiveSignals) {
+      await this.prisma.trackedSignal.create({
+        data: {
+          symbol: s.symbol,
+          direction: s.direction,
+          entryZoneTop: s.entryZoneTop,
+          entryZoneBottom: s.entryZoneBottom,
+          stop: s.stop,
+          tp1: s.tp1,
+          tp2: s.tp2,
+          tp3: s.tp3,
+          strength: s.strength,
+          status: 'WATCHING',
+        },
+      });
+    }
+  }
+
+  async updateTrackedSignals() {
+    const openSignals = await this.prisma.trackedSignal.findMany({
+      where: { status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+    });
+
+    for (const sig of openSignals) {
+      const bullish = sig.direction === 'LONG';
+      const live = await this.getLivePrice(sig.symbol);
+      if (live.price === null) continue;
+      const price = live.price;
+
+      if (sig.status === 'WATCHING') {
+        const ageMs = Date.now() - sig.createdAt.getTime();
+        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+        if (ageMs > fiveDaysMs) {
+          await this.prisma.trackedSignal.update({
+            where: { id: sig.id },
+            data: { status: 'EXPIRED', closedAt: new Date() },
+          });
+          continue;
+        }
+        const entered = price <= sig.entryZoneTop && price >= sig.entryZoneBottom;
+        if (entered) {
+          await this.prisma.trackedSignal.update({
+            where: { id: sig.id },
+            data: { status: 'TRIGGERED', triggeredAt: new Date() },
+          });
+        }
+        continue;
+      }
+
+      // Tetiklenmis ama henuz stop/TP'ye ulasmamis, 10 gunu gecmisse suresi doldu say
+      if (sig.triggeredAt) {
+        const triggeredAgeMs = Date.now() - sig.triggeredAt.getTime();
+        const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
+        if (triggeredAgeMs > tenDaysMs) {
+          await this.prisma.trackedSignal.update({
+            where: { id: sig.id },
+            data: { status: 'EXPIRED', closedAt: new Date() },
+          });
+          continue;
+        }
+      }
+
+      const hitStop = bullish ? price <= sig.stop : price >= sig.stop;
+      if (hitStop) {
+        await this.prisma.trackedSignal.update({
+          where: { id: sig.id },
+          data: { status: 'HIT_STOP', closedAt: new Date() },
+        });
+        continue;
+      }
+
+      const hitTp3 = bullish ? price >= sig.tp3 : price <= sig.tp3;
+      const hitTp2 = bullish ? price >= sig.tp2 : price <= sig.tp2;
+      const hitTp1 = bullish ? price >= sig.tp1 : price <= sig.tp1;
+
+      if (hitTp3) {
+        await this.prisma.trackedSignal.update({
+          where: { id: sig.id },
+          data: { status: 'HIT_TP3', closedAt: new Date() },
+        });
+      } else if (hitTp2 && sig.status !== 'HIT_TP2') {
+        await this.prisma.trackedSignal.update({
+          where: { id: sig.id },
+          data: { status: 'HIT_TP2' },
+        });
+      } else if (hitTp1 && sig.status === 'TRIGGERED') {
+        await this.prisma.trackedSignal.update({
+          where: { id: sig.id },
+          data: { status: 'HIT_TP1' },
+        });
+      }
+    }
+  }
+
+  async getTrackedSignals() {
+    const signals = await this.prisma.trackedSignal.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    const closed = signals.filter((s) => s.closedAt !== null);
+    const wins = closed.filter(
+      (s) => s.status === 'HIT_TP1' || s.status === 'HIT_TP2' || s.status === 'HIT_TP3',
+    ).length;
+    const losses = closed.filter((s) => s.status === 'HIT_STOP').length;
+    const expired = closed.filter((s) => s.status === 'EXPIRED').length;
+    const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
+    return {
+      signals,
+      stats: { total: signals.length, wins, losses, expired, winRate },
+    };
+  }
+
 }

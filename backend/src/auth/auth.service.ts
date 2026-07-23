@@ -12,6 +12,7 @@ import { randomUUID, randomInt } from 'crypto';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityLogService } from '../security-log/security-log.service';
+import { BadgesService } from '../badges/badges.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -31,6 +32,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly securityLogService: SecurityLogService,
+    private readonly badgesService: BadgesService,
   ) {}
 
   private async issueTokens(userId: string, email: string | null, role: string, sessionId: string) {
@@ -171,6 +173,7 @@ export class AuthService {
 
     const isNewDevice = userAgent && !distinctDevices.has(userAgent);
 
+    if (user.role === "STAFF" || user.role === "SUPER_ADMIN") {} else
     if (isNewDevice && distinctDevices.size >= MAX_DEVICES_PER_DAY) {
       await this.prisma.user.update({
         where: { id: user.id },
@@ -208,6 +211,10 @@ export class AuthService {
     });
 
     await this.securityLogService.log('LOGIN_SUCCESS', user.id, ip, userAgent);
+
+    if (user.role === 'STUDENT') {
+      await this.badgesService.grantByNameIfEligible(user.id, 'İlk Adım');
+    }
 
     const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
 

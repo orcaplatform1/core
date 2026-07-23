@@ -40,8 +40,8 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Get()
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.paymentsService.findAll(page ? parseInt(page) : 1, limit ? parseInt(limit) : 20);
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string, @Query('status') status?: string) {
+    return this.paymentsService.findAll(page ? parseInt(page) : 1, limit ? parseInt(limit) : 20, status);
   }
 
   @UseGuards(JwtAuthGuard)

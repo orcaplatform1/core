@@ -6,38 +6,24 @@ import { toast } from "sonner";
 import {
   useBacktestSymbols,
   useCandles,
-  useRefreshSymbol,
   useChartDrawing,
   useSaveChartDrawing,
 } from "@/lib/hooks/use-backtest";
 import { uploadChartSnapshot } from "@/lib/hooks/use-storage";
 import { useSendMentorMessage } from "@/lib/hooks/use-mentor";
-import type { ChartShape, ChartPoint, DrawingTool } from "@/lib/types/curriculum";
+import { useChartDrawingTools, drawShapesOnCanvas } from "@/lib/hooks/use-chart-drawing-tools";
+import { ChartDrawingToolbar } from "@/components/chart-drawing-toolbar";
+import { TOOL_LABELS } from "@/lib/hooks/use-chart-drawing-tools";
 
 type Category = "crypto" | "forex";
 type Timeframe = "1d" | "1h";
-
-const TOOL_LABELS: Record<DrawingTool, string> = {
-  trendline: "Trend Çizgisi",
-  orderblock: "Order Block",
-  liquidity: "Likidite Alanı",
-};
-
-const TOOL_COLORS: Record<DrawingTool, string> = {
-  trendline: "#4F6BFF",
-  orderblock: "#F39C3D",
-  liquidity: "#8A54FF",
-};
 
 export default function BacktestPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [symbol, setSymbol] = useState<string>("");
   const [timeframe, setTimeframe] = useState<Timeframe>("1d");
   const [note, setNote] = useState("");
-  const [shapes, setShapes] = useState<ChartShape[]>([]);
-  const [activeTool, setActiveTool] = useState<DrawingTool | null>(null);
-  const [pendingPoint, setPendingPoint] = useState<ChartPoint | null>(null);
-  const [previewPoint, setPreviewPoint] = useState<ChartPoint | null>(null);
+  const [noteInput, setNoteInput] = useState("");
   const [sending, setSending] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,38 +36,28 @@ export default function BacktestPage() {
   const to = new Date().toISOString().slice(0, 10);
   const from = "2015-01-01";
   const { data: candles, isLoading: candlesLoading } = useCandles(symbol, timeframe, from, to);
-  const refreshSymbol = useRefreshSymbol();
   const { data: savedDrawing } = useChartDrawing("backtest", symbol);
   const saveDrawing = useSaveChartDrawing();
   const sendMessage = useSendMentorMessage();
 
-  function drawOneShape(
-    ctx: CanvasRenderingContext2D,
-    tool: DrawingTool,
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-    color: string,
-    dashed: boolean
-  ) {
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color + "33";
-    ctx.lineWidth = 2;
-    ctx.setLineDash(dashed ? [6, 4] : []);
-    if (tool === "trendline") {
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    } else {
-      const x = Math.min(a.x, b.x);
-      const y = Math.min(a.y, b.y);
-      const w = Math.abs(b.x - a.x);
-      const h = Math.abs(b.y - a.y);
-      ctx.fillRect(x, y, w, h);
-      ctx.strokeRect(x, y, w, h);
-    }
-    ctx.setLineDash([]);
-  }
+  const {
+    shapes,
+    activeTool,
+    pendingPoint,
+    previewPoint,
+    magnet,
+    setMagnet,
+    noteDraft,
+    selectTool,
+    handleClick,
+    handleMouseMove,
+    confirmNote,
+    cancelNote,
+    removeShape,
+    toggleLock,
+    clearShapes,
+    loadShapes,
+  } = useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles });
 
   const redraw = useCallback(() => {
     const canvas = overlayRef.current;
@@ -91,26 +67,11 @@ export default function BacktestPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const toXY = (p: ChartPoint) => {
-      const x = chart.timeScale().timeToCoordinate(p.time as unknown as Time);
-      const y = series.priceToCoordinate(p.price);
-      if (x === null || y === null) return null;
-      return { x, y };
-    };
-
-    shapes.forEach((s) => {
-      const a = toXY(s.p1);
-      const b = toXY(s.p2);
-      if (!a || !b) return;
-      drawOneShape(ctx, s.tool, a, b, s.color, false);
-    });
-
-    if (activeTool && pendingPoint && previewPoint) {
-      const a = toXY(pendingPoint);
-      const b = toXY(previewPoint);
-      if (a && b) drawOneShape(ctx, activeTool, a, b, TOOL_COLORS[activeTool], true);
-    }
+    const preview =
+      activeTool && pendingPoint && previewPoint
+        ? { tool: activeTool, p1: pendingPoint, p2: previewPoint }
+        : null;
+    drawShapesOnCanvas(ctx, chart, series, shapes, preview);
   }, [shapes, activeTool, pendingPoint, previewPoint]);
 
   useEffect(() => {
@@ -143,7 +104,6 @@ export default function BacktestPage() {
     });
     chartRef.current = chart;
     seriesRef.current = series;
-
     const syncOverlaySize = () => {
       if (containerRef.current && overlayRef.current) {
         const w = containerRef.current.clientWidth;
@@ -153,16 +113,13 @@ export default function BacktestPage() {
       }
     };
     syncOverlaySize();
-
     const handleResize = () => {
       syncOverlaySize();
       redrawRef.current();
     };
     const rangeHandler = () => redrawRef.current();
-
     window.addEventListener("resize", handleResize);
     chart.timeScale().subscribeVisibleTimeRangeChange(rangeHandler);
-
     return () => {
       window.removeEventListener("resize", handleResize);
       chart.timeScale().unsubscribeVisibleTimeRangeChange(rangeHandler);
@@ -187,68 +144,14 @@ export default function BacktestPage() {
 
   useEffect(() => {
     if (savedDrawing?.drawings) {
-      setShapes(savedDrawing.drawings.shapes ?? []);
+      loadShapes(savedDrawing.drawings.shapes ?? []);
       setNote(savedDrawing.drawings.note ?? "");
     } else {
-      setShapes([]);
+      loadShapes([]);
       setNote("");
     }
-    setActiveTool(null);
-    setPendingPoint(null);
-    setPreviewPoint(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedDrawing]);
-
-  function pointFromEvent(e: React.MouseEvent<HTMLCanvasElement>): ChartPoint | null {
-    if (!chartRef.current || !seriesRef.current || !overlayRef.current) return null;
-    const rect = overlayRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const time = chartRef.current.timeScale().coordinateToTime(x);
-    const price = seriesRef.current.coordinateToPrice(y);
-    if (time === null || price === null) return null;
-    return { time: time as unknown as number, price };
-  }
-
-  function handleCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
-    if (!activeTool) return;
-    const point = pointFromEvent(e);
-    if (!point) return;
-    if (!pendingPoint) {
-      setPendingPoint(point);
-    } else {
-      const newShape: ChartShape = {
-        id: crypto.randomUUID(),
-        tool: activeTool,
-        p1: pendingPoint,
-        p2: point,
-        color: TOOL_COLORS[activeTool],
-      };
-      setShapes((prev) => [...prev, newShape]);
-      setPendingPoint(null);
-      setPreviewPoint(null);
-      setActiveTool(null);
-    }
-  }
-
-  function handleCanvasMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
-    if (!pendingPoint) return;
-    const point = pointFromEvent(e);
-    if (point) setPreviewPoint(point);
-  }
-
-  function selectTool(tool: DrawingTool) {
-    setActiveTool((prev) => (prev === tool ? null : tool));
-    setPendingPoint(null);
-    setPreviewPoint(null);
-  }
-
-  function removeShape(id: string) {
-    setShapes((prev) => prev.filter((s) => s.id !== id));
-  }
-
-  function clearShapes() {
-    setShapes([]);
-  }
 
   async function handleSaveDrawing() {
     if (!symbol) return;
@@ -361,71 +264,82 @@ export default function BacktestPage() {
                 </button>
               </div>
             </div>
-            <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSymbol("");
+              }}
+            >
+              Parite Değiştir
+            </Button>
+          </div>
+
+          <ChartDrawingToolbar
+            activeTool={activeTool}
+            onSelectTool={selectTool}
+            magnet={magnet}
+            onToggleMagnet={() => setMagnet((m) => !m)}
+            pendingActive={!!pendingPoint}
+            shapes={shapes}
+            onClearAll={clearShapes}
+          />
+
+          {noteDraft && (
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card-inner p-3">
+              <input
+                autoFocus
+                value={noteInput}
+                onChange={(e) => setNoteInput(e.target.value)}
+                placeholder="Not metni..."
+                className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    confirmNote(noteInput);
+                    setNoteInput("");
+                  }
+                }}
+              />
               <Button
-                variant="outline"
-                disabled={refreshSymbol.isPending}
-                onClick={() =>
-                  refreshSymbol.mutate(
-                    { symbol, timeframe },
-                    {
-                      onSuccess: () => toast.success("Grafik güncellendi"),
-                      onError: () => toast.error("Güncellenemedi"),
-                    }
-                  )
-                }
+                onClick={() => {
+                  confirmNote(noteInput);
+                  setNoteInput("");
+                }}
               >
-                {refreshSymbol.isPending ? "Güncelleniyor..." : "Grafiği Güncelle"}
+                Ekle
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => {
-                  setSymbol("");
-                  setShapes([]);
-                  setNote("");
-                  setActiveTool(null);
+                  cancelNote();
+                  setNoteInput("");
                 }}
               >
-                Parite Değiştir
+                İptal
               </Button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {(Object.keys(TOOL_LABELS) as DrawingTool[]).map((tool) => (
-              <button
-                key={tool}
-                onClick={() => selectTool(tool)}
-                className="rounded-xl border px-3 py-1.5 text-sm transition"
-                style={{
-                  borderColor: activeTool === tool ? TOOL_COLORS[tool] : "#223554",
-                  backgroundColor: activeTool === tool ? TOOL_COLORS[tool] + "22" : "#182338",
-                  color: activeTool === tool ? "#F5F8FF" : "#D7E1F8",
-                }}
-              >
-                {TOOL_LABELS[tool]}
-              </button>
-            ))}
-            {activeTool && (
-              <span className="text-xs text-[#8D9BB6]">
-                {pendingPoint ? "İkinci noktayı işaretle" : "Başlangıç noktasını işaretle"}
-              </span>
-            )}
-            {shapes.length > 0 && (
-              <button onClick={clearShapes} className="ml-auto text-xs text-[#FF5C5C] hover:underline">
-                Tüm çizimleri temizle
-              </button>
-            )}
-          </div>
+          )}
 
           <div className="relative rounded-2xl border border-border bg-card p-2">
             <div ref={containerRef} className="w-full" style={{ minHeight: 420 }} />
             <canvas
               ref={overlayRef}
-              onClick={handleCanvasClick}
-              onMouseMove={handleCanvasMouseMove}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                if (!activeTool) return;
+                handleClick(e.clientX, e.clientY);
+              }}
+              onPointerMove={(e) => {
+                if (!activeTool) return;
+                handleMouseMove(e.clientX, e.clientY);
+              }}
               className="absolute left-2 top-2"
-              style={{ height: 420, pointerEvents: activeTool ? "auto" : "none", cursor: activeTool ? "crosshair" : "default" }}
+              style={{
+                height: 420,
+                width: "calc(100% - 16px)",
+                pointerEvents: "auto",
+                cursor: activeTool ? "crosshair" : "default",
+                touchAction: "none",
+              }}
             />
             {candlesLoading && (
               <div className="absolute inset-0 flex items-center justify-center text-sm text-[#8D9BB6] bg-card/80">
@@ -441,10 +355,23 @@ export default function BacktestPage() {
                   key={s.id}
                   className="flex items-center justify-between rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#D7E1F8]"
                 >
-                  <span style={{ color: s.color }}>{TOOL_LABELS[s.tool]}</span>
-                  <button onClick={() => removeShape(s.id)} className="text-[#FF5C5C] hover:underline">
-                    Sil
-                  </button>
+                  <span style={{ color: s.color }}>
+                    {TOOL_LABELS[s.tool]}
+                    {s.text ? ` — ${s.text}` : ""}
+                    {s.locked ? " 🔒" : ""}
+                  </span>
+                  <span className="flex gap-3">
+                    <button onClick={() => toggleLock(s.id)} className="text-[#8D9BB6] hover:underline">
+                      {s.locked ? "Kilidi Aç" : "Kilitle"}
+                    </button>
+                    <button
+                      onClick={() => removeShape(s.id)}
+                      disabled={s.locked}
+                      className={s.locked ? "text-[#66738D]" : "text-[#FF5C5C] hover:underline"}
+                    >
+                      Sil
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>

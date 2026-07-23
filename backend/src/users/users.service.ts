@@ -157,6 +157,39 @@ export class UsersService {
     return updated;
   }
 
+  async updateRole(id: string, role: string, actorId: string) {
+    const exists = await this.prisma.user.findUnique({ where: { id } });
+    if (!exists) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { role: role as any },
+      select: { id: true, fullName: true, username: true, role: true },
+    });
+    await this.auditLogService.log(actorId, 'USER_ROLE_UPDATE', 'User', id, { role });
+    return updated;
+  }
+  async grantEnrollment(id: string, programId: string, actorId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+    const program = await this.prisma.program.findUnique({ where: { id: programId } });
+    if (!program) {
+      throw new NotFoundException('Program bulunamadı.');
+    }
+    const enrollment = await this.prisma.enrollment.upsert({
+      where: { userId_programId: { userId: id, programId } },
+      update: {},
+      create: { userId: id, programId },
+    });
+    if (user.role === 'GUEST') {
+      await this.prisma.user.update({ where: { id }, data: { role: 'STUDENT' } });
+    }
+    await this.auditLogService.log(actorId, 'USER_ENROLLMENT_GRANT', 'User', id, { programId });
+    return enrollment;
+  }
   async adminUpdateIdentity(id: string, fullName?: string, username?: string, actorId?: string) {
     const exists = await this.prisma.user.findUnique({ where: { id } });
 

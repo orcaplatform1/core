@@ -23,7 +23,7 @@ export default function ProgramDetailPage({
     .filter((m) => m.programId === id)
     .sort((a, b) => a.order - b.order);
 
-  const isEnrolled = !!enrollments?.some((e) => e.programId === id);
+  const isEnrolled = !!enrollments?.some((e) => e.programId === id) || user?.role === "SUPER_ADMIN";
 
   if (isLoading || !program) {
     return (

@@ -33,7 +33,8 @@ export class LessonsController {
   @Get(':id')
   findOne(@Req() req: Request, @Param('id') id: string) {
     const userId = (req.user as any).id;
-    return this.lessonsService.findById(userId, id);
+    const role = (req.user as any).role;
+    return this.lessonsService.findById(userId, id, role);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

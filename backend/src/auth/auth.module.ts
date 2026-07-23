@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SecurityLogModule } from '../security-log/security-log.module';
+import { BadgesModule } from '../badges/badges.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -13,6 +14,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PrismaModule,
     ConfigModule,
     SecurityLogModule,
+    BadgesModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),

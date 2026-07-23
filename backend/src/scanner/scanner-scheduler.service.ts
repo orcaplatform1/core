@@ -7,12 +7,7 @@ import { Queue } from 'bullmq';
 export class ScannerScheduler {
   constructor(@InjectQueue('scanner') private readonly scannerQueue: Queue) {}
 
-  @Cron('20 0 * * *')
-  async queueDailyWinRateRefresh() {
-    await this.scannerQueue.add('refresh-win-rate', {});
-  }
-
-  @Cron('15 * * * *')
+  @Cron('*/15 * * * *')
   async queueHourlyScan() {
     await this.scannerQueue.add('hourly-scan', {});
   }

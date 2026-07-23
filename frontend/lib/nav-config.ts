@@ -7,6 +7,7 @@ import {
   LineChart,
   Repeat,
   Radio,
+  Dna,
   Award,
   Medal,
   CreditCard,
@@ -41,6 +42,7 @@ export const studentNav: NavSection[] = [
     items: [
       { label: "Backtest", href: "/backtest", icon: LineChart },
       { label: "Simülasyon", href: "/simulation", icon: Repeat },
+      { label: "Simülasyon DNA", href: "/simulation-dna", icon: Dna },
       { label: "Canlı Dersler", href: "/live-lessons", icon: Radio },
     ],
   },

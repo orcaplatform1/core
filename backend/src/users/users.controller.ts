@@ -6,6 +6,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AdminUpdateIdentityDto } from './dto/admin-update-identity.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { GrantEnrollmentDto } from './dto/grant-enrollment.dto';
 
 @Controller('users')
 export class UsersController {
@@ -66,6 +68,20 @@ export class UsersController {
     return this.usersService.adminUpdateIdentity(id, dto.fullName, dto.username, actorId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id/role')
+  updateRole(@Req() req: Request, @Param('id') id: string, @Body() dto: UpdateRoleDto) {
+    const actorId = (req.user as any).id;
+    return this.usersService.updateRole(id, dto.role, actorId);
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post(':id/enrollments')
+  grantEnrollment(@Req() req: Request, @Param('id') id: string, @Body() dto: GrantEnrollmentDto) {
+    const actorId = (req.user as any).id;
+    return this.usersService.grantEnrollment(id, dto.programId, actorId);
+  }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Get(':id')

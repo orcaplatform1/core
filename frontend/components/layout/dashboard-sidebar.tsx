@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Crown, Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Flame, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { studentNav } from "@/lib/nav-config";
 import { useMyStats } from "@/lib/hooks/use-dashboard";
@@ -47,6 +47,23 @@ export function DashboardSidebar() {
           <span className="text-xs font-medium text-sidebar-foreground/70">
             @{user?.username}
           </span>
+        </div>
+      )}
+
+      {user?.role === "SUPER_ADMIN" && (
+        <div className="px-3 pt-3">
+          <Link
+            href="/manage"
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-200",
+              pathname?.startsWith("/manage") ? "ring-1 ring-[#FF5C5C]" : "",
+              collapsed && "justify-center px-0"
+            )}
+            style={{ backgroundColor: "#FF5C5C1A", color: "#FF5C5C" }}
+          >
+            <ShieldAlert className="size-5 shrink-0" />
+            {!collapsed && <span>M Dashboard</span>}
+          </Link>
         </div>
       )}
 

@@ -8,6 +8,10 @@ export class CreateBadgeDto {
   description!: string;
 
   @IsOptional()
+  @IsString()
+  iconUrl?: string;
+
+  @IsOptional()
   @IsIn(['FIRST_LESSON', 'QUIZ_PASS_COUNT', 'STREAK_DAYS', 'BACKTEST_COUNT', 'SIMULATION_COUNT', 'CUSTOM'])
   triggerType?: string;
 

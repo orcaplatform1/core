@@ -70,6 +70,7 @@ model User {
   commissionsEarned Commission[]
   conversation      Conversation?
   simulationAccount SimulationAccount?
+  simulationDnaReports SimulationDnaReport[]
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -373,6 +374,7 @@ model Badge {
   id          String      @id @default(cuid())
   name        String      @unique
   description String
+  iconUrl     String?
   triggerType BadgeTriggerType @default(CUSTOM)
   requiredCount Int @default(1)
   users       UserBadge[]
@@ -428,12 +430,28 @@ model SimulatedTrade {
   symbol     String
   direction  TradeDirection
   quantity   Float
+  leverage   Int               @default(1)
   entryPrice Float
   exitPrice  Float?
   pnl        Float?
   status     TradeStatus       @default(OPEN)
   createdAt  DateTime          @default(now())
   closedAt   DateTime?
+}
+
+model SimulationDnaReport {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tradesAnalyzedCount Int
+  pending             Boolean  @default(true)
+  riskProfile         String?
+  psychologyLabel     String?
+  strengths           Json?
+  weaknesses          Json?
+  developmentPlan     String?
+  createdAt           DateTime @default(now())
+  @@index([userId])
 }
 
 model HistoricalCandle {
@@ -519,6 +537,25 @@ model ScanResult {
   id        String   @id @default(cuid())
   results   Json
   createdAt DateTime @default(now())
+}
+
+model TrackedSignal {
+  id               String    @id @default(cuid())
+  symbol           String
+  direction        String
+  entryZoneTop     Float
+  entryZoneBottom  Float
+  stop             Float
+  tp1              Float
+  tp2              Float
+  tp3              Float
+  strength         String
+  status           String    @default("WATCHING")
+  createdAt        DateTime  @default(now())
+  triggeredAt      DateTime?
+  closedAt         DateTime?
+
+  @@index([status])
 }
 
 model WinRateCache {

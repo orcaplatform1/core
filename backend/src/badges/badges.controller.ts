@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { BadgesService } from './badges.service';
 import { CreateBadgeDto } from './dto/create-badge.dto';
+import { UpdateBadgeDto } from './dto/update-badge.dto';
 import { GrantBadgeDto } from './dto/grant-badge.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -18,6 +19,14 @@ export class BadgesController {
   create(@Req() req: Request, @Body() dto: CreateBadgeDto) {
     const actorId = (req.user as any).id;
     return this.badgesService.create(dto, actorId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id')
+  update(@Req() req: Request, @Param('id') id: string, @Body() dto: UpdateBadgeDto) {
+    const actorId = (req.user as any).id;
+    return this.badgesService.update(id, dto, actorId);
   }
 
   @Get()

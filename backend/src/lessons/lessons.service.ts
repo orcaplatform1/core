@@ -24,7 +24,7 @@ export class LessonsService {
     });
   }
 
-  async findById(userId: string, id: string) {
+  async findById(userId: string, id: string, role?: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
       include: { resources: true, module: true },
@@ -32,6 +32,10 @@ export class LessonsService {
 
     if (!lesson) {
       throw new NotFoundException('Ders bulunamadı.');
+    }
+
+    if (role === 'SUPER_ADMIN') {
+      return lesson;
     }
 
     const enrollment = await this.prisma.enrollment.findUnique({
