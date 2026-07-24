@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "TrackedSignal" ADD COLUMN     "rr" DOUBLE PRECISION NOT NULL DEFAULT 0;

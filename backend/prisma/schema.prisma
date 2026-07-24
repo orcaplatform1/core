@@ -536,6 +536,7 @@ model StatsSnapshot {
 model ScanResult {
   id        String   @id @default(cuid())
   results   Json
+  style     String   @default("SWING")
   createdAt DateTime @default(now())
 }
 
@@ -549,6 +550,8 @@ model TrackedSignal {
   tp1              Float
   tp2              Float
   tp3              Float
+  rr               Float     @default(0)
+  style            String    @default("SWING")
   strength         String
   status           String    @default("WATCHING")
   createdAt        DateTime  @default(now())

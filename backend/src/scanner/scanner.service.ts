@@ -65,7 +65,10 @@ export class ScannerService {
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
-    return data.map((c: any) => ({
+    // Son eleman henuz kapanmamis (oluşan) mum olabilir, sadece
+    // kapanmis mumlarla calis - yanlis/repaint sinyal riskini onler
+    const closed = data.slice(0, -1);
+    return closed.map((c: any) => ({
       time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
       low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
     }));
@@ -76,10 +79,44 @@ export class ScannerService {
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
-    return data.map((c: any) => ({
+    const closed = data.slice(0, -1);
+    return closed.map((c: any) => ({
       time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
       low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
     }));
+  }
+
+  private async fetchBinance1h(symbol: string, limit = 120): Promise<Candle[]> {
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const closed = data.slice(0, -1);
+    return closed.map((c: any) => ({
+      time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
+      low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
+    }));
+  }
+
+  private async fetchBinance15m(symbol: string, limit = 120): Promise<Candle[]> {
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=${limit}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const closed = data.slice(0, -1);
+    return closed.map((c: any) => ({
+      time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
+      low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
+    }));
+  }
+
+  private isInDayTradeKillzone(): boolean {
+    const now = new Date();
+    const utcHour = now.getUTCHours();
+    // Ana pencere UTC 12:00-16:00 (TRT 15:00-19:00), ikincil UTC 07:00-09:00 (TRT 10:00-12:00)
+    const mainWindow = utcHour >= 12 && utcHour < 16;
+    const secondaryWindow = utcHour >= 7 && utcHour < 9;
+    return mainWindow || secondaryWindow;
   }
 
   private async fetchBinanceFundingRate(symbol: string): Promise<number | null> {
@@ -369,10 +406,12 @@ export class ScannerService {
     let mainTarget: number;
     if (bullish) {
       const nextSwing = swingHighs.length > 0 ? dailyCandles[swingHighs[swingHighs.length - 1]].high : null;
-      mainTarget = nextSwing && nextSwing > entry ? nextSwing : entry + risk * 3;
+      const structural = nextSwing && nextSwing > entry ? nextSwing : entry + risk * 3;
+      mainTarget = Math.max(structural, entry + risk * 2.5);
     } else {
       const nextSwing = swingLows.length > 0 ? dailyCandles[swingLows[swingLows.length - 1]].low : null;
-      mainTarget = nextSwing && nextSwing < entry ? nextSwing : entry - risk * 3;
+      const structural = nextSwing && nextSwing < entry ? nextSwing : entry - risk * 3;
+      mainTarget = Math.min(structural, entry - risk * 2.5);
     }
     const mainReward = Math.abs(mainTarget - entry);
     const rr = risk > 0 ? mainReward / risk : 0;
@@ -571,7 +610,54 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     for (const c of candidates) {
       const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
       if (!tooCorrelated) selected.push(c);
-      if (selected.length === 25) break;
+    }
+
+    for (const s of selected) {
+      s.aiCommentary = await this.interpretWithAI(s.symbol, s);
+    }
+
+    return selected;
+  }
+
+  async scanDayTrade() {
+    if (!this.isInDayTradeKillzone()) return [];
+
+    const symbolList = await this.fetchTopBinanceSymbols(200);
+    const symbols = symbolList.map((s) => ({ symbol: s }));
+
+    const candidates: any[] = [];
+    const returnsMap: Record<string, number[]> = {};
+
+    for (const { symbol } of symbols) {
+      try {
+        const h1 = await this.fetchBinance1h(symbol);
+        const m15 = await this.fetchBinance15m(symbol);
+        const h4 = await this.fetchBinance4h(symbol);
+        if (h1.length < 60 || m15.length < 30 || h4.length < 30) continue;
+
+        const fundingRate = await this.fetchBinanceFundingRate(symbol);
+        const trend15m = this.getTrend(m15);
+        // buildSetup jenerik: (ana yapı mumlari, kisa vadeli trend teyidi, daha yuksek TF trend teyidi, funding)
+        // Swing'de: daily/4h/weekly - Day Trade'de: 1h/15m/4h
+        const setup = this.buildSetup(h1, trend15m, h4, fundingRate);
+        if (!setup) continue;
+
+        const winRate = await this.getCachedWinRate(symbol, setup.direction);
+
+        const closes = h1.slice(-60).map((c) => c.close);
+        returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
+
+        candidates.push({ symbol, ...setup, winRatePercent: winRate, fundingRate, style: 'DAY' });
+      } catch { continue; }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+
+    candidates.sort((a, b) => b.confidenceScore - a.confidenceScore || (b.winRatePercent ?? 0) - (a.winRatePercent ?? 0));
+
+    const selected: any[] = [];
+    for (const c of candidates) {
+      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
+      if (!tooCorrelated) selected.push(c);
     }
 
     for (const s of selected) {
@@ -643,12 +729,19 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   async runFullScan() {
     const crypto = await this.scanCrypto();
     const results = { crypto, scannedAt: new Date() };
-    await this.prisma.scanResult.create({ data: { results: results as any } });
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'SWING' } });
     return results;
   }
 
-  async getLastScan() {
-    return this.prisma.scanResult.findFirst({ orderBy: { createdAt: 'desc' } });
+  async runDayTradeScan() {
+    const crypto = await this.scanDayTrade();
+    const results = { crypto, scannedAt: new Date() };
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'DAY' } });
+    return results;
+  }
+
+  async getLastScan(style: string = 'SWING') {
+    return this.prisma.scanResult.findFirst({ where: { style }, orderBy: { createdAt: 'desc' } });
   }
 
   async scheduledScan() {
@@ -664,7 +757,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const results = await this.runFullScan();
     const activeSignals = results.crypto.filter((c: any) => c.stillValid);
-    const newActiveSignals = activeSignals.filter((c: any) => !previousActiveSymbols.has(c.symbol));
 
     // "Yeni" degil, "su an acik takip kaydi olmayan" tum aktif sinyalleri takibe al
     // (onceki taramaya gore yeni degilse de, deploy oncesi zaten aktifse de kacirmasin)
@@ -673,6 +765,13 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       select: { symbol: true },
     });
     const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
+    // Bildirim icin: hem onceki taramada aktif OLMAYAN hem de zaten takipte OLMAYAN
+    // sinyaller "yeni" sayilir - zaten takipte olan bir sembol fiyat sinirin cevresinde
+    // gidip gelerek stillValid'i true/false arasinda gecis yapabilir, bu durumda tekrar
+    // tekrar bildirim spam'i yapilmasin
+    const newActiveSignals = activeSignals.filter(
+      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    );
     const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
       await this.createTrackedSignals(signalsNeedingTracking);
@@ -698,7 +797,58 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       },
     );
   }
-  async createTrackedSignals(newActiveSignals: any[]) {
+
+  async scheduledDayTradeScan() {
+    if (!this.isInDayTradeKillzone()) return;
+
+    const previousScan = await this.prisma.scanResult.findFirst({
+      where: { style: 'DAY' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const previousActiveSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? [])
+        .filter((c: any) => c.stillValid)
+        .map((c: any) => c.symbol),
+    );
+
+    const results = await this.runDayTradeScan();
+    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+
+    const openTracked = await this.prisma.trackedSignal.findMany({
+      where: { style: 'DAY', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      select: { symbol: true },
+    });
+    const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
+    const newActiveSignals = activeSignals.filter(
+      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    );
+    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    if (signalsNeedingTracking.length > 0) {
+      await this.createTrackedSignals(signalsNeedingTracking, 'DAY');
+    }
+    // NOT: updateTrackedSignals() burada CAGIRILMIYOR - scheduledScan (swing) zaten
+    // TUM acik kayitlari (stil farketmeksizin) her 15 dakikada guncelliyor
+
+    if (newActiveSignals.length === 0) return;
+
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'SUPER_ADMIN' },
+      select: { id: true },
+    });
+
+    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newActiveSignals.length} yeni aktif Day Trade sinyali: ${symbolList}`;
+
+    await this.notificationsService.createForManyUsers(
+      admins.map((a) => a.id),
+      {
+        type: 'SYSTEM',
+        title: 'AI Tarayıcı: Yeni Day Trade Sinyali',
+        message,
+      },
+    );
+  }
+  async createTrackedSignals(newActiveSignals: any[], style: string = 'SWING') {
     for (const s of newActiveSignals) {
       await this.prisma.trackedSignal.create({
         data: {
@@ -710,7 +860,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           tp1: s.tp1,
           tp2: s.tp2,
           tp3: s.tp3,
+          rr: s.rr,
           strength: s.strength,
+          style,
           status: 'WATCHING',
         },
       });
@@ -729,15 +881,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       const price = live.price;
 
       if (sig.status === 'WATCHING') {
-        const ageMs = Date.now() - sig.createdAt.getTime();
-        const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
-        if (ageMs > fiveDaysMs) {
-          await this.prisma.trackedSignal.update({
-            where: { id: sig.id },
-            data: { status: 'EXPIRED', closedAt: new Date() },
-          });
-          continue;
-        }
         const entered = price <= sig.entryZoneTop && price >= sig.entryZoneBottom;
         if (entered) {
           await this.prisma.trackedSignal.update({
@@ -748,11 +891,12 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         continue;
       }
 
-      // Tetiklenmis ama henuz stop/TP'ye ulasmamis, 10 gunu gecmisse suresi doldu say
+      // Tetiklenmis ama henuz stop/TP'ye ulasmamis, stile gore sure asimi:
+      // SWING 10 gun, DAY 1 gun (day trade pozisyonlari uzun sure acik kalmamali)
       if (sig.triggeredAt) {
         const triggeredAgeMs = Date.now() - sig.triggeredAt.getTime();
-        const tenDaysMs = 10 * 24 * 60 * 60 * 1000;
-        if (triggeredAgeMs > tenDaysMs) {
+        const expiryMs = sig.style === 'DAY' ? 1 * 24 * 60 * 60 * 1000 : 10 * 24 * 60 * 60 * 1000;
+        if (triggeredAgeMs > expiryMs) {
           await this.prisma.trackedSignal.update({
             where: { id: sig.id },
             data: { status: 'EXPIRED', closedAt: new Date() },
@@ -793,22 +937,43 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
-  async getTrackedSignals() {
+  async getTrackedSignals(style: string = 'SWING') {
     const signals = await this.prisma.trackedSignal.findMany({
+      where: { style },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    const closed = signals.filter((s) => s.closedAt !== null);
-    const wins = closed.filter(
-      (s) => s.status === 'HIT_TP1' || s.status === 'HIT_TP2' || s.status === 'HIT_TP3',
-    ).length;
-    const losses = closed.filter((s) => s.status === 'HIT_STOP').length;
-    const expired = closed.filter((s) => s.status === 'EXPIRED').length;
+    const [activeCount, wins, losses] = await Promise.all([
+      this.prisma.trackedSignal.count({
+        where: { style, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      }),
+      this.prisma.trackedSignal.count({ where: { style, status: 'HIT_TP3' } }),
+      this.prisma.trackedSignal.count({ where: { style, status: 'HIT_STOP' } }),
+    ]);
+    const total = activeCount + wins + losses;
     const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
     return {
       signals,
-      stats: { total: signals.length, wins, losses, expired, winRate },
+      stats: { total, wins, losses, winRate },
     };
   }
 
+
+  async cleanupTrackedSignals() {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
+    const deletedWatchingSwing = await this.prisma.trackedSignal.deleteMany({
+      where: { style: 'SWING', status: 'WATCHING', createdAt: { lt: threeDaysAgo } },
+    });
+    const deletedWatchingDay = await this.prisma.trackedSignal.deleteMany({
+      where: { style: 'DAY', status: 'WATCHING', createdAt: { lt: eightHoursAgo } },
+    });
+    const deletedExpired = await this.prisma.trackedSignal.deleteMany({
+      where: { status: 'EXPIRED', closedAt: { lt: threeDaysAgo } },
+    });
+    return {
+      deletedWatching: deletedWatchingSwing.count + deletedWatchingDay.count,
+      deletedExpired: deletedExpired.count,
+    };
+  }
 }
