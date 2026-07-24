@@ -405,12 +405,22 @@ export class ScannerService {
 
     let mainTarget: number;
     if (bullish) {
-      const nextSwing = swingHighs.length > 0 ? dailyCandles[swingHighs[swingHighs.length - 1]].high : null;
-      const structural = nextSwing && nextSwing > entry ? nextSwing : entry + risk * 3;
+      // Entry'nin UZERINDEKI tum swing high'lardan FIYATCA EN YAKIN olani sec
+      // (dizideki en son/kronolojik degil) - gercek yapisal direnc, uydurma tavan yok
+      const candidateHighs = swingHighs
+        .map((i) => dailyCandles[i].high)
+        .filter((h) => h > entry)
+        .sort((a, b) => a - b);
+      const nextSwing = candidateHighs.length > 0 ? candidateHighs[0] : null;
+      const structural = nextSwing ?? entry + risk * 3;
       mainTarget = Math.max(structural, entry + risk * 2.5);
     } else {
-      const nextSwing = swingLows.length > 0 ? dailyCandles[swingLows[swingLows.length - 1]].low : null;
-      const structural = nextSwing && nextSwing < entry ? nextSwing : entry - risk * 3;
+      const candidateLows = swingLows
+        .map((i) => dailyCandles[i].low)
+        .filter((l) => l < entry)
+        .sort((a, b) => b - a);
+      const nextSwing = candidateLows.length > 0 ? candidateLows[0] : null;
+      const structural = nextSwing ?? entry - risk * 3;
       mainTarget = Math.min(structural, entry - risk * 2.5);
     }
     const mainReward = Math.abs(mainTarget - entry);
