@@ -5,15 +5,15 @@ import type { ChartShape, ChartPoint, DrawingTool, Candle } from "@/lib/types/cu
 import { SINGLE_POINT_TOOLS } from "@/lib/types/curriculum";
 
 export const TOOL_COLORS: Record<DrawingTool, string> = {
-  trendline: "#4F6BFF",
-  horizontal: "#32D66B",
+  trendline: "#E8A63C",
+  horizontal: "#22C55E",
   vertical: "#F39C3D",
-  ray: "#4F6BFF",
+  ray: "#E8A63C",
   rectangle: "#8A54FF",
   ellipse: "#8A54FF",
   fibonacci: "#F5C542",
-  arrow: "#FF5C5C",
-  note: "#D7E1F8",
+  arrow: "#EF4444",
+  note: "#A69B8A",
 };
 
 export const TOOL_LABELS: Record<DrawingTool, string> = {

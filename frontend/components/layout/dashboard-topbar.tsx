@@ -111,7 +111,7 @@ export function DashboardTopbar() {
                 href="/manage"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-200"
-                style={{ backgroundColor: "#FF5C5C1A", color: "#FF5C5C" }}
+                style={{ backgroundColor: "#EF44441A", color: "#EF4444" }}
               >
                 <ShieldAlert className="size-5 shrink-0" />
                 M Dashboard

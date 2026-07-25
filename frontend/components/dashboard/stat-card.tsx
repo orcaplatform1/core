@@ -22,7 +22,12 @@ export function StatCard({
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 transition-transform duration-200 hover:-translate-y-0.5">
+    <div
+      className={cn(
+        "rounded-2xl border border-border bg-card p-6 transition-transform duration-200 hover:-translate-y-0.5",
+        accent === "primary" && "glow-gold"
+      )}
+    >
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <div className={cn("flex size-9 items-center justify-center rounded-lg", accentClasses[accent])}>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -8,6 +8,9 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AdminUpdateIdentityDto } from './dto/admin-update-identity.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { GrantEnrollmentDto } from './dto/grant-enrollment.dto';
+import { AdminUpdateProfileDto } from './dto/admin-update-profile.dto';
+import { AdjustMentorCreditsDto } from './dto/adjust-mentor-credits.dto';
+import { BanUserDto } from './dto/ban-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -87,5 +90,60 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findById(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Get(':id/detail')
+  findFullDetail(@Param('id') id: string) {
+    return this.usersService.findFullDetail(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id/profile')
+  adminUpdateProfile(@Req() req: Request, @Param('id') id: string, @Body() dto: AdminUpdateProfileDto) {
+    const actorId = (req.user as any).id;
+    return this.usersService.adminUpdateProfile(id, dto, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Patch(':id/mentor-credits')
+  adjustMentorCredits(@Req() req: Request, @Param('id') id: string, @Body() dto: AdjustMentorCreditsDto) {
+    const actorId = (req.user as any).id;
+    return this.usersService.adjustMentorCredits(id, dto, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post(':id/ban')
+  banUser(@Req() req: Request, @Param('id') id: string, @Body() dto: BanUserDto) {
+    const actorId = (req.user as any).id;
+    return this.usersService.banUser(id, dto, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post(':id/reset-ban-count')
+  resetBanCount(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.usersService.resetBanCount(id, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Delete(':id/enrollments/:programId')
+  revokeEnrollment(@Req() req: Request, @Param('id') id: string, @Param('programId') programId: string) {
+    const actorId = (req.user as any).id;
+    return this.usersService.revokeEnrollment(id, programId, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Delete(':id')
+  adminDeleteUser(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.usersService.adminDeleteUser(id, actorId);
   }
 }

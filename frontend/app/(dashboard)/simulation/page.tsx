@@ -68,21 +68,21 @@ export default function SimulationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F8FF]">Simülasyon</h1>
-        <p className="text-sm text-[#8D9BB6]">
+        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Simülasyon</h1>
+        <p className="text-sm text-[#A69B8A]">
           Gerçek para riski olmadan, sanal bakiyenle piyasa fiyatları üzerinden pozisyon aç/kapat.
         </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#8D9BB6]">Sanal Bakiye</p>
-        <p className="text-3xl font-semibold text-[#F5F8FF]">
+        <p className="text-sm text-[#A69B8A]">Sanal Bakiye</p>
+        <p className="text-3xl font-semibold text-[#F5F1EA]">
           {accountLoading ? "..." : `$${formatMoney(account?.balance ?? 0)}`}
         </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
-        <h2 className="font-medium text-[#F5F8FF]">Yeni Pozisyon</h2>
+        <h2 className="font-medium text-[#F5F1EA]">Yeni Pozisyon</h2>
 
         <div className="flex rounded-xl border border-border overflow-hidden w-fit">
           <button
@@ -90,7 +90,7 @@ export default function SimulationPage() {
               setCategory("crypto");
               setSymbol("");
             }}
-            className={`px-4 py-1.5 text-sm ${category === "crypto" ? "bg-primary text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+            className={`px-4 py-1.5 text-sm ${category === "crypto" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
           >
             Kripto
           </button>
@@ -99,14 +99,14 @@ export default function SimulationPage() {
               setCategory("forex");
               setSymbol("");
             }}
-            className={`px-4 py-1.5 text-sm ${category === "forex" ? "bg-primary text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+            className={`px-4 py-1.5 text-sm ${category === "forex" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
           >
             Forex
           </button>
         </div>
 
         {symbolsLoading ? (
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {(category === "crypto" ? symbols?.crypto : symbols?.forex)?.map((s) => (
@@ -115,9 +115,9 @@ export default function SimulationPage() {
                 onClick={() => setSymbol(s)}
                 className="rounded-xl border px-3 py-1.5 text-sm transition"
                 style={{
-                  borderColor: symbol === s ? "#355CFF" : "#223554",
-                  backgroundColor: symbol === s ? "#355CFF22" : "#182338",
-                  color: symbol === s ? "#F5F8FF" : "#D7E1F8",
+                  borderColor: symbol === s ? "#E8A63C" : "#2E2820",
+                  backgroundColor: symbol === s ? "#E8A63C22" : "#241F19",
+                  color: symbol === s ? "#F5F1EA" : "#A69B8A",
                 }}
               >
                 {s}
@@ -130,31 +130,31 @@ export default function SimulationPage() {
           <div className="flex rounded-xl border border-border overflow-hidden">
             <button
               onClick={() => setDirection("BUY")}
-              className={`px-4 py-2 text-sm font-medium ${direction === "BUY" ? "bg-[#32D66B] text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+              className={`px-4 py-2 text-sm font-medium ${direction === "BUY" ? "bg-[#22C55E] text-white" : "bg-card-inner text-[#A69B8A]"}`}
             >
               Al (Long)
             </button>
             <button
               onClick={() => setDirection("SELL")}
-              className={`px-4 py-2 text-sm font-medium ${direction === "SELL" ? "bg-[#FF5C5C] text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+              className={`px-4 py-2 text-sm font-medium ${direction === "SELL" ? "bg-[#EF4444] text-white" : "bg-card-inner text-[#A69B8A]"}`}
             >
               Sat (Short)
             </button>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-[#8D9BB6]">Miktar</label>
+            <label className="mb-1 block text-xs text-[#A69B8A]">Miktar</label>
             <input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="0.00"
-              className="w-32 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+              className="w-32 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A69B8A] outline-none focus:border-primary"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-[#8D9BB6]">Kaldıraç</label>
+            <label className="mb-1 block text-xs text-[#A69B8A]">Kaldıraç</label>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -163,9 +163,9 @@ export default function SimulationPage() {
                 value={leverage}
                 onChange={(e) => setLeverage(e.target.value)}
                 placeholder="1"
-                className="w-20 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                className="w-20 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A69B8A] outline-none focus:border-primary"
               />
-              <span className="text-sm text-[#8D9BB6]">x</span>
+              <span className="text-sm text-[#A69B8A]">x</span>
             </div>
           </div>
 
@@ -176,11 +176,11 @@ export default function SimulationPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
-        <h2 className="font-medium text-[#F5F8FF]">Açık Pozisyonlar</h2>
+        <h2 className="font-medium text-[#F5F1EA]">Açık Pozisyonlar</h2>
         {tradesLoading ? (
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : openTrades.length === 0 ? (
-          <p className="text-sm text-[#8D9BB6]">Açık pozisyon yok.</p>
+          <p className="text-sm text-[#A69B8A]">Açık pozisyon yok.</p>
         ) : (
           <ul className="space-y-2">
             {openTrades.map((t) => (
@@ -189,11 +189,11 @@ export default function SimulationPage() {
                 className="flex items-center justify-between rounded-xl border border-border bg-card-inner px-4 py-3 text-sm"
               >
                 <div>
-                  <span className="font-medium text-[#F5F8FF]">{t.symbol}</span>{" "}
-                  <span style={{ color: t.direction === "BUY" ? "#32D66B" : "#FF5C5C" }}>
+                  <span className="font-medium text-[#F5F1EA]">{t.symbol}</span>{" "}
+                  <span style={{ color: t.direction === "BUY" ? "#22C55E" : "#EF4444" }}>
                     {t.direction === "BUY" ? "Long" : "Short"}
                   </span>{" "}
-                  <span className="text-[#8D9BB6]">
+                  <span className="text-[#A69B8A]">
                     {t.quantity} adet @ {formatMoney(t.entryPrice)} · {t.leverage}x
                   </span>
                 </div>
@@ -211,11 +211,11 @@ export default function SimulationPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
-        <h2 className="font-medium text-[#F5F8FF]">Geçmiş</h2>
+        <h2 className="font-medium text-[#F5F1EA]">Geçmiş</h2>
         {tradesLoading ? (
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : closedTrades.length === 0 ? (
-          <p className="text-sm text-[#8D9BB6]">Henüz kapatılmış işlem yok.</p>
+          <p className="text-sm text-[#A69B8A]">Henüz kapatılmış işlem yok.</p>
         ) : (
           <ul className="space-y-2">
             {closedTrades.map((t) => (
@@ -224,17 +224,17 @@ export default function SimulationPage() {
                 className="flex items-center justify-between rounded-xl border border-border bg-card-inner px-4 py-3 text-sm"
               >
                 <div>
-                  <span className="font-medium text-[#F5F8FF]">{t.symbol}</span>{" "}
-                  <span style={{ color: t.direction === "BUY" ? "#32D66B" : "#FF5C5C" }}>
+                  <span className="font-medium text-[#F5F1EA]">{t.symbol}</span>{" "}
+                  <span style={{ color: t.direction === "BUY" ? "#22C55E" : "#EF4444" }}>
                     {t.direction === "BUY" ? "Long" : "Short"}
                   </span>{" "}
-                  <span className="text-[#8D9BB6]">
+                  <span className="text-[#A69B8A]">
                     {t.quantity} adet @ {formatMoney(t.entryPrice)} → {t.exitPrice ? formatMoney(t.exitPrice) : "-"}
                   </span>
                 </div>
                 <span
                   className="font-medium"
-                  style={{ color: (t.pnl ?? 0) >= 0 ? "#32D66B" : "#FF5C5C" }}
+                  style={{ color: (t.pnl ?? 0) >= 0 ? "#22C55E" : "#EF4444" }}
                 >
                   {(t.pnl ?? 0) >= 0 ? "+" : ""}
                   {formatMoney(t.pnl ?? 0)} $

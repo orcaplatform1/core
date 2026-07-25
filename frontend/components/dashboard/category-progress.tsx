@@ -4,7 +4,7 @@ import { BookOpen, Shield, LineChart, Users, Landmark, Crown } from "lucide-reac
 import { useCategoryBreakdown } from "@/lib/hooks/use-dashboard";
 
 const rotation = [
-  { icon: BookOpen, bg: "#1C2550", fg: "#4F6BFF", bar: "#4F6BFF" },
+  { icon: BookOpen, bg: "#2E2410", fg: "#E8A63C", bar: "#E8A63C" },
   { icon: Shield, bg: "#123A36", fg: "#2DD4BF", bar: "#2DD4BF" },
   { icon: LineChart, bg: "#1E2050", fg: "#6366F1", bar: "#6366F1" },
   { icon: Users, bg: "#2A2147", fg: "#8A5CFF", bar: "#8A5CFF" },

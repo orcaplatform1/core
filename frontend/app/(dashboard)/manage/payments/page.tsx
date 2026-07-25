@@ -32,13 +32,13 @@ export default function AdminPaymentsPage() {
   const reject = useRejectPayment();
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <Lock size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <Lock size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -64,8 +64,8 @@ export default function AdminPaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F8FF]">Ödemeler</h1>
-        <p className="text-sm text-[#8D9BB6]">Dekont/kripto ödemelerini onayla veya reddet.</p>
+        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Ödemeler</h1>
+        <p className="text-sm text-[#A69B8A]">Dekont/kripto ödemelerini onayla veya reddet.</p>
       </div>
 
       <div className="flex rounded-xl border border-border overflow-hidden w-fit">
@@ -76,7 +76,7 @@ export default function AdminPaymentsPage() {
               setStatus(tab.value);
               setPage(1);
             }}
-            className={`px-4 py-1.5 text-sm ${status === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+            className={`px-4 py-1.5 text-sm ${status === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
           >
             {tab.label}
           </button>
@@ -85,23 +85,23 @@ export default function AdminPaymentsPage() {
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {isLoading ? (
-          <p className="p-6 text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="p-6 text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : !paymentList || paymentList.data.length === 0 ? (
-          <p className="p-6 text-sm text-[#8D9BB6]">Bu durumda ödeme yok.</p>
+          <p className="p-6 text-sm text-[#A69B8A]">Bu durumda ödeme yok.</p>
         ) : (
           <div className="divide-y divide-border">
             {paymentList.data.map((p) => (
               <div key={p.id} className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium text-[#F5F8FF]">{p.user.fullName}</p>
-                    <p className="text-xs text-[#8D9BB6]">
+                    <p className="font-medium text-[#F5F1EA]">{p.user.fullName}</p>
+                    <p className="text-xs text-[#A69B8A]">
                       @{p.user.username} · {p.user.email ?? "email yok"}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[#F5F8FF]">{formatMoney(p.amount, p.currency)}</p>
-                    <p className="text-xs text-[#8D9BB6]">
+                    <p className="font-semibold text-[#F5F1EA]">{formatMoney(p.amount, p.currency)}</p>
+                    <p className="text-xs text-[#A69B8A]">
                       {METHOD_LABELS[p.method]} · {p.purpose === "PROGRAM" ? "Program" : "Mentor Kredi"}
                     </p>
                   </div>
@@ -152,7 +152,7 @@ export default function AdminPaymentsPage() {
           <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Önceki
           </Button>
-          <span className="text-sm text-[#8D9BB6]">
+          <span className="text-sm text-[#A69B8A]">
             {page} / {paymentList.pagination.totalPages}
           </span>
           <Button

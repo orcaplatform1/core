@@ -10,7 +10,7 @@ export default function GlobalRootError({
     <html lang="tr">
       <body
         style={{
-          background: "#070B16",
+          background: "#0F0D0A",
           color: "#fff",
           display: "flex",
           minHeight: "100vh",
@@ -21,8 +21,8 @@ export default function GlobalRootError({
       >
         <div
           style={{
-            border: "1px solid #243252",
-            background: "#131D30",
+            border: "1px solid #2E2820",
+            background: "#1C1814",
             borderRadius: 20,
             padding: 40,
             textAlign: "center",
@@ -30,14 +30,14 @@ export default function GlobalRootError({
           }}
         >
           <h1 style={{ fontSize: 20, fontWeight: 700 }}>Bir Şeyler Ters Gitti</h1>
-          <p style={{ marginTop: 8, fontSize: 14, color: "#8FA2C4" }}>
+          <p style={{ marginTop: 8, fontSize: 14, color: "#A69B8A" }}>
             Uygulama beklenmedik bir hatayla karşılaştı.
           </p>
           <button
             onClick={reset}
             style={{
               marginTop: 16,
-              color: "#4F6BFF",
+              color: "#E8A63C",
               background: "none",
               border: "none",
               fontSize: 13,

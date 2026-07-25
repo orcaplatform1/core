@@ -12,7 +12,7 @@ import {
 } from "@/lib/hooks/use-admin-live-lessons";
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
 }
 
 export default function AdminLiveLessonsPage() {
@@ -30,13 +30,13 @@ export default function AdminLiveLessonsPage() {
   });
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <ShieldAlert size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -79,8 +79,8 @@ export default function AdminLiveLessonsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F8FF]">Canlı Dersler</h1>
-          <p className="text-sm text-[#8D9BB6]">Discord üzerinden yapılacak canlı dersleri planla.</p>
+          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Canlı Dersler</h1>
+          <p className="text-sm text-[#A69B8A]">Discord üzerinden yapılacak canlı dersleri planla.</p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
           ← M Dashboard
@@ -123,7 +123,7 @@ export default function AdminLiveLessonsPage() {
             value={form.discordLink}
             onChange={(e) => setForm((f) => ({ ...f, discordLink: e.target.value }))}
           />
-          <p className="text-xs text-[#8D9BB6]">
+          <p className="text-xs text-[#A69B8A]">
             Oluşturunca tüm öğrencilere otomatik bildirim gönderilir. Ders sadece bu sayfadan
             duyurulur, site içinde canlı yayın olmaz — öğrenci geri sayımı görüp Discord'a yönlenir.
           </p>
@@ -140,9 +140,9 @@ export default function AdminLiveLessonsPage() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-[#8D9BB6]">Henüz canlı ders planlanmadı.</p>
+          <p className="text-sm text-[#A69B8A]">Henüz canlı ders planlanmadı.</p>
         ) : (
           sorted.map((l) => {
             const isPast = new Date(l.scheduledAt).getTime() < Date.now();
@@ -152,14 +152,14 @@ export default function AdminLiveLessonsPage() {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#355CFF22]">
-                    <Radio size={18} color="#355CFF" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8A63C22]">
+                    <Radio size={18} color="#E8A63C" />
                   </div>
                   <div>
-                    <p className={`font-medium ${isPast ? "text-[#8D9BB6]" : "text-[#F5F8FF]"}`}>
+                    <p className={`font-medium ${isPast ? "text-[#A69B8A]" : "text-[#F5F1EA]"}`}>
                       {l.title}
                     </p>
-                    <p className="text-xs text-[#8D9BB6]">
+                    <p className="text-xs text-[#A69B8A]">
                       {new Date(l.scheduledAt).toLocaleString("tr-TR")} · {l.durationMinutes} dk
                       {isPast && " · geçti"}
                     </p>

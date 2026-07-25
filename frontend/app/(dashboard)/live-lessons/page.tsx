@@ -35,38 +35,38 @@ export default function LiveLessonsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F8FF]">Canlı Dersler</h1>
-        <p className="text-sm text-[#8D9BB6]">
+        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Canlı Dersler</h1>
+        <p className="text-sm text-[#A69B8A]">
           Canlı dersler Discord üzerinden yapılır. Ders başladığında aşağıdaki buton aktif olur.
         </p>
       </div>
 
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card p-6">
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         </div>
       ) : !lesson ? (
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
-          <p className="text-sm text-[#8D9BB6]">Şu anda planlanmış bir canlı ders yok.</p>
+          <p className="text-sm text-[#A69B8A]">Şu anda planlanmış bir canlı ders yok.</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
           <div className="flex items-center gap-2">
             {lesson.isLive ? (
-              <span className="flex items-center gap-1 rounded-full bg-[#FF5C5C22] px-3 py-1 text-xs font-medium text-[#FF5C5C]">
+              <span className="flex items-center gap-1 rounded-full bg-[#EF444422] px-3 py-1 text-xs font-medium text-[#EF4444]">
                 <Radio size={12} className="animate-pulse" />
                 CANLI
               </span>
             ) : (
-              <span className="rounded-full bg-card-inner px-3 py-1 text-xs text-[#8D9BB6]">
+              <span className="rounded-full bg-card-inner px-3 py-1 text-xs text-[#A69B8A]">
                 Yaklaşan Ders
               </span>
             )}
           </div>
 
-          <h2 className="text-xl font-semibold text-[#F5F8FF]">{lesson.title}</h2>
+          <h2 className="text-xl font-semibold text-[#F5F1EA]">{lesson.title}</h2>
 
-          <div className="flex flex-wrap gap-4 text-sm text-[#8D9BB6]">
+          <div className="flex flex-wrap gap-4 text-sm text-[#A69B8A]">
             <div className="flex items-center gap-2">
               <Calendar size={16} />
               {new Date(lesson.scheduledAt).toLocaleString("tr-TR", {
@@ -85,8 +85,8 @@ export default function LiveLessonsPage() {
 
           {!lesson.isLive && (
             <div className="rounded-xl border border-border bg-card-inner p-4 text-center">
-              <p className="mb-1 text-xs text-[#8D9BB6]">Başlamasına kalan süre</p>
-              <p className="text-2xl font-semibold text-[#F5F8FF] tabular-nums">
+              <p className="mb-1 text-xs text-[#A69B8A]">Başlamasına kalan süre</p>
+              <p className="text-2xl font-semibold text-[#F5F1EA] tabular-nums">
                 {formatCountdown(secondsLeft)}
               </p>
             </div>

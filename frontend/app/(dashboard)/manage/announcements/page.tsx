@@ -14,7 +14,7 @@ const TARGETS: { value: "ALL" | "PAID" | "FREE"; label: string; desc: string }[]
 ];
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
 }
 
 export default function AdminAnnouncementsPage() {
@@ -29,13 +29,13 @@ export default function AdminAnnouncementsPage() {
   });
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <ShieldAlert size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -65,8 +65,8 @@ export default function AdminAnnouncementsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F8FF]">Duyuru Gönder</h1>
-          <p className="text-sm text-[#8D9BB6]">
+          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Duyuru Gönder</h1>
+          <p className="text-sm text-[#A69B8A]">
             Seçtiğin gruba bildirim olarak gönderilir.
           </p>
         </div>
@@ -77,16 +77,16 @@ export default function AdminAnnouncementsPage() {
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#355CFF22]">
-            <Megaphone size={18} color="#355CFF" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8A63C22]">
+            <Megaphone size={18} color="#E8A63C" />
           </div>
-          <p className="text-sm text-[#D7E1F8]">
+          <p className="text-sm text-[#A69B8A]">
             Duyuru site içi bildirim (zil ikonu) olarak düşer. Email/SMS gönderimi yok.
           </p>
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-[#8D9BB6]">Hedef Kitle</label>
+          <label className="text-xs text-[#A69B8A]">Hedef Kitle</label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {TARGETS.map((t) => (
               <button
@@ -99,8 +99,8 @@ export default function AdminAnnouncementsPage() {
                     : "border-border bg-card-inner hover:border-primary/50"
                 }`}
               >
-                <p className="text-sm font-medium text-[#F5F8FF]">{t.label}</p>
-                <p className="mt-0.5 text-[11px] text-[#8D9BB6]">{t.desc}</p>
+                <p className="text-sm font-medium text-[#F5F1EA]">{t.label}</p>
+                <p className="mt-0.5 text-[11px] text-[#A69B8A]">{t.desc}</p>
               </button>
             ))}
           </div>

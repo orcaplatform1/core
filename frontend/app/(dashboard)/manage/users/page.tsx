@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { Search, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -27,13 +28,13 @@ export default function AdminUsersPage() {
   const unban = useUnbanUser();
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <Lock size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <Lock size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -74,33 +75,33 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F8FF]">Kullanıcılar</h1>
-        <p className="text-sm text-[#8D9BB6]">
+        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Kullanıcılar</h1>
+        <p className="text-sm text-[#A69B8A]">
           Rol değiştir, program erişimi ver, ban kaldır.
         </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {isLoading ? (
-          <p className="p-6 text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="p-6 text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : !userList || userList.data.length === 0 ? (
-          <p className="p-6 text-sm text-[#8D9BB6]">Kullanıcı bulunamadı.</p>
+          <p className="p-6 text-sm text-[#A69B8A]">Kullanıcı bulunamadı.</p>
         ) : (
           <div className="divide-y divide-border">
             {userList.data.map((u) => (
               <div key={u.id} className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-[#F5F8FF]">{u.fullName}</p>
-                    <p className="text-xs text-[#8D9BB6]">
+                  <Link href={`/manage/users/${u.id}`} className="hover:opacity-80">
+                    <p className="font-medium text-[#F5F1EA]">{u.fullName}</p>
+                    <p className="text-xs text-[#A69B8A]">
                       @{u.username} · {u.email ?? "email yok"}
                     </p>
-                  </div>
+                  </Link>
                   <select
                     value={u.role}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
                     disabled={updateRole.isPending || u.id === me?.id}
-                    className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                    className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
@@ -116,7 +117,7 @@ export default function AdminUsersPage() {
                       <select
                         value={selectedProgramId}
                         onChange={(e) => setSelectedProgramId(e.target.value)}
-                        className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                        className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
                       >
                         <option value="">Program seç...</option>
                         {programs?.map((p) => (
@@ -165,7 +166,7 @@ export default function AdminUsersPage() {
           >
             Önceki
           </Button>
-          <span className="text-sm text-[#8D9BB6]">
+          <span className="text-sm text-[#A69B8A]">
             {page} / {userList.pagination.totalPages}
           </span>
           <Button

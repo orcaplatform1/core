@@ -69,98 +69,98 @@
 
 :root {
   /* ORCA — tek tema, sadece Dark Mode */
-  --background: #070B16;         /* Midnight Navy */
-  --foreground: #FFFFFF;         /* Primary Text */
+  --background: #0F0D0A;         /* Ana Zemin */
+  --foreground: #F5F1EA;         /* Primary Text */
 
-  --card: #131D30;               /* Navy Surface */
-  --card-foreground: #FFFFFF;
+  --card: #1C1814;               /* Kart Zemini */
+  --card-foreground: #F5F1EA;
 
-  --popover: #131D30;            /* Elevated Surface */
-  --popover-foreground: #FFFFFF;
-  --elevated: #131D30;
+  --popover: #1C1814;            /* Elevated Surface */
+  --popover-foreground: #F5F1EA;
+  --elevated: #1C1814;
 
-  --primary: #4F6BFF;            /* Primary Blue */
-  --primary-foreground: #FFFFFF;
-  --hover-blue: #6178FF;
-  --active-blue: #4257F2;
-  --glow-blue: #5169B0;
+  --primary: #E8A63C;            /* Primary Gold */
+  --primary-foreground: #1C1814;
+  --hover-blue: #F0B95A;
+  --active-blue: #C88A2C;
+  --glow-blue: #C88A2C;
 
-  --secondary: #0B1323;          /* Deep Navy */
-  --secondary-foreground: #FFFFFF;
+  --secondary: #14110D;          /* İkincil Zemin */
+  --secondary-foreground: #F5F1EA;
 
-  --muted: #0B1323;
-  --muted-foreground: #8FA2C4;   /* Muted Text */
-  --text-secondary: #8FA2C4;
-  --text-muted: #72809A;
-  --text-disabled: #56637F;
+  --muted: #14110D;
+  --muted-foreground: #A69B8A;   /* Muted Text */
+  --text-secondary: #A69B8A;
+  --text-muted: #A69B8A;
+  --text-disabled: #6B6255;
 
-  --accent: #15223B;
-  --accent-foreground: #FFFFFF;
+  --accent: #241F19;
+  --accent-foreground: #F5F1EA;
 
-  --destructive: #FF5D5D;        /* Danger */
-  --danger: #FF5D5D;
-  --success: #35D07F;
-  --warning: #F6B23E;
-  --info: #3B82F6;
-  --purple: #8A5CFF;
+  --destructive: #EF4444;        /* Danger */
+  --danger: #EF4444;
+  --success: #22C55E;
+  --warning: #F39C3D;
+  --info: #E8A63C;
+  --purple: #8A54FF;
 
-  --border: #243252;             /* Soft Border */
-  --input: #243252;
-  --divider: #1A2741;
-  --ring: #4F6BFF;
+  --border: #2E2820;             /* Soft Border */
+  --input: #2E2820;
+  --divider: #211C16;
+  --ring: #E8A63C;
 
-  --chart-1: #4F6BFF;
-  --chart-2: #35D07F;
-  --chart-3: #F6B23E;
-  --chart-4: #8A5CFF;
-  --chart-5: #FF5D5D;
+  --chart-1: #E8A63C;
+  --chart-2: #22C55E;
+  --chart-3: #F39C3D;
+  --chart-4: #8A54FF;
+  --chart-5: #EF4444;
 
   --radius: 1rem; /* 16px varsayılan radius */
 
-  --sidebar: #0C1323;            /* Sidebar Navy */
-  --sidebar-navy: #0C1323;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #4F6BFF;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #15223B;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #243252;
-  --sidebar-ring: #4F6BFF;
+  --sidebar: #14110D;            /* İkincil Zemin */
+  --sidebar-navy: #14110D;
+  --sidebar-foreground: #F5F1EA;
+  --sidebar-primary: #E8A63C;
+  --sidebar-primary-foreground: #1C1814;
+  --sidebar-accent: #241F19;
+  --sidebar-accent-foreground: #F5F1EA;
+  --sidebar-border: #2E2820;
+  --sidebar-ring: #E8A63C;
 }
 
 /* ORCA'da tek tema var — .dark class'ı :root ile aynı, dark: varyantlarının kırılmaması için tutuluyor */
 .dark {
-  --background: #070B16;
-  --foreground: #FFFFFF;
-  --card: #131D30;
-  --card-foreground: #FFFFFF;
-  --popover: #131D30;
-  --popover-foreground: #FFFFFF;
-  --primary: #4F6BFF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #0B1323;
-  --secondary-foreground: #FFFFFF;
-  --muted: #0B1323;
-  --muted-foreground: #8FA2C4;
-  --accent: #15223B;
-  --accent-foreground: #FFFFFF;
-  --destructive: #FF5D5D;
-  --border: #243252;
-  --input: #243252;
-  --ring: #4F6BFF;
-  --chart-1: #4F6BFF;
-  --chart-2: #35D07F;
-  --chart-3: #F6B23E;
-  --chart-4: #8A5CFF;
-  --chart-5: #FF5D5D;
-  --sidebar: #0C1323;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #4F6BFF;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #15223B;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #243252;
-  --sidebar-ring: #4F6BFF;
+  --background: #0F0D0A;
+  --foreground: #F5F1EA;
+  --card: #1C1814;
+  --card-foreground: #F5F1EA;
+  --popover: #1C1814;
+  --popover-foreground: #F5F1EA;
+  --primary: #E8A63C;
+  --primary-foreground: #1C1814;
+  --secondary: #14110D;
+  --secondary-foreground: #F5F1EA;
+  --muted: #14110D;
+  --muted-foreground: #A69B8A;
+  --accent: #241F19;
+  --accent-foreground: #F5F1EA;
+  --destructive: #EF4444;
+  --border: #2E2820;
+  --input: #2E2820;
+  --ring: #E8A63C;
+  --chart-1: #E8A63C;
+  --chart-2: #22C55E;
+  --chart-3: #F39C3D;
+  --chart-4: #8A54FF;
+  --chart-5: #EF4444;
+  --sidebar: #14110D;
+  --sidebar-foreground: #F5F1EA;
+  --sidebar-primary: #E8A63C;
+  --sidebar-primary-foreground: #1C1814;
+  --sidebar-accent: #241F19;
+  --sidebar-accent-foreground: #F5F1EA;
+  --sidebar-border: #2E2820;
+  --sidebar-ring: #E8A63C;
 }
 
 @layer base {
@@ -182,20 +182,20 @@
 }
 a.bg-card:hover,
 button.bg-card:hover {
-  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 14px 36px -10px rgba(59, 91, 255, 0.22);
+  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 14px 36px -10px rgba(232, 166, 60, 0.22);
 }
 
 /* ORCA — genişletilmiş token seti (ChatGPT tasarım spesifikasyonu, 2026-07-21) */
 :root {
   --orange: #FF8C3A;
-  --gray-tone: #72809A;
+  --gray-tone: #A69B8A;
 
   --chart-backtest: #8A5CFF;
-  --chart-simulation: #35D07F;
+  --chart-simulation: #22C55E;
   --chart-quiz: #F6B23E;
-  --chart-finans: #4F6BFF;
+  --chart-finans: #E8A63C;
 
-  --icon-bg-blue: #1C2550;
+  --icon-bg-blue: #2E2410;
   --icon-bg-green: #173726;
   --icon-bg-purple: #2A2147;
   --icon-bg-orange: #3A2717;
@@ -238,16 +238,16 @@ textarea {
 
 /* ORCA — "Demo" karşılaştırma ince ayarları (2026-07-21, 2. tur) */
 :root {
-  --card-refined: #111B2E;
-  --card-refined-border: #233252;
-  --active-menu-bg: #3148E8;
-  --header-bg: #08101D;
-  --header-border: #1E2942;
+  --card-refined: #1C1814;
+  --card-refined-border: #2E2820;
+  --active-menu-bg: #E8A63C;
+  --header-bg: #14110D;
+  --header-border: #2E2820;
 }
 
 body {
   background:
-    radial-gradient(circle at top, #111C3C 0%, #070D18 35%, #070D18 100%),
+    radial-gradient(circle at top, #1C1814 0%, #0F0D0A 35%, #0F0D0A 100%),
     var(--background);
   background-attachment: fixed;
 }
@@ -266,7 +266,7 @@ header {
 
 .sidebar-active-item {
   background-color: var(--active-menu-bg) !important;
-  color: #fff !important;
+  color: #1C1814 !important;
 }
 
 /* ORCA — Toast Notification System (tüm platformda tek standart) */
@@ -281,42 +281,42 @@ header {
   background: #0E1F1A !important;
   border: 1px solid #2DD881 !important;
 }
-[data-sonner-toast][data-type="success"] [data-icon] { color: #35D07F !important; }
+[data-sonner-toast][data-type="success"] [data-icon] { color: #22C55E !important; }
 
 [data-sonner-toast][data-type="error"] {
   background: #241214 !important;
-  border: 1px solid #E65B68 !important;
+  border: 1px solid #EF4444 !important;
 }
-[data-sonner-toast][data-type="error"] [data-icon] { color: #FF5D6E !important; }
+[data-sonner-toast][data-type="error"] [data-icon] { color: #EF4444 !important; }
 
 [data-sonner-toast][data-type="info"] {
-  background: #111B2F !important;
-  border: 1px solid #4F6BFF !important;
+  background: #2A2013 !important;
+  border: 1px solid #E8A63C !important;
 }
-[data-sonner-toast][data-type="info"] [data-icon] { color: #4F6BFF !important; }
+[data-sonner-toast][data-type="info"] [data-icon] { color: #E8A63C !important; }
 
 [data-sonner-toast][data-type="warning"] {
   background: #241E11 !important;
-  border: 1px solid #F6B23E !important;
+  border: 1px solid #F39C3D !important;
 }
-[data-sonner-toast][data-type="warning"] [data-icon] { color: #F6B23E !important; }
+[data-sonner-toast][data-type="warning"] [data-icon] { color: #F39C3D !important; }
 
 [data-sonner-toast] [data-title] {
-  color: #FFFFFF !important;
+  color: #F5F1EA !important;
   font-weight: 600 !important;
 }
 [data-sonner-toast] [data-description] {
-  color: #A7B8C7 !important;
+  color: #A69B8A !important;
 }
 
 /* ========================= */
 /* ORCA SURFACE SYSTEM (2026-07-21, final tur) */
 /* ========================= */
 :root {
-  --card-inner: #182338;
-  --card-hover: #1D2942;
-  --border-light: #2D3E61;
-  --primary-border: #7286FF;
+  --card-inner: #241F19;
+  --card-hover: #2A241D;
+  --border-light: #3A3226;
+  --primary-border: #E8A63C;
 }
 
 /* Ana kart (Dashboard, Login Card vb.) — .bg-card zaten mevcut kuralı override ediyor */
@@ -336,36 +336,36 @@ header {
 /* Primary buton */
 [data-slot="button"].btn-primary-surface,
 [data-slot="button"]:not(.social-login-btn):not([class*="variant-secondary"]) {
-  box-shadow: 0 12px 32px rgba(79, 107, 255, 0.32) !important;
+  box-shadow: 0 12px 32px rgba(232, 166, 60, 0.32) !important;
 }
 
 /* Input */
 [data-slot="input"] {
   background-color: var(--card-inner) !important;
   border-color: var(--border) !important;
-  color: #FFFFFF !important;
+  color: #F5F1EA !important;
 }
 [data-slot="input"]:focus-visible {
-  border-color: #4F6BFF !important;
-  box-shadow: 0 0 0 3px rgba(79, 107, 255, 0.14) !important;
+  border-color: #E8A63C !important;
+  box-shadow: 0 0 0 3px rgba(232, 166, 60, 0.14) !important;
 }
 
 /* Kullanıcı Adı / E-posta / Telefon sekmeleri */
 .method-tab {
   background-color: var(--card-inner) !important;
   border-color: var(--border) !important;
-  color: #94A3B8 !important;
+  color: #A69B8A !important;
 }
 .method-tab:hover {
   background-color: var(--card-hover) !important;
   border-color: var(--border-light) !important;
-  color: #FFFFFF !important;
+  color: #F5F1EA !important;
 }
 .method-tab-active {
-  background: #566EFF !important;
-  border-color: #7387FF !important;
-  box-shadow: 0 8px 24px rgba(79, 107, 255, 0.3) !important;
-  color: #FFFFFF !important;
+  background: #E8A63C !important;
+  border-color: #F0B95A !important;
+  box-shadow: 0 8px 24px rgba(232, 166, 60, 0.3) !important;
+  color: #1C1814 !important;
 }
 
 /* AI Öneri kutusu */
@@ -376,31 +376,31 @@ header {
 
 /* AI Mentor butonu (özel accent varyant) */
 .btn-ai-mentor {
-  background-color: #3348E8 !important;
-  border: 1px solid #5C73FF !important;
-  box-shadow: 0 10px 28px rgba(51, 72, 232, 0.3) !important;
-  color: #FFFFFF !important;
+  background-color: #E8A63C !important;
+  border: 1px solid #F0B95A !important;
+  box-shadow: 0 10px 28px rgba(232, 166, 60, 0.3) !important;
+  color: #1C1814 !important;
 }
 
 /* Secondary buton */
 [data-slot="button"].variant-secondary-surface {
   background-color: var(--card-inner) !important;
-  border-color: #2B3B5F !important;
-  color: #FFFFFF !important;
+  border-color: #3A3226 !important;
+  color: #F5F1EA !important;
 }
 [data-slot="button"].variant-secondary-surface:hover {
-  background-color: #1E2B44 !important;
-  border-color: #405A8D !important;
+  background-color: #2A241D !important;
+  border-color: #4A4032 !important;
 }
 
 /* Google / Apple butonu */
 .social-login-btn {
-  background-color: #101827 !important;
-  border-color: #243252 !important;
+  background-color: #14110D !important;
+  border-color: #2E2820 !important;
 }
 .social-login-btn:hover {
-  background-color: #182338 !important;
-  border-color: #3A4D74 !important;
+  background-color: #241F19 !important;
+  border-color: #4A4032 !important;
 }
 
 /* ================================================================
@@ -408,53 +408,53 @@ header {
    Bu blok en sonda olduğu için önceki tüm renk tanımlarının üzerine yazar.
    ================================================================ */
 :root {
-  --background: #060B16;
-  --dashboard-bg: #08111F;
-  --sidebar: #091222;
-  --sidebar-navy: #091222;
-  --card: #0D1728;
-  --card-inner: #111C30;
-  --card-hover: #152545;
-  --border: #223554;
-  --divider: #1A2740;
-  --border-light: #223554;
+  --background: #0F0D0A;
+  --dashboard-bg: #0F0D0A;
+  --sidebar: #14110D;
+  --sidebar-navy: #14110D;
+  --card: #1C1814;
+  --card-inner: #241F19;
+  --card-hover: #2A241D;
+  --border: #2E2820;
+  --divider: #211C16;
+  --border-light: #2E2820;
 
-  --primary: #355CFF;
-  --hover-blue: #4066FF;
-  --active-blue: #304DFF;
-  --primary-border: rgba(120, 150, 255, 0.22);
-  --electric-lacivert: #2D4DFF;
-  --neon-mavi: #5579FF;
-  --acik-mavi-glow: #6D93FF;
+  --primary: #E8A63C;
+  --hover-blue: #F0B95A;
+  --active-blue: #C88A2C;
+  --primary-border: rgba(232, 166, 60, 0.22);
+  --electric-lacivert: #E8A63C;
+  --neon-mavi: #F0B95A;
+  --acik-mavi-glow: #F0B95A;
 
-  --glow-outer: rgba(59, 91, 255, 0.20);
-  --glow-inner: rgba(80, 120, 255, 0.12);
-  --glow-border: rgba(70, 100, 255, 0.35);
+  --glow-outer: rgba(232, 166, 60, 0.20);
+  --glow-inner: rgba(232, 166, 60, 0.12);
+  --glow-border: rgba(232, 166, 60, 0.35);
 
-  --foreground: #F5F8FF;
-  --text-secondary: #D7E1F8;
-  --muted-foreground: #8D9BB6;
-  --text-muted: #8D9BB6;
-  --text-disabled: #66738D;
+  --foreground: #F5F1EA;
+  --text-secondary: #A69B8A;
+  --muted-foreground: #A69B8A;
+  --text-muted: #A69B8A;
+  --text-disabled: #6B6255;
 
-  --success: #32D66B;
+  --success: #22C55E;
   --warning: #F39C3D;
   --orange: #F39C3D;
   --purple: #8A54FF;
-  --danger: #FF5C5C;
-  --destructive: #FF5C5C;
+  --danger: #EF4444;
+  --destructive: #EF4444;
 
-  --ring: #355CFF;
-  --sidebar-primary: #355CFF;
-  --sidebar-ring: #355CFF;
-  --sidebar-border: #223554;
-  --input: #223554;
+  --ring: #E8A63C;
+  --sidebar-primary: #E8A63C;
+  --sidebar-ring: #E8A63C;
+  --sidebar-border: #2E2820;
+  --input: #2E2820;
 
-  --chart-1: #355CFF;
-  --chart-2: #32D66B;
+  --chart-1: #E8A63C;
+  --chart-2: #22C55E;
   --chart-3: #F39C3D;
   --chart-4: #8A54FF;
-  --chart-5: #FF5C5C;
+  --chart-5: #EF4444;
 }
 
 body {
@@ -463,26 +463,26 @@ body {
 
 /* Widget/kart — gradient arka plan + üst parlama + gölge */
 .bg-card {
-  background: linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  background: linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
-  border: 1px solid rgba(73, 100, 180, 0.25) !important;
+    linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
+  border: 1px solid rgba(232, 166, 60, 0.18) !important;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(48, 77, 255, 0.08) !important;
+    0 0 24px rgba(232, 166, 60, 0.06) !important;
   border-radius: 20px !important;
 }
 
 /* Buton — verilen tam gradient/border/glow */
 [data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface) {
-  background: linear-gradient(180deg, #3E5FFF 0%, #304DFF 100%) !important;
-  border: 1px solid rgba(120, 150, 255, 0.22) !important;
-  box-shadow: 0 0 22px rgba(60, 95, 255, 0.22) !important;
-  color: #F5F8FF !important;
+  background: linear-gradient(180deg, #F0B95A 0%, #C88A2C 100%) !important;
+  border: 1px solid rgba(240, 185, 90, 0.4) !important;
+  box-shadow: 0 0 22px rgba(232, 166, 60, 0.22) !important;
+  color: #1C1814 !important;
 }
 [data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface):hover {
-  background: linear-gradient(180deg, #4E6FFF 0%, #4066FF 100%) !important;
+  background: linear-gradient(180deg, #F5C978 0%, #F0B95A 100%) !important;
 }
 
 /* Dashboard arka planı (sidebar dışındaki içerik alanı) sidebar'dan biraz daha açık */
@@ -494,13 +494,20 @@ main {
    ezmemesi için aynı bileşik seçicilerle son bir override */
 .auth-card.bg-card,
 .bg-card.bg-card {
-  background: linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
+  background: linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
   background-image:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, #111B2F 0%, #0D1728 45%, #091220 100%) !important;
-  border-color: rgba(73, 100, 180, 0.25) !important;
+    linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
+  border-color: rgba(232, 166, 60, 0.18) !important;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(48, 77, 255, 0.08) !important;
+    0 0 24px rgba(232, 166, 60, 0.06) !important;
   border-radius: 22px !important;
+}
+
+/* ORCA — "Siyah & Altın" premium tema (2026-07-25)
+   Öne çıkan kartlarda (aktif sinyal, öne çıkan istatistik) kullanılacak
+   hafif altın parıltı — .bg-card'ın box-shadow'una ek olarak uygulanır */
+.glow-gold {
+  box-shadow: 0 0 24px rgba(232, 166, 60, 0.15) !important;
 }

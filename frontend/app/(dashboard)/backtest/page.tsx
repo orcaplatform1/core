@@ -83,24 +83,24 @@ export default function BacktestPage() {
     if (!containerRef.current) return;
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#0D1728" },
-        textColor: "#8D9BB6",
+        background: { type: ColorType.Solid, color: "#1C1814" },
+        textColor: "#A69B8A",
       },
       grid: {
-        vertLines: { color: "#223554" },
-        horzLines: { color: "#223554" },
+        vertLines: { color: "#2E2820" },
+        horzLines: { color: "#2E2820" },
       },
       width: containerRef.current.clientWidth,
       height: 420,
-      timeScale: { borderColor: "#223554" },
-      rightPriceScale: { borderColor: "#223554" },
+      timeScale: { borderColor: "#2E2820" },
+      rightPriceScale: { borderColor: "#2E2820" },
     });
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#32D66B",
-      downColor: "#FF5C5C",
+      upColor: "#22C55E",
+      downColor: "#EF4444",
       borderVisible: false,
-      wickUpColor: "#32D66B",
-      wickDownColor: "#FF5C5C",
+      wickUpColor: "#22C55E",
+      wickDownColor: "#EF4444",
     });
     chartRef.current = chart;
     seriesRef.current = series;
@@ -203,8 +203,8 @@ export default function BacktestPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F8FF]">Backtest</h1>
-        <p className="text-sm text-[#8D9BB6]">
+        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Backtest</h1>
+        <p className="text-sm text-[#A69B8A]">
           Geçmiş fiyat verisi üzerinde grafik incele, çizim araçlarıyla işaretle ve Yapay Zeka Mentordan değerlendirme al.
         </p>
       </div>
@@ -219,7 +219,7 @@ export default function BacktestPage() {
       {category && !symbol && (
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-medium text-[#F5F8FF]">
+            <h2 className="font-medium text-[#F5F1EA]">
               {category === "crypto" ? "Kripto Paritesi Seç" : "Forex/Emtia Paritesi Seç"}
             </h2>
             <Button variant="ghost" onClick={() => setCategory(null)}>
@@ -227,14 +227,14 @@ export default function BacktestPage() {
             </Button>
           </div>
           {symbolsLoading ? (
-            <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+            <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {(category === "crypto" ? symbols?.crypto : symbols?.forex)?.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSymbol(s)}
-                  className="rounded-xl border border-border bg-card-inner px-4 py-2 text-sm text-[#D7E1F8] hover:border-primary hover:text-[#F5F8FF]"
+                  className="rounded-xl border border-border bg-card-inner px-4 py-2 text-sm text-[#A69B8A] hover:border-primary hover:text-[#F5F1EA]"
                 >
                   {s}
                 </button>
@@ -248,17 +248,17 @@ export default function BacktestPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="font-medium text-[#F5F8FF]">{symbol}</h2>
+              <h2 className="font-medium text-[#F5F1EA]">{symbol}</h2>
               <div className="flex rounded-xl border border-border overflow-hidden">
                 <button
                   onClick={() => setTimeframe("1d")}
-                  className={`px-3 py-1.5 text-sm ${timeframe === "1d" ? "bg-primary text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+                  className={`px-3 py-1.5 text-sm ${timeframe === "1d" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
                 >
                   Günlük
                 </button>
                 <button
                   onClick={() => setTimeframe("1h")}
-                  className={`px-3 py-1.5 text-sm ${timeframe === "1h" ? "bg-primary text-white" : "bg-card-inner text-[#8D9BB6]"}`}
+                  className={`px-3 py-1.5 text-sm ${timeframe === "1h" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
                 >
                   1 Saatlik
                 </button>
@@ -291,7 +291,7 @@ export default function BacktestPage() {
                 value={noteInput}
                 onChange={(e) => setNoteInput(e.target.value)}
                 placeholder="Not metni..."
-                className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     confirmNote(noteInput);
@@ -342,7 +342,7 @@ export default function BacktestPage() {
               }}
             />
             {candlesLoading && (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-[#8D9BB6] bg-card/80">
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-[#A69B8A] bg-card/80">
                 Grafik yükleniyor...
               </div>
             )}
@@ -353,7 +353,7 @@ export default function BacktestPage() {
               {shapes.map((s) => (
                 <li
                   key={s.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#D7E1F8]"
+                  className="flex items-center justify-between rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A69B8A]"
                 >
                   <span style={{ color: s.color }}>
                     {TOOL_LABELS[s.tool]}
@@ -361,13 +361,13 @@ export default function BacktestPage() {
                     {s.locked ? " 🔒" : ""}
                   </span>
                   <span className="flex gap-3">
-                    <button onClick={() => toggleLock(s.id)} className="text-[#8D9BB6] hover:underline">
+                    <button onClick={() => toggleLock(s.id)} className="text-[#A69B8A] hover:underline">
                       {s.locked ? "Kilidi Aç" : "Kilitle"}
                     </button>
                     <button
                       onClick={() => removeShape(s.id)}
                       disabled={s.locked}
-                      className={s.locked ? "text-[#66738D]" : "text-[#FF5C5C] hover:underline"}
+                      className={s.locked ? "text-[#6B6255]" : "text-[#EF4444] hover:underline"}
                     >
                       Sil
                     </button>
@@ -379,13 +379,13 @@ export default function BacktestPage() {
 
           <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
             <div>
-              <label className="mb-1 block text-sm text-[#8D9BB6]">Not</label>
+              <label className="mb-1 block text-sm text-[#A69B8A]">Not</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={4}
                 placeholder="Bu grafikte gördüğün formasyon/yapı hakkında not al..."
-                className="w-full rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#D7E1F8] outline-none focus:border-primary"
+                className="w-full rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A69B8A] outline-none focus:border-primary"
               />
             </div>
             <div className="flex flex-wrap gap-3">

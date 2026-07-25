@@ -9,13 +9,13 @@ export default function AdminStaffPage() {
   const { data: staff, isLoading } = useStaffPerformance();
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <ShieldAlert size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -34,8 +34,8 @@ export default function AdminStaffPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F8FF]">Staff Performans</h1>
-          <p className="text-sm text-[#8D9BB6]">AVM personel bazlı test/satış/komisyon özeti.</p>
+          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Staff Performans</h1>
+          <p className="text-sm text-[#A69B8A]">AVM personel bazlı test/satış/komisyon özeti.</p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
           ← M Dashboard
@@ -44,20 +44,20 @@ export default function AdminStaffPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-[#8D9BB6]">Toplam Test</p>
-          <p className="mt-1 text-xl font-semibold text-[#F5F8FF]">{totals.testsGiven}</p>
+          <p className="text-xs text-[#A69B8A]">Toplam Test</p>
+          <p className="mt-1 text-xl font-semibold text-[#F5F1EA]">{totals.testsGiven}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-[#8D9BB6]">Dönüşüm</p>
-          <p className="mt-1 text-xl font-semibold text-[#32D66B]">{totals.conversions}</p>
+          <p className="text-xs text-[#A69B8A]">Dönüşüm</p>
+          <p className="mt-1 text-xl font-semibold text-[#22C55E]">{totals.conversions}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-[#8D9BB6]">Toplam Satış</p>
-          <p className="mt-1 text-xl font-semibold text-[#F5F8FF]">{totals.totalSales}</p>
+          <p className="text-xs text-[#A69B8A]">Toplam Satış</p>
+          <p className="mt-1 text-xl font-semibold text-[#F5F1EA]">{totals.totalSales}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-[#8D9BB6]">Toplam Komisyon</p>
-          <p className="mt-1 text-xl font-semibold text-[#355CFF]">
+          <p className="text-xs text-[#A69B8A]">Toplam Komisyon</p>
+          <p className="mt-1 text-xl font-semibold text-[#E8A63C]">
             {totals.totalCommission.toLocaleString("tr-TR")} ₺
           </p>
         </div>
@@ -65,11 +65,11 @@ export default function AdminStaffPage() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
         ) : !staff || staff.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-            <Users2 size={28} className="mx-auto text-[#8D9BB6]" />
-            <p className="text-sm text-[#8D9BB6]">
+            <Users2 size={28} className="mx-auto text-[#A69B8A]" />
+            <p className="text-sm text-[#A69B8A]">
               Henüz STAFF rolüne yükseltilmiş personel yok. Kullanıcılar bölümünden bir kullanıcının
               rolünü STAFF yaparak başlayabilirsin.
             </p>
@@ -81,36 +81,36 @@ export default function AdminStaffPage() {
               <div key={s.staffId} className="rounded-2xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium text-[#F5F8FF]">{s.fullName}</p>
-                    <p className="text-xs text-[#8D9BB6]">
+                    <p className="font-medium text-[#F5F1EA]">{s.fullName}</p>
+                    <p className="text-xs text-[#A69B8A]">
                       Promo kod: {s.promoCode ?? "—"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-sm font-semibold text-[#32D66B]">
+                  <div className="flex items-center gap-1 text-sm font-semibold text-[#22C55E]">
                     <TrendingUp size={14} />
                     {conversionRate}%
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
-                    <p className="text-[10px] text-[#8D9BB6]">Test</p>
-                    <p className="text-sm font-semibold text-[#F5F8FF]">{s.testsGiven}</p>
+                    <p className="text-[10px] text-[#A69B8A]">Test</p>
+                    <p className="text-sm font-semibold text-[#F5F1EA]">{s.testsGiven}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
-                    <p className="text-[10px] text-[#8D9BB6]">Dönüştü</p>
-                    <p className="text-sm font-semibold text-[#32D66B]">{s.conversions}</p>
+                    <p className="text-[10px] text-[#A69B8A]">Dönüştü</p>
+                    <p className="text-sm font-semibold text-[#22C55E]">{s.conversions}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
-                    <p className="text-[10px] text-[#8D9BB6]">Dönüşmedi</p>
+                    <p className="text-[10px] text-[#A69B8A]">Dönüşmedi</p>
                     <p className="text-sm font-semibold text-[#F39C3D]">{s.notConvertedYet}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
-                    <p className="text-[10px] text-[#8D9BB6]">Satış</p>
-                    <p className="text-sm font-semibold text-[#F5F8FF]">{s.totalSales}</p>
+                    <p className="text-[10px] text-[#A69B8A]">Satış</p>
+                    <p className="text-sm font-semibold text-[#F5F1EA]">{s.totalSales}</p>
                   </div>
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
-                    <p className="text-[10px] text-[#8D9BB6]">Komisyon</p>
-                    <p className="text-sm font-semibold text-[#355CFF]">
+                    <p className="text-[10px] text-[#A69B8A]">Komisyon</p>
+                    <p className="text-sm font-semibold text-[#E8A63C]">
                       {s.totalCommission.toLocaleString("tr-TR")} ₺
                     </p>
                   </div>

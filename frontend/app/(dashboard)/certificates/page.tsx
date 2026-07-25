@@ -54,7 +54,7 @@ export default function CertificatesPage() {
       ) : status.hasCertificate ? (
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 rounded-2xl border border-border bg-card p-10 text-center">
           <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 via-card to-purple/15">
-            <Award className="size-10 text-primary drop-shadow-[0_0_20px_rgba(79,107,255,0.5)]" />
+            <Award className="size-10 text-primary drop-shadow-[0_0_20px_rgba(232,166,60,0.5)]" />
           </div>
           <div>
             <p className="text-xs font-medium text-muted-foreground">{status.certificate.code}</p>

@@ -44,3 +44,78 @@ export function useUnbanUser() {
     },
   });
 }
+export function useUserDetail(id: string) {
+  return useQuery({
+    queryKey: ["admin", "users", "detail", id],
+    queryFn: () => apiClient<any>(`/users/${id}/detail`),
+    enabled: !!id,
+  });
+}
+export function useAdminUpdateProfile(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) =>
+      apiClient(`/users/${id}/profile`, { method: "PATCH", body: payload }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useAdminUpdateIdentity(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { fullName?: string; username?: string }) =>
+      apiClient(`/users/${id}/identity`, { method: "PATCH", body: payload }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useAdjustMentorCredits(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (delta: number) =>
+      apiClient(`/users/${id}/mentor-credits`, { method: "PATCH", body: { delta } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useBanUser(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (days: number) =>
+      apiClient(`/users/${id}/ban`, { method: "POST", body: { days } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useResetBanCount(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient(`/users/${id}/reset-ban-count`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useRevokeEnrollment(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (programId: string) =>
+      apiClient(`/users/${id}/enrollments/${programId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "detail", id] });
+    },
+  });
+}
+export function useAdminDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient(`/users/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}

@@ -130,7 +130,7 @@ export default function DashboardPage() {
                 totalLabel="Toplam PnL"
                 data={simChart}
                 isLoading={loadingSim}
-                color="#35D07F"
+                color="#22C55E"
               />
             </div>
           </LockedOverlay>

@@ -15,9 +15,9 @@ import {
 } from "@/lib/hooks/use-admin-scanner";
 
 const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: string; color: string }> = {
-  GUCLU: { label: "KALİTELİ (4/4)", bg: "#32D66B22", color: "#32D66B" },
+  GUCLU: { label: "KALİTELİ (4/4)", bg: "#22C55E22", color: "#22C55E" },
   ORTA: { label: "ORTA (3/4)", bg: "#F39C3D22", color: "#F39C3D" },
-  RISKLI: { label: "DÜŞÜK (2/4)", bg: "#FF5C5C22", color: "#FF5C5C" },
+  RISKLI: { label: "DÜŞÜK (2/4)", bg: "#EF444422", color: "#EF4444" },
 };
 
 function fmt(n: number) {
@@ -41,7 +41,7 @@ function CoinIcon({ symbol, bullish }: { symbol: string; bullish: boolean }) {
   return (
     <div
       className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden shrink-0"
-      style={{ backgroundColor: bullish ? "#32D66B22" : "#FF5C5C22" }}
+      style={{ backgroundColor: bullish ? "#22C55E22" : "#EF444422" }}
     >
       {level < sources.length ? (
         <img
@@ -52,9 +52,9 @@ function CoinIcon({ symbol, bullish }: { symbol: string; bullish: boolean }) {
           onError={() => setLevel((l) => l + 1)}
         />
       ) : bullish ? (
-        <TrendingUp size={18} color="#32D66B" />
+        <TrendingUp size={18} color="#22C55E" />
       ) : (
-        <TrendingDown size={18} color="#FF5C5C" />
+        <TrendingDown size={18} color="#EF4444" />
       )}
     </div>
   );
@@ -64,20 +64,30 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
   const bullish = signal.direction === "LONG";
   const { data: live } = useLivePrice(signal.symbol, true);
   const displayPrice = live?.price ?? signal.currentPrice;
+  const liveStillValid =
+    displayPrice == null
+      ? true
+      : displayPrice <= signal.entryZoneTop && displayPrice >= signal.entryZoneBottom;
+  const liveDistancePercent =
+    displayPrice == null || liveStillValid
+      ? 0
+      : displayPrice > signal.entryZoneTop
+      ? Math.round(((displayPrice - signal.entryZoneTop) / signal.entryZoneTop) * 10000) / 100
+      : Math.round(((signal.entryZoneBottom - displayPrice) / signal.entryZoneBottom) * 10000) / 100;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <div className="glow-gold rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <CoinIcon symbol={signal.symbol} bullish={bullish} />
           <div>
             <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-[#F5F8FF]">{signal.symbol}</p>
+              <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
               <a
                 href={`https://www.binance.com/en/futures/${signal.symbol}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#8D9BB6] hover:text-primary"
+                className="text-[#A69B8A] hover:text-primary"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
                   <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
@@ -88,7 +98,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
                 </svg>
               </a>
             </div>
-            <p className="text-xs text-[#8D9BB6]">{bullish ? "LONG" : "SHORT"}</p>
+            <p className="text-xs text-[#A69B8A]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
         <span
@@ -99,15 +109,15 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
         </span>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-[#355CFF33] bg-gradient-to-r from-[#355CFF14] to-transparent px-3 py-2">
+      <div className="flex items-center justify-between rounded-xl border border-[#E8A63C33] bg-gradient-to-r from-[#E8A63C14] to-transparent px-3 py-2">
         <div className="flex items-center gap-1.5">
           <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#32D66B] opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-[#32D66B]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-[#22C55E]" />
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#32D66B]">Canlı</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#22C55E]">Canlı</span>
         </div>
-        <span className="font-mono text-base font-bold text-[#F5F8FF]">
+        <span className="font-mono text-base font-bold text-[#F5F1EA]">
           {displayPrice != null ? fmt(displayPrice) : "…"}
         </span>
       </div>
@@ -120,55 +130,63 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
           </p>
         </div>
       )}
+      {signal.stillValid && !liveStillValid && (
+        <div className="flex items-center gap-2 rounded-lg border border-[#F39C3D40] bg-[#F39C3D11] px-3 py-2">
+          <AlertTriangle size={14} color="#F39C3D" className="shrink-0" />
+          <p className="text-xs text-[#F39C3D]">
+            Canlı fiyat bölgeden %{liveDistancePercent} uzaklaştı, giriş için teyit et
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">Giriş Bölgesi</p>
-          <p className="text-xs font-semibold text-[#F5F8FF]">
+          <p className="text-[10px] text-[#A69B8A]">Giriş Bölgesi</p>
+          <p className="text-xs font-semibold text-[#F5F1EA]">
             {fmt(signal.entryZoneBottom)} - {fmt(signal.entryZoneTop)}
           </p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">Stop</p>
-          <p className="text-xs font-semibold text-[#FF5C5C]">{fmt(signal.stop)}</p>
+          <p className="text-[10px] text-[#A69B8A]">Stop</p>
+          <p className="text-xs font-semibold text-[#EF4444]">{fmt(signal.stop)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">R:R</p>
-          <p className="text-xs font-semibold text-[#F5F8FF]">1:{signal.rr}</p>
+          <p className="text-[10px] text-[#A69B8A]">R:R</p>
+          <p className="text-xs font-semibold text-[#F5F1EA]">1:{signal.rr}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#8D9BB6]">TP1</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp1)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP1</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp1)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#8D9BB6]">TP2</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp2)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP2</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp2)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#8D9BB6]">TP3</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp3)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP3</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp3)}</p>
         </div>
       </div>
 
       <div className="space-y-1">
         {signal.reasons.map((r, i) => (
-          <p key={i} className="text-xs text-[#8D9BB6]">
+          <p key={i} className="text-xs text-[#A69B8A]">
             • {r}
           </p>
         ))}
       </div>
 
       {signal.aiCommentary && (
-        <div className="rounded-lg border border-[#355CFF40] bg-[#355CFF11] p-3">
-          <p className="text-xs text-[#D7E1F8]">{signal.aiCommentary}</p>
+        <div className="rounded-lg border border-[#E8A63C40] bg-[#E8A63C11] p-3">
+          <p className="text-xs text-[#A69B8A]">{signal.aiCommentary}</p>
         </div>
       )}
 
       {signal.fundingRate !== null && (
-        <p className="text-[10px] text-[#8D9BB6]">
+        <p className="text-[10px] text-[#A69B8A]">
           Funding rate: {(signal.fundingRate as number).toFixed(4)}%
         </p>
       )}
@@ -177,12 +195,12 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
 }
 
 const STATUS_STYLES: Record<TrackedSignal["status"], { label: string; bg: string; color: string }> = {
-  WATCHING: { label: "IZLENIYOR", bg: "#8D9BB622", color: "#8D9BB6" },
-  TRIGGERED: { label: "TETIKLENDI", bg: "#355CFF22", color: "#355CFF" },
-  HIT_TP1: { label: "TP1 VURULDU", bg: "#32D66B22", color: "#32D66B" },
-  HIT_TP2: { label: "TP2 VURULDU", bg: "#32D66B22", color: "#32D66B" },
-  HIT_TP3: { label: "TP3 VURULDU", bg: "#32D66B22", color: "#32D66B" },
-  HIT_STOP: { label: "STOP OLDU", bg: "#FF5C5C22", color: "#FF5C5C" },
+  WATCHING: { label: "IZLENIYOR", bg: "#A69B8A22", color: "#A69B8A" },
+  TRIGGERED: { label: "TETIKLENDI", bg: "#E8A63C22", color: "#E8A63C" },
+  HIT_TP1: { label: "TP1 VURULDU", bg: "#22C55E22", color: "#22C55E" },
+  HIT_TP2: { label: "TP2 VURULDU", bg: "#22C55E22", color: "#22C55E" },
+  HIT_TP3: { label: "TP3 VURULDU", bg: "#22C55E22", color: "#22C55E" },
+  HIT_STOP: { label: "STOP OLDU", bg: "#EF444422", color: "#EF4444" },
   EXPIRED: { label: "SURESI DOLDU", bg: "#F39C3D22", color: "#F39C3D" },
 };
 
@@ -199,24 +217,24 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
   const stopHit = signal.status === "HIT_STOP";
   const tpBoxClass = (level: number) =>
     hitLevel >= level
-      ? "rounded-lg border border-[#32D66B40] bg-[#32D66B1A] p-2.5 text-center"
+      ? "rounded-lg border border-[#22C55E40] bg-[#22C55E1A] p-2.5 text-center"
       : "rounded-lg border border-border bg-card-inner p-2.5 text-center";
   const stopBoxClass = stopHit
-    ? "rounded-lg border border-[#FF5C5C40] bg-[#FF5C5C1A] p-2.5"
+    ? "rounded-lg border border-[#EF444440] bg-[#EF44441A] p-2.5"
     : "rounded-lg border border-border bg-card-inner p-2.5";
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <div className="glow-gold rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <CoinIcon symbol={signal.symbol} bullish={bullish} />
           <div>
             <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-[#F5F8FF]">{signal.symbol}</p>
+              <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
               <a
                 href={`https://www.binance.com/en/futures/${signal.symbol}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#8D9BB6] hover:text-primary"
+                className="text-[#A69B8A] hover:text-primary"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
                   <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
@@ -227,7 +245,7 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
                 </svg>
               </a>
             </div>
-            <p className="text-xs text-[#8D9BB6]">{bullish ? "LONG" : "SHORT"}</p>
+            <p className="text-xs text-[#A69B8A]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -248,53 +266,53 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
         </div>
       </div>
       {isOpen && (
-        <div className="flex items-center justify-between rounded-xl border border-[#355CFF33] bg-gradient-to-r from-[#355CFF14] to-transparent px-3 py-2">
+        <div className="flex items-center justify-between rounded-xl border border-[#E8A63C33] bg-gradient-to-r from-[#E8A63C14] to-transparent px-3 py-2">
           <div className="flex items-center gap-1.5">
             <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#32D66B] opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-[#32D66B]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-[#22C55E]" />
             </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#32D66B]">Canlı</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#22C55E]">Canlı</span>
           </div>
-          <span className="font-mono text-base font-bold text-[#F5F8FF]">
+          <span className="font-mono text-base font-bold text-[#F5F1EA]">
             {displayPrice != null ? fmt(displayPrice) : "…"}
           </span>
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">Giriş Bölgesi</p>
-          <p className="text-xs font-semibold text-[#F5F8FF]">
+          <p className="text-[10px] text-[#A69B8A]">Giriş Bölgesi</p>
+          <p className="text-xs font-semibold text-[#F5F1EA]">
             {fmt(signal.entryZoneBottom)} - {fmt(signal.entryZoneTop)}
           </p>
         </div>
         <div className={stopBoxClass}>
-          <p className="text-[10px] text-[#8D9BB6]">Stop</p>
-          <p className="text-xs font-semibold text-[#FF5C5C]">{fmt(signal.stop)}</p>
+          <p className="text-[10px] text-[#A69B8A]">Stop</p>
+          <p className="text-xs font-semibold text-[#EF4444]">{fmt(signal.stop)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">R:R</p>
-          <p className="text-xs font-semibold text-[#F5F8FF]">1:{signal.rr}</p>
+          <p className="text-[10px] text-[#A69B8A]">R:R</p>
+          <p className="text-xs font-semibold text-[#F5F1EA]">1:{signal.rr}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#8D9BB6]">Oluşturuldu</p>
-          <p className="text-xs font-semibold text-[#F5F8FF]">
+          <p className="text-[10px] text-[#A69B8A]">Oluşturuldu</p>
+          <p className="text-xs font-semibold text-[#F5F1EA]">
             {new Date(signal.createdAt).toLocaleString("tr-TR")}
           </p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className={tpBoxClass(1)}>
-          <p className="text-[10px] text-[#8D9BB6]">TP1</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp1)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP1</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp1)}</p>
         </div>
         <div className={tpBoxClass(2)}>
-          <p className="text-[10px] text-[#8D9BB6]">TP2</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp2)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP2</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp2)}</p>
         </div>
         <div className={tpBoxClass(3)}>
-          <p className="text-[10px] text-[#8D9BB6]">TP3</p>
-          <p className="text-xs font-semibold text-[#32D66B]">{fmt(signal.tp3)}</p>
+          <p className="text-[10px] text-[#A69B8A]">TP3</p>
+          <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp3)}</p>
         </div>
       </div>
     </div>
@@ -309,13 +327,13 @@ export default function AdminScannerPage() {
   const triggerScan = useTriggerScan(style);
 
   if (authLoading) {
-    return <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <ShieldAlert size={32} color="#FF5C5C" className="mx-auto" />
-        <p className="text-sm text-[#8D9BB6]">Bu sayfaya erişim yetkin yok.</p>
+        <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
+        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -337,8 +355,8 @@ export default function AdminScannerPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F8FF]">AI Chart Scanner</h1>
-          <p className="text-sm text-[#8D9BB6]">
+          <h1 className="text-2xl font-semibold text-[#F5F1EA]">AI Chart Scanner</h1>
+          <p className="text-sm text-[#A69B8A]">
             Sadece kişisel kullanım — öğrencilere kapalı. Binance top 200 kripto, 15 dakikada bir otomatik tarama.
           </p>
         </div>
@@ -374,27 +392,27 @@ export default function AdminScannerPage() {
           {triggerScan.isPending ? "Kuyruğa ekleniyor..." : "Şimdi Tara"}
         </Button>
         {results?.scannedAt && (
-          <span className="text-xs text-[#8D9BB6]">
+          <span className="text-xs text-[#A69B8A]">
             Son tarama: {new Date(results.scannedAt).toLocaleString("tr-TR")}
           </span>
         )}
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-[#8D9BB6]">Yükleniyor...</p>
+        <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
       ) : (
         <>
           {activeSignals.length === 0 && (
             <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-              <Zap size={28} className="mx-auto text-[#8D9BB6]" />
-              <p className="text-sm text-[#8D9BB6]">
+              <Zap size={28} className="mx-auto text-[#A69B8A]" />
+              <p className="text-sm text-[#A69B8A]">
                 Şu an aktif (girilebilir) sinyal yok. Bu normal — filtreler sıkı, her taramada çıkmayabilir.
               </p>
             </div>
           )}
           {activeSignals.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-[#F5F8FF]">Aktif Sinyaller ({activeSignals.length})</h2>
+              <h2 className="text-sm font-semibold text-[#F5F1EA]">Aktif Sinyaller ({activeSignals.length})</h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {activeSignals.map((s) => (
                   <SignalCard key={s.symbol} signal={s} />
@@ -405,15 +423,15 @@ export default function AdminScannerPage() {
           {tracked && tracked.signals.length > 0 && (
             <div className="space-y-3">
               <div className="space-y-1">
-                <h2 className="text-sm font-semibold text-[#F5F8FF]">
+                <h2 className="text-sm font-semibold text-[#F5F1EA]">
                   Takip Edilenler ({tracked.signals.length})
                 </h2>
-                <div className="flex items-center gap-3 text-xs text-[#8D9BB6] flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-[#A69B8A] flex-wrap">
                   <span>Toplam: {tracked.stats.total}</span>
-                  <span className="text-[#32D66B]">Kazandi: {tracked.stats.wins}</span>
-                  <span className="text-[#FF5C5C]">Stop: {tracked.stats.losses}</span>
+                  <span className="text-[#22C55E]">Kazandi: {tracked.stats.wins}</span>
+                  <span className="text-[#EF4444]">Stop: {tracked.stats.losses}</span>
                   {tracked.stats.winRate !== null && (
-                    <span className="font-semibold text-[#F5F8FF]">
+                    <span className="font-semibold text-[#F5F1EA]">
                       Basari: %{tracked.stats.winRate}
                     </span>
                   )}

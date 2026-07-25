@@ -15,12 +15,12 @@ export class ScannerController {
   ) {}
   @Post('scan')
   async runScan() {
-    await this.scannerQueue.add('hourly-scan', {});
+    await this.scannerQueue.add('hourly-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
     return { message: 'Tarama kuyruğa eklendi, arka planda çalışıyor. Birkaç dakika sonra "son tarama" sonucunu kontrol et.' };
   }
   @Post('scan/day-trade')
   async runDayTradeScan() {
-    await this.scannerQueue.add('day-trade-scan', {});
+    await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
     return { message: 'Day Trade taraması kuyruğa eklendi (sadece killzone saatlerinde gerçek sonuç üretir).' };
   }
   @Get('last')
@@ -34,5 +34,11 @@ export class ScannerController {
   @Get('tracked')
   getTrackedSignals(@Query('style') style?: string) {
     return this.scannerService.getTrackedSignals(style || 'SWING');
+  }
+
+  @Post('refresh-winrate')
+  async refreshWinRate() {
+    await this.scannerQueue.add('refresh-winrate', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
+    return { message: 'Basari orani hesaplama kuyruga eklendi, sembol sayisina gore birkac dakika surebilir.' };
   }
 }
