@@ -31,7 +31,7 @@ export default function SimulationDnaPage() {
             <div key={report.id} className="rounded-2xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Dna size={18} color="#8A54FF" />
+                  <Dna size={18} color="#8B5CF6" />
                   <h2 className="font-medium text-[#F5F1EA]">
                     İlk {report.tradesAnalyzedCount} İşlem Raporu
                   </h2>
@@ -98,7 +98,7 @@ export default function SimulationDnaPage() {
                   {report.developmentPlan && (
                     <div>
                       <div className="mb-2 flex items-center gap-2 text-xs text-[#A69B8A]">
-                        <Target size={14} color="#E8A63C" />
+                        <Target size={14} color="#3B5BFF" />
                         Gelişim Planı
                       </div>
                       <p className="text-sm text-[#A69B8A]">{report.developmentPlan}</p>

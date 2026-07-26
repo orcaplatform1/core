@@ -2,11 +2,12 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { Clock, Layers, Lock } from "lucide-react";
-import { useProgram, useAllModules, useMyEnrollments } from "@/lib/hooks/use-curriculum";
+import { Clock, Layers, Lock, PlayCircle } from "lucide-react";
+import { useProgram, useAllModules, useAllLessons, useMyEnrollments } from "@/lib/hooks/use-curriculum";
 import { useAuth } from "@/context/auth-context";
 import { LevelBadge } from "@/components/programs/level-badge";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function ProgramDetailPage({
   params,
@@ -17,6 +18,7 @@ export default function ProgramDetailPage({
   const { user } = useAuth();
   const { data: program, isLoading } = useProgram(id);
   const { data: allModules } = useAllModules();
+  const { data: allLessons } = useAllLessons();
   const { data: enrollments } = useMyEnrollments();
 
   const modules = (allModules ?? [])
@@ -35,6 +37,16 @@ export default function ProgramDetailPage({
 
   return (
     <div className="mx-auto max-w-[1000px] px-4 py-16 sm:px-6">
+      {program.coverImageUrl && (
+        <div className="mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border sm:h-64">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={program.coverImageUrl}
+            alt={program.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
       <div className="flex flex-col gap-4">
         <LevelBadge level={program.level} />
         <h1 className="text-3xl font-bold text-foreground">{program.title}</h1>
@@ -58,9 +70,7 @@ export default function ProgramDetailPage({
             render={<Link href={`/courses/${program.id}`}>Eğitime Devam Et</Link>}
           />
         ) : user ? (
-          <Button disabled className="mt-2 h-12 w-fit" title="Ödeme sistemi yakında ekleniyor">
-            Programı Satın Al (Yakında)
-          </Button>
+          <Button className="mt-2 h-12 w-fit" render={<Link href="/subscription">Programı Satın Al</Link>} />
         ) : (
           <Button className="mt-2 h-12 w-fit" render={<Link href="/login">Satın Almak İçin Giriş Yap</Link>} />
         )}
@@ -68,28 +78,66 @@ export default function ProgramDetailPage({
 
       <div className="mt-12">
         <h2 className="text-lg font-semibold text-foreground">Müfredat</h2>
-        <div className="mt-4 flex flex-col gap-3">
-          {modules.length === 0 && (
-            <p className="text-sm text-muted-foreground">Müfredat yakında eklenecek.</p>
-          )}
-          {modules.map((mod, i) => (
-            <div
-              key={mod.id}
-              className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
-                {i + 1}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground">{mod.title}</p>
-                {mod.description && (
-                  <p className="truncate text-xs text-muted-foreground">{mod.description}</p>
-                )}
-              </div>
-              {!isEnrolled && <Lock className="size-4 shrink-0 text-muted-foreground" />}
-            </div>
-          ))}
-        </div>
+        {modules.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Müfredat yakında eklenecek.</p>
+        ) : (
+          <Accordion multiple={false} className="mt-4 flex flex-col gap-3">
+            {modules.map((mod, i) => {
+              const moduleLessons = (allLessons ?? [])
+                .filter((l) => l.moduleId === mod.id)
+                .sort((a, b) => a.order - b.order);
+              return (
+                <AccordionItem
+                  key={mod.id}
+                  value={mod.id}
+                  className="rounded-xl border border-border bg-card px-4"
+                >
+                  <AccordionTrigger className="py-4 hover:no-underline">
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1 text-left">
+                        <p className="text-sm font-medium text-foreground">{mod.title}</p>
+                        {mod.description && (
+                          <p className="truncate text-xs text-muted-foreground">{mod.description}</p>
+                        )}
+                      </div>
+                      {!isEnrolled && <Lock className="size-4 shrink-0 text-muted-foreground" />}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col gap-1 pb-2 pl-13">
+                      {moduleLessons.length === 0 && (
+                        <p className="text-xs text-muted-foreground">Bu modülde henüz ders yok.</p>
+                      )}
+                      {moduleLessons.map((lesson) =>
+                        user ? (
+                          <Link
+                            key={lesson.id}
+                            href={`/courses/${id}/lessons/${lesson.id}`}
+                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
+                          >
+                            <PlayCircle className="size-4 shrink-0" />
+                            {lesson.title}
+                          </Link>
+                        ) : (
+                          <span
+                            key={lesson.id}
+                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground"
+                          >
+                            <PlayCircle className="size-4 shrink-0" />
+                            {lesson.title}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        )}
       </div>
     </div>
   );

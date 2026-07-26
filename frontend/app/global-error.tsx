@@ -10,7 +10,7 @@ export default function GlobalRootError({
     <html lang="tr">
       <body
         style={{
-          background: "#0F0D0A",
+          background: "#060B16",
           color: "#fff",
           display: "flex",
           minHeight: "100vh",
@@ -21,8 +21,8 @@ export default function GlobalRootError({
       >
         <div
           style={{
-            border: "1px solid #2E2820",
-            background: "#1C1814",
+            border: "1px solid #1C2740",
+            background: "#0E1626",
             borderRadius: 20,
             padding: 40,
             textAlign: "center",
@@ -37,7 +37,7 @@ export default function GlobalRootError({
             onClick={reset}
             style={{
               marginTop: 16,
-              color: "#E8A63C",
+              color: "#3B5BFF",
               background: "none",
               border: "none",
               fontSize: 13,

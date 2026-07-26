@@ -152,8 +152,8 @@ export default function AdminLiveLessonsPage() {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8A63C22]">
-                    <Radio size={18} color="#E8A63C" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#3B5BFF22]">
+                    <Radio size={18} color="#3B5BFF" />
                   </div>
                   <div>
                     <p className={`font-medium ${isPast ? "text-[#A69B8A]" : "text-[#F5F1EA]"}`}>

@@ -28,6 +28,9 @@ import {
 } from "@/components/ui/sheet";
 import { studentNav } from "@/lib/nav-config";
 import { useAuth } from "@/context/auth-context";
+import { SiteLogo } from "@/components/layout/site-logo";
+import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
+import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 
 function playNotificationSound() {
   try {
@@ -53,7 +56,11 @@ function playNotificationSound() {
   }
 }
 
-export function DashboardTopbar() {
+export function DashboardTopbar({
+  siteContent = DEFAULT_SITE_CONTENT,
+}: {
+  siteContent?: SiteContentSettings;
+}) {
   const sections = studentNav;
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -101,9 +108,7 @@ export function DashboardTopbar() {
         <SheetContent side="left" className="w-[280px] bg-sidebar border-r border-sidebar-border p-0 overflow-y-auto">
           <SheetTitle className="sr-only">Menü</SheetTitle>
           <div className="flex items-center h-[72px] px-4 border-b border-sidebar-border">
-            <span className="font-bold text-sidebar-foreground">
-              ORCA <span className="text-primary">TRADERS</span>
-            </span>
+            <SiteLogo siteContent={siteContent} textClassName="text-sidebar-foreground" imgClassName="h-8" />
           </div>
           {user?.role === "SUPER_ADMIN" && (
             <div className="px-3 pt-3">

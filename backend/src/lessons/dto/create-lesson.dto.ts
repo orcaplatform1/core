@@ -32,4 +32,8 @@ export class CreateLessonDto {
   @IsString()
   @MinLength(1)
   moduleId!: string;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
 }

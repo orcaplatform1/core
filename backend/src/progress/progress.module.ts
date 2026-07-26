@@ -7,5 +7,6 @@ import { BadgesModule } from '../badges/badges.module';
   imports: [BadgesModule],
   controllers: [ProgressController],
   providers: [ProgressService],
+  exports: [ProgressService],
 })
 export class ProgressModule {}

@@ -43,6 +43,8 @@
   --color-card: var(--card);
 
   /* ORCA custom tokens */
+  --color-primary-glow: var(--primary-glow);
+  --color-primary-light: var(--primary-light);
   --color-hover-blue: var(--hover-blue);
   --color-active-blue: var(--active-blue);
   --color-glow-blue: var(--glow-blue);
@@ -67,100 +69,109 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ================================================================
+   ORCA — TEK PALET KAYNAĞI (Mavi marka teması, 2026-07-26)
+   Tüm renkler burada tanımlanır; sayfa/bileşen bazında hardcoded hex
+   kullanılmaz. ORCA'da tek tema var (sadece Dark Mode) — .dark class'ı
+   ayrıca token tekrar etmiyor, sadece dark: varyantlarının çalışması
+   için html üzerinde duruyor (bkz. app/layout.tsx).
+   ================================================================ */
 :root {
-  /* ORCA — tek tema, sadece Dark Mode */
-  --background: #0F0D0A;         /* Ana Zemin */
-  --foreground: #F5F1EA;         /* Primary Text */
+  --background: #060B16;
+  --dashboard-bg: #060B16;
+  --foreground: #F5F1EA;
 
-  --card: #1C1814;               /* Kart Zemini */
+  --sidebar: #080D1A;
+  --sidebar-navy: #080D1A;
+  --card: #0E1626;
   --card-foreground: #F5F1EA;
-
-  --popover: #1C1814;            /* Elevated Surface */
+  --card-inner: #141E32;
+  --card-hover: #1A2540;
+  --popover: #0E1626;
   --popover-foreground: #F5F1EA;
-  --elevated: #1C1814;
+  --elevated: #0E1626;
 
-  --primary: #E8A63C;            /* Primary Gold */
-  --primary-foreground: #1C1814;
-  --hover-blue: #F0B95A;
-  --active-blue: #C88A2C;
-  --glow-blue: #C88A2C;
-
-  --secondary: #14110D;          /* İkincil Zemin */
+  --secondary: #080D1A;
   --secondary-foreground: #F5F1EA;
-
-  --muted: #14110D;
-  --muted-foreground: #A69B8A;   /* Muted Text */
+  --muted: #080D1A;
+  --muted-foreground: #A69B8A;
   --text-secondary: #A69B8A;
   --text-muted: #A69B8A;
   --text-disabled: #6B6255;
 
-  --accent: #241F19;
+  --accent: #141E32;
   --accent-foreground: #F5F1EA;
 
-  --destructive: #EF4444;        /* Danger */
+  --border: #1C2740;
+  --border-light: #1C2740;
+  --input: #1C2740;
+  --divider: #0A0F1C;
+
+  /* Primary Blue — marka rengi (Gold'un yerini aldı) */
+  --primary: #3B5BFF;              /* Primary Blue */
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #5A7CFF;         /* Blue Glow — gradient ikinci durağı / hover */
+  --primary-light: #8FB8FF;        /* açık mavi-beyaz — glow/ışın efektleri için, düşük opasitede kullanılır */
+  --hover-blue: #5A7CFF;
+  --active-blue: #2E4EDB;
+  --electric-lacivert: #3B5BFF;
+  --neon-mavi: #5A7CFF;
+  --acik-mavi-glow: #8FB8FF;
+  --glow-blue: #5A7CFF;
+
+  --gradient-primary: linear-gradient(to top right, #3B5BFF 0%, #5A7CFF 100%);
+
+  --primary-border: rgba(59, 91, 255, 0.22);
+  --glow-outer: rgba(59, 91, 255, 0.20);
+  --glow-inner: rgba(59, 91, 255, 0.12);
+  --glow-border: rgba(59, 91, 255, 0.35);
+
+  /* Glassmorphism (Elevated Glass Card) */
+  --glass-bg: rgba(18, 22, 36, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Semantik renkler — değişmedi */
+  --destructive: #EF4444;
   --danger: #EF4444;
   --success: #22C55E;
   --warning: #F39C3D;
+  --orange: #F39C3D;
   --info: #E8A63C;
-  --purple: #8A54FF;
+  --purple: #8B5CF6;
+  --gray-tone: #A69B8A;
 
-  --border: #2E2820;             /* Soft Border */
-  --input: #2E2820;
-  --divider: #211C16;
-  --ring: #E8A63C;
+  --ring: #3B5BFF;
 
   --chart-1: #E8A63C;
   --chart-2: #22C55E;
   --chart-3: #F39C3D;
-  --chart-4: #8A54FF;
+  --chart-4: #8B5CF6;
   --chart-5: #EF4444;
+  --chart-backtest: #8A5CFF;
+  --chart-simulation: #22C55E;
+  --chart-quiz: #F6B23E;
+  --chart-finans: #E8A63C;
+
+  --icon-bg-blue: #2E2410;
+  --icon-bg-green: #173726;
+  --icon-bg-purple: #2A2147;
+  --icon-bg-orange: #3A2717;
+
+  --badge-gold: #D9A441;
+  --badge-silver: #BFC6D8;
+  --badge-bronze: #B46A42;
 
   --radius: 1rem; /* 16px varsayılan radius */
 
-  --sidebar: #14110D;            /* İkincil Zemin */
-  --sidebar-navy: #14110D;
   --sidebar-foreground: #F5F1EA;
-  --sidebar-primary: #E8A63C;
-  --sidebar-primary-foreground: #1C1814;
-  --sidebar-accent: #241F19;
+  --sidebar-primary: #3B5BFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #141E32;
   --sidebar-accent-foreground: #F5F1EA;
-  --sidebar-border: #2E2820;
-  --sidebar-ring: #E8A63C;
-}
+  --sidebar-border: #1C2740;
+  --sidebar-ring: #3B5BFF;
 
-/* ORCA'da tek tema var — .dark class'ı :root ile aynı, dark: varyantlarının kırılmaması için tutuluyor */
-.dark {
-  --background: #0F0D0A;
-  --foreground: #F5F1EA;
-  --card: #1C1814;
-  --card-foreground: #F5F1EA;
-  --popover: #1C1814;
-  --popover-foreground: #F5F1EA;
-  --primary: #E8A63C;
-  --primary-foreground: #1C1814;
-  --secondary: #14110D;
-  --secondary-foreground: #F5F1EA;
-  --muted: #14110D;
-  --muted-foreground: #A69B8A;
-  --accent: #241F19;
-  --accent-foreground: #F5F1EA;
-  --destructive: #EF4444;
-  --border: #2E2820;
-  --input: #2E2820;
-  --ring: #E8A63C;
-  --chart-1: #E8A63C;
-  --chart-2: #22C55E;
-  --chart-3: #F39C3D;
-  --chart-4: #8A54FF;
-  --chart-5: #EF4444;
-  --sidebar: #14110D;
-  --sidebar-foreground: #F5F1EA;
-  --sidebar-primary: #E8A63C;
-  --sidebar-primary-foreground: #1C1814;
-  --sidebar-accent: #241F19;
-  --sidebar-accent-foreground: #F5F1EA;
-  --sidebar-border: #2E2820;
-  --sidebar-ring: #E8A63C;
+  --active-menu-bg: #3B5BFF;
 }
 
 @layer base {
@@ -175,50 +186,72 @@
   }
 }
 
+body {
+  background:
+    radial-gradient(circle at top, #0E1626 0%, #060B16 35%, #060B16 100%),
+    var(--background);
+  background-attachment: fixed;
+}
+
+/* Hero arka plan görseli — nefes alır gibi sürekli zoom efekti */
+@keyframes hero-bg-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+.hero-bg-zoom {
+  animation: hero-bg-zoom 5s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg-zoom {
+    animation: none;
+  }
+}
+
+/* Dashboard arka planı (sidebar dışındaki içerik alanı) sidebar'dan biraz daha açık */
+main {
+  background: var(--dashboard-bg);
+}
+
+/* Gradient utility'ler — sadece öne çıkan CTA butonları ve başlıkta
+   vurgulanan kelimeler için (bkz. button.tsx "gradient" varyantı) */
+.bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+.text-gradient-primary {
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 /* ORCA Shadow Sistemi — kartlarda varsayılan mavi tonlu gölge, hover'da bir seviye artar */
 .bg-card {
-  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.02) inset, 0 8px 28px -10px rgba(4, 8, 20, 0.55);
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #141E32 0%, #0E1626 45%, #080D1A 100%) !important;
+  border: 1px solid rgba(59, 91, 255, 0.14) !important;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(59, 91, 255, 0.05) !important;
+  border-radius: 20px !important;
   transition: box-shadow 200ms ease-out, transform 200ms ease-out;
 }
 a.bg-card:hover,
 button.bg-card:hover {
-  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset, 0 14px 36px -10px rgba(232, 166, 60, 0.22);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+    0 14px 36px -10px rgba(59, 91, 255, 0.22) !important;
 }
-
-/* ORCA — genişletilmiş token seti (ChatGPT tasarım spesifikasyonu, 2026-07-21) */
-:root {
-  --orange: #FF8C3A;
-  --gray-tone: #A69B8A;
-
-  --chart-backtest: #8A5CFF;
-  --chart-simulation: #22C55E;
-  --chart-quiz: #F6B23E;
-  --chart-finans: #E8A63C;
-
-  --icon-bg-blue: #2E2410;
-  --icon-bg-green: #173726;
-  --icon-bg-purple: #2A2147;
-  --icon-bg-orange: #3A2717;
-
-  --badge-gold: #D9A441;
-  --badge-silver: #BFC6D8;
-  --badge-bronze: #B46A42;
-}
-
-.icon-tile-blue { background: var(--icon-bg-blue); color: var(--chart-finans); }
-.icon-tile-green { background: var(--icon-bg-green); color: var(--chart-simulation); }
-.icon-tile-purple { background: var(--icon-bg-purple); color: var(--chart-backtest); }
-.icon-tile-orange { background: var(--icon-bg-orange); color: var(--orange); }
-
-.badge-tier-gold { color: var(--badge-gold); border-color: var(--badge-gold); }
-.badge-tier-silver { color: var(--badge-silver); border-color: var(--badge-silver); }
-.badge-tier-bronze { color: var(--badge-bronze); border-color: var(--badge-bronze); }
 
 /* Component bazlı border-radius kuralları — tüm sayfalarda tutarlı olsun diye
    data-slot attribute'ları ve .bg-card üzerinden merkezi olarak uygulanıyor */
-.bg-card {
-  border-radius: 20px !important;
-}
 [data-slot="input"],
 [data-slot="select-trigger"],
 textarea {
@@ -236,37 +269,106 @@ textarea {
   border-radius: 999px !important;
 }
 
-/* ORCA — "Demo" karşılaştırma ince ayarları (2026-07-21, 2. tur) */
-:root {
-  --card-refined: #1C1814;
-  --card-refined-border: #2E2820;
-  --active-menu-bg: #E8A63C;
-  --header-bg: #14110D;
-  --header-border: #2E2820;
-}
-
-body {
-  background:
-    radial-gradient(circle at top, #1C1814 0%, #0F0D0A 35%, #0F0D0A 100%),
-    var(--background);
-  background-attachment: fixed;
-}
-
-.bg-card {
-  background-color: var(--card-refined) !important;
-  border-color: var(--card-refined-border) !important;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28) !important;
-}
-
 header {
-  background-color: var(--header-bg) !important;
-  border-bottom-color: var(--header-border) !important;
+  background-color: var(--sidebar) !important;
+  border-bottom-color: var(--border) !important;
   backdrop-filter: none !important;
 }
 
 .sidebar-active-item {
   background-color: var(--active-menu-bg) !important;
-  color: #1C1814 !important;
+  color: #FFFFFF !important;
+}
+
+/* Kart içindeki kutular: input, AI kutusu, tab arkaplanı, progress, liste öğeleri */
+.card-inner {
+  background-color: var(--card-inner);
+  border: 1px solid var(--border);
+}
+
+/* Input */
+[data-slot="input"] {
+  background-color: var(--card-inner) !important;
+  border-color: var(--border) !important;
+  color: #F5F1EA !important;
+}
+[data-slot="input"]:focus-visible {
+  border-color: #3B5BFF !important;
+  box-shadow: 0 0 0 3px rgba(59, 91, 255, 0.16) !important;
+}
+
+/* Kullanıcı Adı / E-posta / Telefon sekmeleri */
+.method-tab {
+  background-color: var(--card-inner) !important;
+  border-color: var(--border) !important;
+  color: #A69B8A !important;
+}
+.method-tab:hover {
+  background-color: var(--card-hover) !important;
+  border-color: var(--border-light) !important;
+  color: #F5F1EA !important;
+}
+.method-tab-active {
+  background: #3B5BFF !important;
+  border-color: #5A7CFF !important;
+  box-shadow: 0 8px 24px rgba(59, 91, 255, 0.32) !important;
+  color: #FFFFFF !important;
+}
+
+/* AI Öneri kutusu */
+.ai-suggestion-box {
+  background-color: var(--card-inner);
+  border: 1px solid var(--border);
+}
+
+/* AI Mentor butonu (özel accent varyant) */
+.btn-ai-mentor {
+  background-color: #3B5BFF !important;
+  border: 1px solid #5A7CFF !important;
+  box-shadow: 0 10px 28px rgba(59, 91, 255, 0.32) !important;
+  color: #FFFFFF !important;
+}
+
+/* Secondary buton */
+[data-slot="button"].variant-secondary-surface {
+  background-color: var(--card-inner) !important;
+  border-color: #2A3654 !important;
+  color: #F5F1EA !important;
+}
+[data-slot="button"].variant-secondary-surface:hover {
+  background-color: #1A2540 !important;
+  border-color: #34446A !important;
+}
+
+/* Google / Apple butonu */
+.social-login-btn {
+  background-color: #080D1A !important;
+  border-color: #1C2740 !important;
+}
+.social-login-btn:hover {
+  background-color: #141E32 !important;
+  border-color: #34446A !important;
+}
+
+/* auth-card gibi daha spesifik (bileşik) seçicilerin .bg-card ile aynı görünümde
+   kalmasını sağlayan tekrar */
+.auth-card.bg-card {
+  border-radius: 22px !important;
+}
+
+.icon-tile-blue { background: var(--icon-bg-blue); color: var(--chart-finans); }
+.icon-tile-green { background: var(--icon-bg-green); color: var(--chart-simulation); }
+.icon-tile-purple { background: var(--icon-bg-purple); color: var(--chart-backtest); }
+.icon-tile-orange { background: var(--icon-bg-orange); color: var(--orange); }
+
+.badge-tier-gold { color: var(--badge-gold); border-color: var(--badge-gold); }
+.badge-tier-silver { color: var(--badge-silver); border-color: var(--badge-silver); }
+.badge-tier-bronze { color: var(--badge-bronze); border-color: var(--badge-bronze); }
+
+/* ORCA — öne çıkan kartlarda (aktif sinyal, öne çıkan istatistik) kullanılan
+   hafif marka rengi parıltısı — .bg-card'ın box-shadow'una ek olarak uygulanır */
+.glow-primary {
+  box-shadow: 0 0 24px rgba(59, 91, 255, 0.18) !important;
 }
 
 /* ORCA — Toast Notification System (tüm platformda tek standart) */
@@ -307,207 +409,4 @@ header {
 }
 [data-sonner-toast] [data-description] {
   color: #A69B8A !important;
-}
-
-/* ========================= */
-/* ORCA SURFACE SYSTEM (2026-07-21, final tur) */
-/* ========================= */
-:root {
-  --card-inner: #241F19;
-  --card-hover: #2A241D;
-  --border-light: #3A3226;
-  --primary-border: #E8A63C;
-}
-
-/* Ana kart (Dashboard, Login Card vb.) — .bg-card zaten mevcut kuralı override ediyor */
-.bg-card {
-  background-color: var(--card) !important;
-  border-color: var(--border) !important;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.28) !important;
-  border-radius: 20px !important;
-}
-
-/* Kart içindeki kutular: input, AI kutusu, tab arkaplanı, progress, liste öğeleri */
-.card-inner {
-  background-color: var(--card-inner);
-  border: 1px solid var(--border);
-}
-
-/* Primary buton */
-[data-slot="button"].btn-primary-surface,
-[data-slot="button"]:not(.social-login-btn):not([class*="variant-secondary"]) {
-  box-shadow: 0 12px 32px rgba(232, 166, 60, 0.32) !important;
-}
-
-/* Input */
-[data-slot="input"] {
-  background-color: var(--card-inner) !important;
-  border-color: var(--border) !important;
-  color: #F5F1EA !important;
-}
-[data-slot="input"]:focus-visible {
-  border-color: #E8A63C !important;
-  box-shadow: 0 0 0 3px rgba(232, 166, 60, 0.14) !important;
-}
-
-/* Kullanıcı Adı / E-posta / Telefon sekmeleri */
-.method-tab {
-  background-color: var(--card-inner) !important;
-  border-color: var(--border) !important;
-  color: #A69B8A !important;
-}
-.method-tab:hover {
-  background-color: var(--card-hover) !important;
-  border-color: var(--border-light) !important;
-  color: #F5F1EA !important;
-}
-.method-tab-active {
-  background: #E8A63C !important;
-  border-color: #F0B95A !important;
-  box-shadow: 0 8px 24px rgba(232, 166, 60, 0.3) !important;
-  color: #1C1814 !important;
-}
-
-/* AI Öneri kutusu */
-.ai-suggestion-box {
-  background-color: var(--card-inner);
-  border: 1px solid var(--border);
-}
-
-/* AI Mentor butonu (özel accent varyant) */
-.btn-ai-mentor {
-  background-color: #E8A63C !important;
-  border: 1px solid #F0B95A !important;
-  box-shadow: 0 10px 28px rgba(232, 166, 60, 0.3) !important;
-  color: #1C1814 !important;
-}
-
-/* Secondary buton */
-[data-slot="button"].variant-secondary-surface {
-  background-color: var(--card-inner) !important;
-  border-color: #3A3226 !important;
-  color: #F5F1EA !important;
-}
-[data-slot="button"].variant-secondary-surface:hover {
-  background-color: #2A241D !important;
-  border-color: #4A4032 !important;
-}
-
-/* Google / Apple butonu */
-.social-login-btn {
-  background-color: #14110D !important;
-  border-color: #2E2820 !important;
-}
-.social-login-btn:hover {
-  background-color: #241F19 !important;
-  border-color: #4A4032 !important;
-}
-
-/* ================================================================
-   ORCA — KESİN FİNAL PALET (2026-07-21, son revizyon)
-   Bu blok en sonda olduğu için önceki tüm renk tanımlarının üzerine yazar.
-   ================================================================ */
-:root {
-  --background: #0F0D0A;
-  --dashboard-bg: #0F0D0A;
-  --sidebar: #14110D;
-  --sidebar-navy: #14110D;
-  --card: #1C1814;
-  --card-inner: #241F19;
-  --card-hover: #2A241D;
-  --border: #2E2820;
-  --divider: #211C16;
-  --border-light: #2E2820;
-
-  --primary: #E8A63C;
-  --hover-blue: #F0B95A;
-  --active-blue: #C88A2C;
-  --primary-border: rgba(232, 166, 60, 0.22);
-  --electric-lacivert: #E8A63C;
-  --neon-mavi: #F0B95A;
-  --acik-mavi-glow: #F0B95A;
-
-  --glow-outer: rgba(232, 166, 60, 0.20);
-  --glow-inner: rgba(232, 166, 60, 0.12);
-  --glow-border: rgba(232, 166, 60, 0.35);
-
-  --foreground: #F5F1EA;
-  --text-secondary: #A69B8A;
-  --muted-foreground: #A69B8A;
-  --text-muted: #A69B8A;
-  --text-disabled: #6B6255;
-
-  --success: #22C55E;
-  --warning: #F39C3D;
-  --orange: #F39C3D;
-  --purple: #8A54FF;
-  --danger: #EF4444;
-  --destructive: #EF4444;
-
-  --ring: #E8A63C;
-  --sidebar-primary: #E8A63C;
-  --sidebar-ring: #E8A63C;
-  --sidebar-border: #2E2820;
-  --input: #2E2820;
-
-  --chart-1: #E8A63C;
-  --chart-2: #22C55E;
-  --chart-3: #F39C3D;
-  --chart-4: #8A54FF;
-  --chart-5: #EF4444;
-}
-
-body {
-  background: var(--background) !important;
-}
-
-/* Widget/kart — gradient arka plan + üst parlama + gölge */
-.bg-card {
-  background: linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
-  border: 1px solid rgba(232, 166, 60, 0.18) !important;
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(232, 166, 60, 0.06) !important;
-  border-radius: 20px !important;
-}
-
-/* Buton — verilen tam gradient/border/glow */
-[data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface) {
-  background: linear-gradient(180deg, #F0B95A 0%, #C88A2C 100%) !important;
-  border: 1px solid rgba(240, 185, 90, 0.4) !important;
-  box-shadow: 0 0 22px rgba(232, 166, 60, 0.22) !important;
-  color: #1C1814 !important;
-}
-[data-slot="button"]:not(.social-login-btn):not(.variant-secondary-surface):hover {
-  background: linear-gradient(180deg, #F5C978 0%, #F0B95A 100%) !important;
-}
-
-/* Dashboard arka planı (sidebar dışındaki içerik alanı) sidebar'dan biraz daha açık */
-main {
-  background: var(--dashboard-bg);
-}
-
-/* ORCA — auth-card gibi daha spesifik (bileşik) seçicilerin yeni paleti
-   ezmemesi için aynı bileşik seçicilerle son bir override */
-.auth-card.bg-card,
-.bg-card.bg-card {
-  background: linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, #241F19 0%, #1C1814 45%, #14110D 100%) !important;
-  border-color: rgba(232, 166, 60, 0.18) !important;
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(232, 166, 60, 0.06) !important;
-  border-radius: 22px !important;
-}
-
-/* ORCA — "Siyah & Altın" premium tema (2026-07-25)
-   Öne çıkan kartlarda (aktif sinyal, öne çıkan istatistik) kullanılacak
-   hafif altın parıltı — .bg-card'ın box-shadow'una ek olarak uygulanır */
-.glow-gold {
-  box-shadow: 0 0 24px rgba(232, 166, 60, 0.15) !important;
 }

@@ -30,11 +30,14 @@ export type LessonResource = {
   name: string;
   url: string;
 };
+export type LessonLockReason = "PAYMENT_REQUIRED" | "LEVEL_LOCKED" | null;
 export type LessonDetail = LessonSummary & {
   videoUrl: string | null;
   pdfUrl: string | null;
   resources: LessonResource[];
   module: CourseModule & { programId: string };
+  locked: boolean;
+  lockReason: LessonLockReason;
 };
 export type Enrollment = {
   id: string;
@@ -130,10 +133,17 @@ export type DrawingTool =
   | "ellipse"
   | "fibonacci"
   | "arrow"
-  | "note";
+  | "note"
+  | "channel"
+  | "position-long"
+  | "position-short"
+  | "text"
+  | "measure";
 
 // Tools requiring only ONE click to complete (no second point)
-export const SINGLE_POINT_TOOLS: DrawingTool[] = ["horizontal", "vertical", "ray", "note"];
+// NOT "ray": a ray needs an origin + a second point to define its direction,
+// exactly like trendline.
+export const SINGLE_POINT_TOOLS: DrawingTool[] = ["horizontal", "vertical", "note", "text"];
 
 export type ChartPoint = { time: number; price: number };
 
@@ -142,7 +152,8 @@ export type ChartShape = {
   tool: DrawingTool;
   p1: ChartPoint;
   p2?: ChartPoint; // undefined for single-point tools
-  text?: string; // used by "note" tool
+  p3?: ChartPoint; // only used by "channel" (parallel offset point)
+  text?: string; // used by "note"/"text" tools
   color: string;
   locked: boolean;
 };

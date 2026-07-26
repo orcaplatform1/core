@@ -76,7 +76,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
       : Math.round(((signal.entryZoneBottom - displayPrice) / signal.entryZoneBottom) * 10000) / 100;
 
   return (
-    <div className="glow-gold rounded-2xl border border-border bg-card p-4 space-y-3">
+    <div className="glow-primary rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <CoinIcon symbol={signal.symbol} bullish={bullish} />
@@ -109,7 +109,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
         </span>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-[#E8A63C33] bg-gradient-to-r from-[#E8A63C14] to-transparent px-3 py-2">
+      <div className="flex items-center justify-between rounded-xl border border-[#3B5BFF33] bg-gradient-to-r from-[#3B5BFF14] to-transparent px-3 py-2">
         <div className="flex items-center gap-1.5">
           <span className="relative flex size-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-75" />
@@ -180,7 +180,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
       </div>
 
       {signal.aiCommentary && (
-        <div className="rounded-lg border border-[#E8A63C40] bg-[#E8A63C11] p-3">
+        <div className="rounded-lg border border-[#3B5BFF40] bg-[#3B5BFF11] p-3">
           <p className="text-xs text-[#A69B8A]">{signal.aiCommentary}</p>
         </div>
       )}
@@ -196,7 +196,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
 
 const STATUS_STYLES: Record<TrackedSignal["status"], { label: string; bg: string; color: string }> = {
   WATCHING: { label: "IZLENIYOR", bg: "#A69B8A22", color: "#A69B8A" },
-  TRIGGERED: { label: "TETIKLENDI", bg: "#E8A63C22", color: "#E8A63C" },
+  TRIGGERED: { label: "TETIKLENDI", bg: "#3B5BFF22", color: "#3B5BFF" },
   HIT_TP1: { label: "TP1 VURULDU", bg: "#22C55E22", color: "#22C55E" },
   HIT_TP2: { label: "TP2 VURULDU", bg: "#22C55E22", color: "#22C55E" },
   HIT_TP3: { label: "TP3 VURULDU", bg: "#22C55E22", color: "#22C55E" },
@@ -223,7 +223,7 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
     ? "rounded-lg border border-[#EF444440] bg-[#EF44441A] p-2.5"
     : "rounded-lg border border-border bg-card-inner p-2.5";
   return (
-    <div className="glow-gold rounded-2xl border border-border bg-card p-4 space-y-3">
+    <div className="glow-primary rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <CoinIcon symbol={signal.symbol} bullish={bullish} />
@@ -266,7 +266,7 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
         </div>
       </div>
       {isOpen && (
-        <div className="flex items-center justify-between rounded-xl border border-[#E8A63C33] bg-gradient-to-r from-[#E8A63C14] to-transparent px-3 py-2">
+        <div className="flex items-center justify-between rounded-xl border border-[#3B5BFF33] bg-gradient-to-r from-[#3B5BFF14] to-transparent px-3 py-2">
           <div className="flex items-center gap-1.5">
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#22C55E] opacity-75" />

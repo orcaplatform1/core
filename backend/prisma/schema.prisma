@@ -740,6 +740,55 @@ model FooterSettings {
   updatedAt    DateTime @updatedAt
 }
 
+model SiteContentSettings {
+  id                    String   @id @default(cuid())
+
+  headerLogoText        String   @default("ORCA TRADERS")
+  headerLogoImageUrl    String?
+  navLinks              Json?
+
+  aiMentorLabel         String   @default("ORCA AI Mentor")
+  aiMentorHref          String   @default("/mentor")
+
+  heroBadge             String?
+  heroTitle             String   @default("Piyasayı Anlamak Artık Daha Akıllı.")
+  heroDescription       String   @default("Yapay zeka destekli analiz, profesyonel eğitim ve gerçek piyasa simülasyonları ile trading yolculuğunu üst seviyeye taşı.")
+  heroPrimaryCtaLabel   String   @default("Keşfetmeye Başla")
+  heroPrimaryCtaHref    String   @default("/register")
+  heroSecondaryCtaLabel String?
+  heroSecondaryCtaHref  String?
+  heroSocialProofCount  String?
+  heroSocialProofLabel  String?
+  heroImageUrl          String?
+
+  statsItems            Json?
+
+  programsTableTitle    String?
+  programsTableItems    Json?
+
+  toolsTitle            String?
+  toolsSubtitle         String?
+  toolsItems            Json?
+
+  featuresTitle         String?
+  featuresSubtitle      String?
+  featureItems          Json?
+
+  communityTitle        String?
+  communityStats        Json?
+  communityExtraCount   Int?
+
+  ctaTitle              String?
+  ctaDescription        String?
+  ctaButtonLabel        String?
+  ctaButtonHref         String?
+  ctaChecklist          Json?
+
+  faviconUrl            String?
+
+  updatedAt             DateTime @updatedAt
+}
+
 model SecurityEvent {
   id        String   @id @default(cuid())
   userId    String?

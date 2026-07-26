@@ -38,8 +38,8 @@ export function useCreateBadge() {
 export function useUpdateBadge() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { id: string } & Partial<BadgePayload>) =>
-      apiClient<AdminBadge>(`/badges/${payload.id}`, { method: "PATCH", body: payload }),
+    mutationFn: ({ id, ...body }: { id: string } & Partial<BadgePayload>) =>
+      apiClient<AdminBadge>(`/badges/${id}`, { method: "PATCH", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "badges"] }),
   });
 }

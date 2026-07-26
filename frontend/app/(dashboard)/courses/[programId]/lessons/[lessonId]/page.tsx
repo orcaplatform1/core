@@ -1,17 +1,15 @@
 "use client";
 
-import { use, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { use } from "react";
 import { FileText, Download } from "lucide-react";
 import { ErrorCard } from "@/components/errors/error-card";
-import { toast } from "sonner";
 import { useLesson, useMyProgress } from "@/lib/hooks/use-curriculum";
 import { useAllQuizzes } from "@/lib/hooks/use-quiz";
 import { ListChecks } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LessonVideoPlayer } from "@/components/lessons/lesson-video-player";
-import { ApiError } from "@/context/auth-context";
+import { LockedLessonBanner } from "@/components/lessons/locked-lesson-banner";
 
 export default function LessonPage({
   params,
@@ -19,18 +17,10 @@ export default function LessonPage({
   params: Promise<{ programId: string; lessonId: string }>;
 }) {
   const { programId, lessonId } = use(params);
-  const router = useRouter();
   const { data: lesson, isLoading, error } = useLesson(lessonId);
   const { data: myProgress } = useMyProgress();
   const { data: allQuizzes } = useAllQuizzes();
   const lessonQuizzes = (allQuizzes ?? []).filter((q) => q.lessonId === lessonId);
-
-  useEffect(() => {
-    if (error instanceof ApiError && error.status === 403) {
-      toast.error(error.message);
-      router.replace(`/programs/${programId}`);
-    }
-  }, [error, programId, router]);
 
   if (isLoading) {
     return <div className="h-96 animate-pulse rounded-2xl bg-card" />;
@@ -39,8 +29,8 @@ export default function LessonPage({
   if (error || !lesson) {
     return (
       <ErrorCard
-        code="403"
-        description="Bu derse erişim sağlanamadı — programı satın almış olman gerekiyor."
+        code="404"
+        description="Bu ders bulunamadı."
         redirectTo={`/programs/${programId}`}
       />
     );
@@ -55,7 +45,9 @@ export default function LessonPage({
         )}
       </div>
 
-      {lesson.videoUrl ? (
+      {lesson.locked ? (
+        <LockedLessonBanner reason={lesson.lockReason} />
+      ) : lesson.videoUrl ? (
         <LessonVideoPlayer
           lessonId={lesson.id}
           videoUrl={lesson.videoUrl}
@@ -69,7 +61,7 @@ export default function LessonPage({
         </div>
       )}
 
-      {lessonQuizzes.length > 0 && (
+      {!lesson.locked && lessonQuizzes.length > 0 && (
         <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <ListChecks className="size-4" /> Ders Sınavı

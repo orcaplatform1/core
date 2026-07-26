@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -30,8 +30,8 @@ export default function ManagePage() {
           href="/manage/users"
           className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8A63C22]">
-            <Users size={20} color="#E8A63C" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B5BFF22]">
+            <Users size={20} color="#3B5BFF" />
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Kullanıcılar</p>
@@ -54,8 +54,8 @@ export default function ManagePage() {
           href="/manage/programs"
           className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8A54FF22]">
-            <Layers size={20} color="#8A54FF" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF622]">
+            <Layers size={20} color="#8B5CF6" />
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Programlar</p>
@@ -114,12 +114,24 @@ export default function ManagePage() {
           href="/manage/scanner"
           className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8A63C22]">
-            <Zap size={20} color="#E8A63C" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B5BFF22]">
+            <Zap size={20} color="#3B5BFF" />
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">AI Chart Scanner</p>
             <p className="text-xs text-[#A69B8A]">Kişisel kullanım — canlı sinyal taraması</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/site-content"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#32D6C622]">
+            <Globe size={20} color="#32D6C6" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Site İçeriği</p>
+            <p className="text-xs text-[#A69B8A]">Landing page, header, footer, logo ve favicon yönetimi</p>
           </div>
         </Link>
       </div>

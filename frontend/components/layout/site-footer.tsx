@@ -1,45 +1,91 @@
 import Link from "next/link";
+import { X } from "lucide-react";
+import { DEFAULT_FOOTER_SETTINGS } from "@/lib/marketing/default-site-content";
+import type { FooterSettingsData } from "@/lib/marketing/site-content-types";
 
 const footerColumns = [
   {
     title: "Platform",
     links: [
       { label: "Programlar", href: "/programs" },
-      { label: "Eğitmenler", href: "/instructors" },
+      { label: "AI Mentor", href: "/mentor" },
+      { label: "Araçlar", href: "/manage/scanner" },
+      { label: "Topluluk", href: "/programs" },
       { label: "Blog", href: "/blog" },
-      { label: "SSS", href: "/faq" },
     ],
   },
   {
-    title: "Kurumsal",
+    title: "Destek",
     links: [
-      { label: "Hakkımızda", href: "/about" },
+      { label: "Sıkça Sorulan Sorular", href: "/faq" },
+      { label: "Destek Merkezi", href: "/contact" },
       { label: "İletişim", href: "/contact" },
     ],
   },
   {
     title: "Yasal",
     links: [
-      { label: "Gizlilik Politikası", href: "/privacy-policy" },
-      { label: "KVKK", href: "/kvkk" },
       { label: "Kullanım Şartları", href: "/terms-of-service" },
-      { label: "Mesafeli Satış Sözleşmesi", href: "/distance-sales-agreement" },
+      { label: "Gizlilik Politikası", href: "/privacy-policy" },
+      { label: "Çerez Politikası", href: "/privacy-policy" },
     ],
   },
 ];
 
-export function SiteFooter() {
+// lucide-react bu projede YouTube/Instagram/Discord marka ikonlarını içermiyor
+// (sadece jenerik ikonlar var) — bu üçü için küçük, sade satır-ikon SVG'ler.
+function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M21.6 7.2c-.2-1-1-1.7-1.9-1.9C18 5 12 5 12 5s-6 0-7.7.3c-1 .2-1.7 1-1.9 1.9C2 8.9 2 12 2 12s0 3.1.4 4.8c.2 1 1 1.7 1.9 1.9C6 19 12 19 12 19s6 0 7.7-.3c1-.2 1.7-1 1.9-1.9.4-1.7.4-4.8.4-4.8s0-3.1-.4-4.8ZM10 15V9l5 3-5 3Z" />
+    </svg>
+  );
+}
+function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+function DiscordIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M18.9 5.7A16.3 16.3 0 0 0 15 4.5l-.2.4a13 13 0 0 1 3.4 1.3 14.5 14.5 0 0 0-12.4 0 13 13 0 0 1 3.4-1.3L9 4.5a16.3 16.3 0 0 0-3.9 1.2C2.9 9 2.3 12.2 2.5 15.3a16.4 16.4 0 0 0 5 2.5l.7-1.1a10.6 10.6 0 0 1-1.6-.8l.4-.3a11.7 11.7 0 0 0 10 0l.4.3a10.6 10.6 0 0 1-1.6.8l.7 1.1a16.4 16.4 0 0 0 5-2.5c.3-3.5-.6-6.7-2.6-9.6ZM9.3 13.4c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6c.8 0 1.5.7 1.4 1.6 0 .9-.6 1.6-1.4 1.6Zm5.4 0c-.8 0-1.4-.7-1.4-1.6s.6-1.6 1.4-1.6c.8 0 1.4.7 1.4 1.6s-.6 1.6-1.4 1.6Z" />
+    </svg>
+  );
+}
+
+const socialIcons: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  X: X,
+  YouTube: YoutubeIcon,
+  Instagram: InstagramIcon,
+  Discord: DiscordIcon,
+};
+
+export function SiteFooter({
+  footer = DEFAULT_FOOTER_SETTINGS,
+}: {
+  footer?: FooterSettingsData;
+}) {
+  const socialLinks = Object.entries(footer.socialLinks ?? {})
+    .filter(([label]) => socialIcons[label])
+    .map(([label, href]) => ({ label, href, icon: socialIcons[label] }));
+  const [logoFirst, ...logoRest] = footer.companyName.split(" ");
+
   return (
     <footer className="border-t border-border bg-secondary">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
             <span className="text-lg font-bold text-foreground">
-              ORCA <span className="text-primary">TRADERS</span>
+              {logoFirst} <span className="text-primary">{logoRest.join(" ")}</span>
             </span>
-            <p className="mt-3 text-sm text-muted-foreground max-w-xs">
-              Yapay zeka destekli finans ve trading eğitim platformu.
-            </p>
+            {footer.description && (
+              <p className="mt-3 text-sm text-muted-foreground max-w-xs">{footer.description}</p>
+            )}
           </div>
           {footerColumns.map((col) => (
             <div key={col.title}>
@@ -48,7 +94,7 @@ export function SiteFooter() {
               </h4>
               <ul className="flex flex-col gap-3">
                 {col.links.map((link) => (
-                  <li key={link.href}>
+                  <li key={link.label}>
                     <Link
                       href={link.href}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
@@ -61,8 +107,23 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-12 pt-8 border-t border-divider text-xs text-muted-foreground">
-          © {new Date().getFullYear()} ORCA TRADERS. Tüm hakları saklıdır.
+
+        <div className="mt-12 flex flex-col-reverse items-center gap-6 border-t border-divider pt-8 sm:flex-row sm:justify-between">
+          <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
+          <div className="flex items-center gap-3">
+            {socialLinks.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <s.icon className="size-4" />
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </footer>

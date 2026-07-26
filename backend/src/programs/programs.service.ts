@@ -11,7 +11,7 @@ export class ProgramsService {
 
   async findAll() {
     return this.prisma.program.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ level: 'asc' }, { createdAt: 'asc' }],
     });
   }
 

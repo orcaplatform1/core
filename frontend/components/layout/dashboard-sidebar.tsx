@@ -15,8 +15,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { SiteLogo } from "@/components/layout/site-logo";
+import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
+import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 
-export function DashboardSidebar() {
+export function DashboardSidebar({
+  siteContent = DEFAULT_SITE_CONTENT,
+}: {
+  siteContent?: SiteContentSettings;
+}) {
   const sections = studentNav;
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
@@ -31,11 +38,12 @@ export function DashboardSidebar() {
       )}
     >
       <div className="flex items-center h-[72px] px-4 border-b border-sidebar-border shrink-0">
-        {!collapsed && (
-          <span className="font-bold text-sidebar-foreground">
-            ORCA <span className="text-primary">TRADERS</span>
-          </span>
-        )}
+        <SiteLogo
+          siteContent={siteContent}
+          textClassName="text-sidebar-foreground"
+          imgClassName="h-9"
+          collapsed={collapsed}
+        />
       </div>
 
       {!collapsed && (
@@ -113,15 +121,18 @@ export function DashboardSidebar() {
 
       {!collapsed && (
         <div className="flex flex-col gap-3 border-t border-sidebar-border p-3">
-          <div className="rounded-xl bg-gradient-to-br from-primary/20 via-purple/10 to-transparent border border-primary/20 p-4">
+          <div className="rounded-xl bg-purple/[0.15] border border-purple/25 p-4">
             <div className="flex items-center gap-2">
-              <Crown className="size-4 text-primary" />
+              <Crown className="size-4 text-purple" />
               <span className="text-sm font-semibold text-foreground">ORCA Premium</span>
             </div>
             <p className="mt-1.5 text-xs text-muted-foreground">
               Tüm özelliklere erişin, gelişiminizi katlayın.
             </p>
-            <Button size="sm" className="mt-3 h-8 w-full">
+            <Button
+              size="sm"
+              className="mt-3 h-8 w-full bg-purple text-white border-purple/40 hover:bg-purple/90"
+            >
               Premium&apos;a Geç
             </Button>
           </div>

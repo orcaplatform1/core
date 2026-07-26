@@ -1,59 +1,86 @@
 "use client";
-import { useState } from "react";
-import type { IChartApi, ISeriesApi, Time } from "lightweight-charts";
-import type { ChartShape, ChartPoint, DrawingTool, Candle } from "@/lib/types/curriculum";
+import { useEffect, useRef, useState } from "react";
+import type { IChartApi, ISeriesApi, MouseEventParams, Time } from "lightweight-charts";
+import type { ChartPoint, ChartShape, Candle, DrawingTool } from "@/lib/types/curriculum";
 import { SINGLE_POINT_TOOLS } from "@/lib/types/curriculum";
+import { TOOL_COLORS } from "@/lib/chart-drawing/tool-meta";
+import { DrawingLayerPrimitive, type HandleKind } from "@/lib/chart-drawing/shape-primitive";
 
-export const TOOL_COLORS: Record<DrawingTool, string> = {
-  trendline: "#E8A63C",
-  horizontal: "#22C55E",
-  vertical: "#F39C3D",
-  ray: "#E8A63C",
-  rectangle: "#8A54FF",
-  ellipse: "#8A54FF",
-  fibonacci: "#F5C542",
-  arrow: "#EF4444",
-  note: "#A69B8A",
-};
-
-export const TOOL_LABELS: Record<DrawingTool, string> = {
-  trendline: "Trend Çizgisi",
-  horizontal: "Yatay Çizgi",
-  vertical: "Dikey Çizgi",
-  ray: "Ray",
-  rectangle: "Dikdörtgen",
-  ellipse: "Elips",
-  fibonacci: "Fibonacci",
-  arrow: "Ok",
-  note: "Not",
-};
-
-const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
-
-type ChartRef = React.RefObject<IChartApi | null>;
-type SeriesRef = React.RefObject<ISeriesApi<"Candlestick"> | null>;
-type CanvasRef = React.RefObject<HTMLCanvasElement | null>;
+type DragState = { shapeId: string; handle: HandleKind; last: ChartPoint };
 
 type Args = {
-  chartRef: ChartRef;
-  seriesRef: SeriesRef;
-  overlayRef: CanvasRef;
   candles: Candle[] | undefined;
 };
 
-export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles }: Args) {
+export function useChartDrawingTools({ candles }: Args) {
   const [shapes, setShapes] = useState<ChartShape[]>([]);
   const [activeTool, setActiveTool] = useState<DrawingTool | null>(null);
   const [pendingPoint, setPendingPoint] = useState<ChartPoint | null>(null);
   const [previewPoint, setPreviewPoint] = useState<ChartPoint | null>(null);
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [magnet, setMagnet] = useState(false);
-  const [noteDraft, setNoteDraft] = useState<ChartPoint | null>(null);
+  const [noteDraft, setNoteDraft] = useState<{ point: ChartPoint; tool: "note" | "text" } | null>(null);
 
-  function snapToCandle(point: ChartPoint): ChartPoint {
-    if (!magnet || !candles || candles.length === 0) return point;
-    let closest = candles[0];
+  const primitiveRef = useRef<DrawingLayerPrimitive>(new DrawingLayerPrimitive());
+  const dragRef = useRef<DragState | null>(null);
+
+  // Stabil event handler'ların (subscribeClick/subscribeCrosshairMove/native
+  // pointerdown, hepsi tek seferlik attachToChart() içinde abone olunuyor)
+  // her render'da yeniden abone olmadan en güncel state'i okuyabilmesi için
+  // ref aynaları.
+  const activeToolRef = useRef(activeTool);
+  const pendingPointRef = useRef(pendingPoint);
+  const magnetRef = useRef(magnet);
+  const candlesRef = useRef(candles);
+  useEffect(() => {
+    activeToolRef.current = activeTool;
+  }, [activeTool]);
+  useEffect(() => {
+    pendingPointRef.current = pendingPoint;
+  }, [pendingPoint]);
+  useEffect(() => {
+    magnetRef.current = magnet;
+  }, [magnet]);
+  useEffect(() => {
+    candlesRef.current = candles;
+  }, [candles]);
+
+  // Primitive'in kendi çizim state'ini React state'iyle senkron tut.
+  useEffect(() => {
+    primitiveRef.current.setShapes(shapes);
+  }, [shapes]);
+  useEffect(() => {
+    primitiveRef.current.setSelectedId(selectedShapeId);
+  }, [selectedShapeId]);
+  useEffect(() => {
+    const preview =
+      activeTool && pendingPoint && previewPoint ? { tool: activeTool, p1: pendingPoint, p2: previewPoint } : null;
+    primitiveRef.current.setPreview(preview);
+  }, [activeTool, pendingPoint, previewPoint]);
+  useEffect(() => {
+    primitiveRef.current.setPendingAnchor(pendingPoint && !previewPoint ? pendingPoint : null);
+  }, [pendingPoint, previewPoint]);
+
+  // Seçili şekli Delete/Backspace ile silme (input/textarea'da yazarken değil).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!selectedShapeId) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        removeShape(selectedShapeId);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedShapeId]);
+
+  function snapToCandlePoint(point: ChartPoint): ChartPoint {
+    if (!magnetRef.current || !candlesRef.current || candlesRef.current.length === 0) return point;
+    let closest = candlesRef.current[0];
     let minDiff = Infinity;
-    for (const c of candles) {
+    for (const c of candlesRef.current) {
       const t = new Date(c.timestamp).getTime() / 1000;
       const diff = Math.abs(t - point.time);
       if (diff < minDiff) {
@@ -75,15 +102,32 @@ export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles 
     return { time: t, price: closestPrice };
   }
 
-  function pointFromCoords(clientX: number, clientY: number): ChartPoint | null {
-    if (!chartRef.current || !seriesRef.current || !overlayRef.current) return null;
-    const rect = overlayRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    const time = chartRef.current.timeScale().coordinateToTime(x);
-    const price = seriesRef.current.coordinateToPrice(y);
-    if (time === null || price === null) return null;
-    return snapToCandle({ time: time as unknown as number, price });
+  function pointFromParam(param: MouseEventParams<Time>, series: ISeriesApi<"Candlestick">): ChartPoint | null {
+    if (!param.point || param.time === undefined) return null;
+    const price = series.coordinateToPrice(param.point.y);
+    if (price === null) return null;
+    return { time: param.time as unknown as number, price };
+  }
+
+  function finalizeShape(tool: DrawingTool, p1: ChartPoint, p2: ChartPoint | undefined, text?: string) {
+    const newShape: ChartShape = {
+      id: crypto.randomUUID(),
+      tool,
+      p1,
+      p2,
+      color: TOOL_COLORS[tool],
+      locked: false,
+    };
+    if (tool === "channel" && p2) {
+      const baseOffset = Math.abs(p2.price - p1.price) * 0.3;
+      const priceOffset = baseOffset || Math.abs(p1.price) * 0.03 || 1;
+      newShape.p3 = { time: (p1.time + p2.time) / 2, price: (p1.price + p2.price) / 2 + priceOffset };
+    }
+    if (text) newShape.text = text;
+    setShapes((prev) => [...prev, newShape]);
+    setPendingPoint(null);
+    setPreviewPoint(null);
+    setActiveTool(null);
   }
 
   function selectTool(tool: DrawingTool) {
@@ -91,53 +135,14 @@ export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles 
     setPendingPoint(null);
     setPreviewPoint(null);
     setNoteDraft(null);
+    setSelectedShapeId(null);
   }
 
-  function handleClick(clientX: number, clientY: number) {
-    if (!activeTool) return;
-    const point = pointFromCoords(clientX, clientY);
-    if (!point) return;
-
-    if (activeTool === "note") {
-      setNoteDraft(point);
-      return;
-    }
-
-    if (SINGLE_POINT_TOOLS.includes(activeTool)) {
-      const newShape: ChartShape = {
-        id: crypto.randomUUID(),
-        tool: activeTool,
-        p1: point,
-        color: TOOL_COLORS[activeTool],
-        locked: false,
-      };
-      setShapes((prev) => [...prev, newShape]);
-      setActiveTool(null);
-      return;
-    }
-
-    if (!pendingPoint) {
-      setPendingPoint(point);
-    } else {
-      const newShape: ChartShape = {
-        id: crypto.randomUUID(),
-        tool: activeTool,
-        p1: pendingPoint,
-        p2: point,
-        color: TOOL_COLORS[activeTool],
-        locked: false,
-      };
-      setShapes((prev) => [...prev, newShape]);
-      setPendingPoint(null);
-      setPreviewPoint(null);
-      setActiveTool(null);
-    }
-  }
-
-  function handleMouseMove(clientX: number, clientY: number) {
-    if (!pendingPoint) return;
-    const point = pointFromCoords(clientX, clientY);
-    if (point) setPreviewPoint(point);
+  function deselectTool() {
+    setActiveTool(null);
+    setPendingPoint(null);
+    setPreviewPoint(null);
+    setNoteDraft(null);
   }
 
   function confirmNote(text: string) {
@@ -148,10 +153,10 @@ export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles 
     }
     const newShape: ChartShape = {
       id: crypto.randomUUID(),
-      tool: "note",
-      p1: noteDraft,
+      tool: noteDraft.tool,
+      p1: noteDraft.point,
       text: text.trim(),
-      color: TOOL_COLORS.note,
+      color: TOOL_COLORS[noteDraft.tool],
       locked: false,
     };
     setShapes((prev) => [...prev, newShape]);
@@ -170,14 +175,33 @@ export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles 
       if (s?.locked) return prev;
       return prev.filter((x) => x.id !== id);
     });
+    setSelectedShapeId((prev) => (prev === id ? null : prev));
+    if (dragRef.current?.shapeId === id) dragRef.current = null;
   }
 
   function toggleLock(id: string) {
     setShapes((prev) => prev.map((s) => (s.id === id ? { ...s, locked: !s.locked } : s)));
+    setSelectedShapeId((prev) => (prev === id ? null : prev));
   }
 
   function clearShapes() {
     setShapes((prev) => prev.filter((s) => s.locked));
+    setSelectedShapeId(null);
+  }
+
+  // "Geri al" — sadece en son eklenen (kilitli olmayan) şekli diziden çıkarır.
+  // clearShapes'ten (hepsini temizle) ayrı tutulur, birbirine karışmaz.
+  function undoLastShape() {
+    setShapes((prev) => {
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (!prev[i].locked) {
+          const removedId = prev[i].id;
+          setSelectedShapeId((sel) => (sel === removedId ? null : sel));
+          return [...prev.slice(0, i), ...prev.slice(i + 1)];
+        }
+      }
+      return prev;
+    });
   }
 
   function loadShapes(newShapes: ChartShape[]) {
@@ -186,145 +210,155 @@ export function useChartDrawingTools({ chartRef, seriesRef, overlayRef, candles 
     setPendingPoint(null);
     setPreviewPoint(null);
     setNoteDraft(null);
+    setSelectedShapeId(null);
+  }
+
+  // Bir grafik (yeniden) oluşturulduğunda çağrılır: çizim motorunu bu chart'a
+  // bağlar (primitive attach + click/crosshair aboneliği + sürükleme için
+  // native pointerdown/up). Döndürülen fonksiyon her şeyi geri söker.
+  function attachToChart(chart: IChartApi, series: ISeriesApi<"Candlestick">, container: HTMLElement): () => void {
+    series.attachPrimitive(primitiveRef.current);
+
+    function onClick(param: MouseEventParams<Time>) {
+      const tool = activeToolRef.current;
+      if (!tool) return;
+      const raw = pointFromParam(param, series);
+      if (!raw) return;
+      const point = snapToCandlePoint(raw);
+
+      if (tool === "note" || tool === "text") {
+        setNoteDraft({ point, tool });
+        return;
+      }
+      if (SINGLE_POINT_TOOLS.includes(tool)) {
+        finalizeShape(tool, point, undefined);
+        return;
+      }
+      const pending = pendingPointRef.current;
+      if (!pending) {
+        setPendingPoint(point);
+      } else {
+        finalizeShape(tool, pending, point);
+      }
+    }
+
+    // NOT: sürükleme takibi bilerek chart.subscribeCrosshairMove'a değil,
+    // window üzerindeki native pointermove'a bağlanıyor. Kütüphanenin kendi
+    // crosshair-move event'i, buton basılıyken (aktif bir pan/drag jesti
+    // sırasında) güvenilir şekilde ateşlenmeyebiliyor — bu yüzden koordinat
+    // çevrimini (coordinateToTime/coordinateToPrice) burada kendimiz, tıpkı
+    // nokta yerleştirmede olduğu gibi, doğrudan native event'ten yapıyoruz.
+    function onWindowPointerMove(e: PointerEvent) {
+      const drag = dragRef.current;
+      if (!drag) return;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const time = chart.timeScale().coordinateToTime(x);
+      const price = series.coordinateToPrice(y);
+      if (time === null || price === null) return;
+      const raw: ChartPoint = { time: time as unknown as number, price };
+      const deltaTime = raw.time - drag.last.time;
+      const deltaPrice = raw.price - drag.last.price;
+      applyDragDelta(drag.shapeId, drag.handle, deltaTime, deltaPrice);
+      drag.last = raw;
+    }
+
+    function onCrosshairMove(param: MouseEventParams<Time>) {
+      if (dragRef.current) return; // sürükleme onWindowPointerMove'da işleniyor
+      if (activeToolRef.current && pendingPointRef.current) {
+        const raw = pointFromParam(param, series);
+        if (raw) setPreviewPoint(snapToCandlePoint(raw));
+      }
+    }
+
+    function onPointerDown(e: PointerEvent) {
+      if (activeToolRef.current) return;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const hit = primitiveRef.current.hitTest(x, y);
+      if (!hit) {
+        setSelectedShapeId(null);
+        return;
+      }
+      e.preventDefault();
+      const [shapeId, handle] = hit.externalId.split("::") as [string, HandleKind];
+      setSelectedShapeId(shapeId);
+      const time = chart.timeScale().coordinateToTime(x);
+      const price = series.coordinateToPrice(y);
+      if (time === null || price === null) return;
+      dragRef.current = { shapeId, handle, last: { time: time as unknown as number, price } };
+      chart.applyOptions({ handleScroll: false, handleScale: false });
+    }
+
+    function onPointerUp() {
+      if (dragRef.current) {
+        dragRef.current = null;
+        chart.applyOptions({ handleScroll: true, handleScale: true });
+      }
+    }
+
+    chart.subscribeClick(onClick);
+    chart.subscribeCrosshairMove(onCrosshairMove);
+    container.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+
+    return () => {
+      series.detachPrimitive(primitiveRef.current);
+      chart.unsubscribeClick(onClick);
+      chart.unsubscribeCrosshairMove(onCrosshairMove);
+      container.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onWindowPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      dragRef.current = null;
+    };
+  }
+
+  function applyDragDelta(shapeId: string, handle: HandleKind, deltaTime: number, deltaPrice: number) {
+    setShapes((prev) =>
+      prev.map((s) => {
+        if (s.id !== shapeId || s.locked) return s;
+        const shift = (p: ChartPoint): ChartPoint => ({ time: p.time + deltaTime, price: p.price + deltaPrice });
+        if (handle === "body") {
+          return {
+            ...s,
+            p1: shift(s.p1),
+            p2: s.p2 ? shift(s.p2) : undefined,
+            p3: s.p3 ? shift(s.p3) : undefined,
+          };
+        }
+        if (handle === "p1") {
+          if (s.tool === "horizontal") return { ...s, p1: { ...s.p1, price: s.p1.price + deltaPrice } };
+          if (s.tool === "vertical") return { ...s, p1: { ...s.p1, time: s.p1.time + deltaTime } };
+          return { ...s, p1: shift(s.p1) };
+        }
+        if (handle === "p2" && s.p2) return { ...s, p2: shift(s.p2) };
+        if (handle === "p3" && s.p3) return { ...s, p3: shift(s.p3) };
+        return s;
+      })
+    );
   }
 
   return {
     shapes,
-    setShapes,
     activeTool,
     pendingPoint,
     previewPoint,
+    selectedShapeId,
     magnet,
     setMagnet,
     noteDraft,
     selectTool,
-    handleClick,
-    handleMouseMove,
+    deselectTool,
     confirmNote,
     cancelNote,
     removeShape,
     toggleLock,
     clearShapes,
+    undoLastShape,
     loadShapes,
+    attachToChart,
   };
-}
-
-export function drawShapesOnCanvas(
-  ctx: CanvasRenderingContext2D,
-  chart: IChartApi,
-  series: ISeriesApi<"Candlestick">,
-  shapes: ChartShape[],
-  preview: { tool: DrawingTool; p1: ChartPoint; p2: ChartPoint } | null
-) {
-  const TOOL_COLORS_LOCAL = TOOL_COLORS;
-  const toXY = (p: ChartPoint) => {
-    const x = chart.timeScale().timeToCoordinate(p.time as unknown as Time);
-    const y = series.priceToCoordinate(p.price);
-    if (x === null || y === null) return null;
-    return { x, y };
-  };
-
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-
-  function drawShape(shape: { tool: DrawingTool; p1: ChartPoint; p2?: ChartPoint; text?: string; color: string }, dashed: boolean) {
-    const a = toXY(shape.p1);
-    if (!a) return;
-    ctx.strokeStyle = shape.color;
-    ctx.fillStyle = shape.color + "33";
-    ctx.lineWidth = 2;
-    ctx.setLineDash(dashed ? [6, 4] : []);
-
-    if (shape.tool === "horizontal") {
-      ctx.beginPath();
-      ctx.moveTo(0, a.y);
-      ctx.lineTo(width, a.y);
-      ctx.stroke();
-    } else if (shape.tool === "vertical") {
-      ctx.beginPath();
-      ctx.moveTo(a.x, 0);
-      ctx.lineTo(a.x, height);
-      ctx.stroke();
-    } else if (shape.tool === "note") {
-      ctx.beginPath();
-      ctx.arc(a.x, a.y, 4, 0, Math.PI * 2);
-      ctx.fill();
-      if (shape.text) {
-        ctx.font = "12px sans-serif";
-        ctx.fillStyle = shape.color;
-        ctx.fillText(shape.text, a.x + 8, a.y - 8);
-      }
-    } else if (shape.p2) {
-      const b = toXY(shape.p2);
-      if (!b) return;
-      if (shape.tool === "trendline") {
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      } else if (shape.tool === "ray") {
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const scale = (width * 2) / len;
-        const ex = a.x + dx * scale;
-        const ey = a.y + dy * scale;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-      } else if (shape.tool === "rectangle") {
-        const x = Math.min(a.x, b.x);
-        const y = Math.min(a.y, b.y);
-        const w = Math.abs(b.x - a.x);
-        const h = Math.abs(b.y - a.y);
-        ctx.fillRect(x, y, w, h);
-        ctx.strokeRect(x, y, w, h);
-      } else if (shape.tool === "ellipse") {
-        const cx = (a.x + b.x) / 2;
-        const cy = (a.y + b.y) / 2;
-        const rx = Math.abs(b.x - a.x) / 2;
-        const ry = Math.abs(b.y - a.y) / 2;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      } else if (shape.tool === "arrow") {
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        const angle = Math.atan2(b.y - a.y, b.x - a.x);
-        const headLen = 10;
-        ctx.beginPath();
-        ctx.moveTo(b.x, b.y);
-        ctx.lineTo(b.x - headLen * Math.cos(angle - Math.PI / 6), b.y - headLen * Math.sin(angle - Math.PI / 6));
-        ctx.moveTo(b.x, b.y);
-        ctx.lineTo(b.x - headLen * Math.cos(angle + Math.PI / 6), b.y - headLen * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
-      } else if (shape.tool === "fibonacci" && shape.p2) {
-        const top = Math.min(shape.p1.price, shape.p2.price);
-        const bottom = Math.max(shape.p1.price, shape.p2.price);
-        const range = bottom - top;
-        const x1 = Math.min(a.x, b.x);
-        const x2 = Math.max(a.x, b.x);
-        ctx.font = "10px sans-serif";
-        FIB_LEVELS.forEach((level) => {
-          const price = bottom - range * level;
-          const y = series.priceToCoordinate(price);
-          if (y === null) return;
-          ctx.beginPath();
-          ctx.moveTo(x1, y);
-          ctx.lineTo(x2, y);
-          ctx.stroke();
-          ctx.fillStyle = shape.color;
-          ctx.fillText(`${(level * 100).toFixed(1)}%`, x2 + 4, y + 3);
-        });
-      }
-    }
-    ctx.setLineDash([]);
-  }
-
-  shapes.forEach((s) => drawShape(s, false));
-  if (preview) drawShape({ ...preview, color: TOOL_COLORS_LOCAL[preview.tool] }, true);
 }

@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   IsUUID,
+  IsInt,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -20,5 +21,8 @@ export class CreateModuleDto {
   @IsString()
   @MinLength(1)
   programId!: string;
- 
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
 }

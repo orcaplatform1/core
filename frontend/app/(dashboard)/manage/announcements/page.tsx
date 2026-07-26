@@ -77,8 +77,8 @@ export default function AdminAnnouncementsPage() {
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#E8A63C22]">
-            <Megaphone size={18} color="#E8A63C" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#3B5BFF22]">
+            <Megaphone size={18} color="#3B5BFF" />
           </div>
           <p className="text-sm text-[#A69B8A]">
             Duyuru site içi bildirim (zil ikonu) olarak düşer. Email/SMS gönderimi yok.

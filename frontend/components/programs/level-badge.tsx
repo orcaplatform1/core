@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 const labels: Record<ProgramLevel, string> = {
   BASLANGIC: "Başlangıç",
-  ORTA: "Orta",
-  ILERI: "İleri",
+  ORTA: "Orta Seviye",
+  ILERI: "İleri Seviye",
 };
 
 const colors: Record<ProgramLevel, string> = {

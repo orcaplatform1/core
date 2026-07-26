@@ -3,6 +3,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 import { BadgesService } from '../badges/badges.service';
 
+type ProgramLevel = 'BASLANGIC' | 'ORTA' | 'ILERI';
+
+const LEVEL_RANK: Record<ProgramLevel, number> = { BASLANGIC: 0, ORTA: 1, ILERI: 2 };
+const BYPASS_ROLES = ['SUPER_ADMIN', 'STAFF'];
+
 @Injectable()
 export class ProgressService {
   constructor(
@@ -10,22 +15,80 @@ export class ProgressService {
     private readonly badgesService: BadgesService,
   ) {}
 
-  async updateWatchProgress(userId: string, dto: UpdateProgressDto) {
+  /** Kullanıcının bir programdaki tüm derslerin videosunu izleyip izlemediğini ve o derslerdeki
+   * tüm quizleri geçip geçmediğini kontrol eder. */
+  async isProgramCompleted(userId: string, programId: string): Promise<boolean> {
+    const lessons = await this.prisma.lesson.findMany({
+      where: { module: { programId } },
+      select: { id: true },
+    });
+    const quizzes = await this.prisma.quiz.findMany({
+      where: { lesson: { module: { programId } } },
+      select: { id: true },
+    });
+    for (const lesson of lessons) {
+      const progress = await this.prisma.progress.findUnique({
+        where: { userId_lessonId: { userId, lessonId: lesson.id } },
+      });
+      if (!progress || !progress.completed) return false;
+    }
+    for (const quiz of quizzes) {
+      const passedAttempt = await this.prisma.quizAttempt.findFirst({
+        where: { userId, quizId: quiz.id, passed: true },
+      });
+      if (!passedAttempt) return false;
+    }
+    return true;
+  }
+
+  /** Bir seviyedeki programlara erişim için, kullanıcının kayıtlı olduğu ALT seviyelerdeki
+   * tüm programları tamamlamış olması gerekir. Seviyesiz (null) programlar kilitlenmez. */
+  async isLevelUnlocked(userId: string, level: ProgramLevel | null): Promise<boolean> {
+    if (!level) return true;
+    const rank = LEVEL_RANK[level];
+    if (rank === 0) return true;
+
+    const priorLevels = (Object.keys(LEVEL_RANK) as ProgramLevel[]).filter((l) => LEVEL_RANK[l] < rank);
+    const priorPrograms = await this.prisma.program.findMany({
+      where: { level: { in: priorLevels } },
+      select: { id: true },
+    });
+    const enrolledPrior = await this.prisma.enrollment.findMany({
+      where: { userId, programId: { in: priorPrograms.map((p) => p.id) } },
+      select: { programId: true },
+    });
+    for (const { programId } of enrolledPrior) {
+      if (!(await this.isProgramCompleted(userId, programId))) return false;
+    }
+    return true;
+  }
+
+  async updateWatchProgress(userId: string, dto: UpdateProgressDto, role?: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: dto.lessonId },
-      include: { module: true, quizzes: true },
+      include: { module: { include: { program: true } }, quizzes: true },
     });
 
     if (!lesson) {
       throw new NotFoundException('Ders bulunamadı.');
     }
 
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_programId: { userId, programId: lesson.module.programId } },
-    });
+    if (!role || !BYPASS_ROLES.includes(role)) {
+      const enrollment = await this.prisma.enrollment.findUnique({
+        where: { userId_programId: { userId, programId: lesson.module.programId } },
+      });
 
-    if (!enrollment) {
-      throw new ForbiddenException('Bu derse erişiminiz yok.');
+      if (!enrollment) {
+        throw new ForbiddenException('Bu derse erişiminiz yok.');
+      }
+
+      const unlocked = await this.isLevelUnlocked(userId, lesson.module.program.level);
+      if (!unlocked) {
+        throw new ForbiddenException({
+          code: 'LEVEL_LOCKED',
+          message: 'Bir önceki seviyedeki programları başarıyla tamamlamadan bu programa erişim sağlayamazsınız.',
+        });
+      }
     }
 
     const percentage = lesson.durationSeconds && lesson.durationSeconds > 0

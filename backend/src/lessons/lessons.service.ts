@@ -1,13 +1,17 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { ProgressService } from '../progress/progress.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+
+const BYPASS_ROLES = ['SUPER_ADMIN', 'STAFF'];
 
 @Injectable()
 export class LessonsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly progressService: ProgressService,
   ) {}
 
   async findAll() {
@@ -27,15 +31,15 @@ export class LessonsService {
   async findById(userId: string, id: string, role?: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      include: { resources: true, module: true },
+      include: { resources: true, module: { include: { program: true } } },
     });
 
     if (!lesson) {
       throw new NotFoundException('Ders bulunamadı.');
     }
 
-    if (role === 'SUPER_ADMIN') {
-      return lesson;
+    if (role && BYPASS_ROLES.includes(role)) {
+      return { ...lesson, locked: false, lockReason: null };
     }
 
     const enrollment = await this.prisma.enrollment.findUnique({
@@ -45,14 +49,29 @@ export class LessonsService {
     });
 
     if (!enrollment) {
-      throw new ForbiddenException({
-        code: 'PAYMENT_REQUIRED',
-        message: 'Bu derse erişmek için önce programı satın almanız gerekiyor.',
-        programId: lesson.module.programId,
-      });
+      return {
+        ...lesson,
+        videoUrl: null,
+        pdfUrl: null,
+        resources: [],
+        locked: true,
+        lockReason: 'PAYMENT_REQUIRED' as const,
+      };
     }
 
-    return lesson;
+    const unlocked = await this.progressService.isLevelUnlocked(userId, lesson.module.program.level);
+    if (!unlocked) {
+      return {
+        ...lesson,
+        videoUrl: null,
+        pdfUrl: null,
+        resources: [],
+        locked: true,
+        lockReason: 'LEVEL_LOCKED' as const,
+      };
+    }
+
+    return { ...lesson, locked: false, lockReason: null };
   }
 
   async create(data: CreateLessonDto, actorId: string) {

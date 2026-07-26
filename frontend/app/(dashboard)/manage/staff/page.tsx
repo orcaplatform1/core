@@ -57,7 +57,7 @@ export default function AdminStaffPage() {
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
           <p className="text-xs text-[#A69B8A]">Toplam Komisyon</p>
-          <p className="mt-1 text-xl font-semibold text-[#E8A63C]">
+          <p className="mt-1 text-xl font-semibold text-[#3B5BFF]">
             {totals.totalCommission.toLocaleString("tr-TR")} ₺
           </p>
         </div>
@@ -110,7 +110,7 @@ export default function AdminStaffPage() {
                   </div>
                   <div className="rounded-lg border border-border bg-card-inner p-2.5">
                     <p className="text-[10px] text-[#A69B8A]">Komisyon</p>
-                    <p className="text-sm font-semibold text-[#E8A63C]">
+                    <p className="text-sm font-semibold text-[#3B5BFF]">
                       {s.totalCommission.toLocaleString("tr-TR")} ₺
                     </p>
                   </div>

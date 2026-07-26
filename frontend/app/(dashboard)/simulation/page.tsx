@@ -9,8 +9,10 @@ import {
   useOpenTrade,
   useCloseTrade,
 } from "@/lib/hooks/use-simulation";
+import { TradingChart } from "@/components/trading-chart/trading-chart";
 
 type Category = "crypto" | "forex";
+type Timeframe = "1d" | "1h";
 
 function formatMoney(n: number) {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -19,6 +21,7 @@ function formatMoney(n: number) {
 export default function SimulationPage() {
   const [category, setCategory] = useState<Category>("crypto");
   const [symbol, setSymbol] = useState<string>("");
+  const [timeframe, setTimeframe] = useState<Timeframe>("1d");
   const [direction, setDirection] = useState<"BUY" | "SELL">("BUY");
   const [quantity, setQuantity] = useState<string>("");
   const [leverage, setLeverage] = useState<string>("1");
@@ -115,14 +118,39 @@ export default function SimulationPage() {
                 onClick={() => setSymbol(s)}
                 className="rounded-xl border px-3 py-1.5 text-sm transition"
                 style={{
-                  borderColor: symbol === s ? "#E8A63C" : "#2E2820",
-                  backgroundColor: symbol === s ? "#E8A63C22" : "#241F19",
+                  borderColor: symbol === s ? "#3B5BFF" : "#1C2740",
+                  backgroundColor: symbol === s ? "#3B5BFF22" : "#141E32",
                   color: symbol === s ? "#F5F1EA" : "#A69B8A",
                 }}
               >
                 {s}
               </button>
             ))}
+          </div>
+        )}
+
+        {symbol && (
+          <div className="space-y-3">
+            <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+              <button
+                onClick={() => setTimeframe("1d")}
+                className={`px-3 py-1.5 text-sm ${timeframe === "1d" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
+              >
+                Günlük
+              </button>
+              <button
+                onClick={() => setTimeframe("1h")}
+                className={`px-3 py-1.5 text-sm ${timeframe === "1h" ? "bg-primary text-white" : "bg-card-inner text-[#A69B8A]"}`}
+              >
+                1 Saatlik
+              </button>
+            </div>
+            <TradingChart
+              symbol={symbol}
+              timeframe={timeframe}
+              timeframeLabel={timeframe === "1d" ? "Günlük" : "1 Saatlik"}
+              context="simulation"
+            />
           </div>
         )}
 

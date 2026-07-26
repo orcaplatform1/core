@@ -1,35 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProgressService } from '../progress/progress.service';
 import PDFDocument = require('pdfkit');
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class CertificatesService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  private async checkProgramCompleted(userId: string, programId: string) {
-    const lessons = await this.prisma.lesson.findMany({
-      where: { module: { programId } },
-      select: { id: true },
-    });
-    const quizzes = await this.prisma.quiz.findMany({
-      where: { lesson: { module: { programId } } },
-      select: { id: true },
-    });
-    for (const lesson of lessons) {
-      const progress = await this.prisma.progress.findUnique({
-        where: { userId_lessonId: { userId, lessonId: lesson.id } },
-      });
-      if (!progress || !progress.completed) return false;
-    }
-    for (const quiz of quizzes) {
-      const passedAttempt = await this.prisma.quizAttempt.findFirst({
-        where: { userId, quizId: quiz.id, passed: true },
-      });
-      if (!passedAttempt) return false;
-    }
-    return true;
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progressService: ProgressService,
+  ) {}
 
   /** Kullanıcının sahip olduğu (enrollment) TÜM programları tamamlayıp tamamlamadığını kontrol eder. */
   async checkGraduationEligible(userId: string): Promise<{ eligible: boolean; totalPrograms: number; completedPrograms: number }> {
@@ -39,7 +19,7 @@ export class CertificatesService {
     }
     let completedCount = 0;
     for (const enrollment of enrollments) {
-      const done = await this.checkProgramCompleted(userId, enrollment.programId);
+      const done = await this.progressService.isProgramCompleted(userId, enrollment.programId);
       if (done) completedCount++;
     }
     return {

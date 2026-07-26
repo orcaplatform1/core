@@ -25,7 +25,7 @@ export function StatCard({
     <div
       className={cn(
         "rounded-2xl border border-border bg-card p-6 transition-transform duration-200 hover:-translate-y-0.5",
-        accent === "primary" && "glow-gold"
+        accent === "primary" && "glow-primary"
       )}
     >
       <div className="flex items-center justify-between">

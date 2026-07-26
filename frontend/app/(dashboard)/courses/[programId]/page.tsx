@@ -38,6 +38,17 @@ export default function CourseDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {program?.coverImageUrl && (
+        <div className="h-48 w-full overflow-hidden rounded-2xl border border-border sm:h-56">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={program.coverImageUrl}
+            alt={program.title}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-foreground">{program?.title ?? "Yükleniyor..."}</h1>
         <p className="mt-1 text-sm text-muted-foreground">

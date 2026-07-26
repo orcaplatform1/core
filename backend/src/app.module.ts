@@ -39,6 +39,7 @@ import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { PagesModule } from './pages/pages.module';
 import { FooterModule } from './footer/footer.module';
+import { SiteContentModule } from './site-content/site-content.module';
 import { SitemapModule } from './sitemap/sitemap.module';
 import { SecurityLogModule } from './security-log/security-log.module';
 import { InvoicesModule } from './invoices/invoices.module';
@@ -95,6 +96,7 @@ import { InvoicesModule } from './invoices/invoices.module';
     AuditLogModule,
     PagesModule,
     FooterModule,
+    SiteContentModule,
     SitemapModule,
     SecurityLogModule,
     InvoicesModule,

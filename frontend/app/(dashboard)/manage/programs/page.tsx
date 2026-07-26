@@ -150,13 +150,22 @@ export default function AdminProgramsPage() {
   }
 
   async function submitNewModule(programId: string) {
-    if (!moduleTitle.trim()) {
+    const titles = moduleTitle
+      .split("\n")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (titles.length === 0) {
       toast.error("Modül başlığı gerekli");
       return;
     }
     try {
-      await createModule.mutateAsync({ title: moduleTitle.trim(), programId });
-      toast.success("Modül eklendi");
+      const existing = (modules ?? []).filter((m) => m.programId === programId);
+      let nextOrder = existing.length > 0 ? Math.max(...existing.map((m) => m.order)) + 1 : 1;
+      for (const title of titles) {
+        await createModule.mutateAsync({ title, programId, order: nextOrder });
+        nextOrder++;
+      }
+      toast.success(titles.length > 1 ? `${titles.length} modül eklendi` : "Modül eklendi");
       setModuleTitle("");
       setNewModuleForProgram(null);
     } catch (err: any) {
@@ -186,18 +195,26 @@ export default function AdminProgramsPage() {
   }
 
   async function submitNewLesson(moduleId: string) {
-    if (!lessonForm.title.trim()) {
+    const titles = lessonForm.title
+      .split("\n")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (titles.length === 0) {
       toast.error("Ders başlığı gerekli");
       return;
     }
     try {
-      await createLesson.mutateAsync({
-        title: lessonForm.title.trim(),
-        videoUrl: lessonForm.videoUrl || undefined,
-        pdfUrl: lessonForm.pdfUrl || undefined,
-        moduleId,
-      });
-      toast.success("Ders eklendi");
+      const existing = (lessons ?? []).filter((l) => l.moduleId === moduleId);
+      let nextOrder = existing.length > 0 ? Math.max(...existing.map((l) => l.order)) + 1 : 1;
+      const singleExtras =
+        titles.length === 1
+          ? { videoUrl: lessonForm.videoUrl || undefined, pdfUrl: lessonForm.pdfUrl || undefined }
+          : {};
+      for (const title of titles) {
+        await createLesson.mutateAsync({ title, moduleId, order: nextOrder, ...singleExtras });
+        nextOrder++;
+      }
+      toast.success(titles.length > 1 ? `${titles.length} ders eklendi` : "Ders eklendi");
       setLessonForm({ title: "", videoUrl: "", pdfUrl: "" });
       setNewLessonForModule(null);
     } catch (err: any) {
@@ -563,22 +580,27 @@ export default function AdminProgramsPage() {
 
                               {newLessonForModule === m.id ? (
                                 <div className="rounded-lg border border-border bg-card-inner p-2.5 space-y-2">
-                                  <input
+                                  <textarea
                                     className={inputClass()}
                                     placeholder="Ders başlığı"
+                                    rows={3}
                                     value={lessonForm.title}
                                     onChange={(e) => setLessonForm((f) => ({ ...f, title: e.target.value }))}
                                     autoFocus
                                   />
+                                  <p className="text-xs text-[#A69B8A]">
+                                    Her satıra bir ders adı yaz — birden fazla ders aynı anda eklenebilir. Video/PDF
+                                    URL sadece tek ders eklerken uygulanır.
+                                  </p>
                                   <input
                                     className={inputClass()}
-                                    placeholder="Video URL (opsiyonel)"
+                                    placeholder="Video URL (opsiyonel, tek ders eklerken)"
                                     value={lessonForm.videoUrl}
                                     onChange={(e) => setLessonForm((f) => ({ ...f, videoUrl: e.target.value }))}
                                   />
                                   <input
                                     className={inputClass()}
-                                    placeholder="PDF URL (opsiyonel)"
+                                    placeholder="PDF URL (opsiyonel, tek ders eklerken)"
                                     value={lessonForm.pdfUrl}
                                     onChange={(e) => setLessonForm((f) => ({ ...f, pdfUrl: e.target.value }))}
                                   />
@@ -607,20 +629,26 @@ export default function AdminProgramsPage() {
                     })}
 
                     {newModuleForProgram === p.id ? (
-                      <div className="flex gap-2">
-                        <input
+                      <div className="space-y-1.5">
+                        <textarea
                           className={inputClass()}
                           placeholder="Modül başlığı"
+                          rows={2}
                           value={moduleTitle}
                           onChange={(e) => setModuleTitle(e.target.value)}
                           autoFocus
                         />
-                        <Button size="sm" onClick={() => submitNewModule(p.id)}>
-                          Ekle
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setNewModuleForProgram(null)}>
-                          İptal
-                        </Button>
+                        <p className="text-xs text-[#A69B8A]">
+                          Her satıra bir modül adı yaz — birden fazla modül aynı anda eklenebilir.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => submitNewModule(p.id)}>
+                            Ekle
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setNewModuleForProgram(null)}>
+                            İptal
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <Button size="sm" variant="outline" onClick={() => setNewModuleForProgram(p.id)}>

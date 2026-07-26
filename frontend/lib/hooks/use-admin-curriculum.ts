@@ -44,8 +44,8 @@ export function useCreateProgram() {
 export function useUpdateProgram() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { id: string } & Partial<ProgramPayload>) =>
-      apiClient<Program>(`/programs/${payload.id}`, { method: "PATCH", body: payload }),
+    mutationFn: ({ id, ...body }: { id: string } & Partial<ProgramPayload>) =>
+      apiClient<Program>(`/programs/${id}`, { method: "PATCH", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["programs"] }),
   });
 }
@@ -58,7 +58,7 @@ export function useDeleteProgram() {
 }
 
 // ---- Modules ----
-type ModulePayload = { title: string; description?: string; programId: string };
+type ModulePayload = { title: string; description?: string; programId: string; order?: number };
 export function useCreateModule() {
   const qc = useQueryClient();
   return useMutation({
@@ -69,8 +69,8 @@ export function useCreateModule() {
 export function useUpdateModule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { id: string } & Partial<ModulePayload>) =>
-      apiClient<CourseModule>(`/modules/${payload.id}`, { method: "PATCH", body: payload }),
+    mutationFn: ({ id, ...body }: { id: string } & Partial<ModulePayload>) =>
+      apiClient<CourseModule>(`/modules/${id}`, { method: "PATCH", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["modules"] }),
   });
 }
@@ -90,6 +90,7 @@ type LessonPayload = {
   pdfUrl?: string;
   durationSeconds?: number;
   moduleId: string;
+  order?: number;
 };
 export function useCreateLesson() {
   const qc = useQueryClient();
@@ -101,8 +102,8 @@ export function useCreateLesson() {
 export function useUpdateLesson() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { id: string } & Partial<LessonPayload>) =>
-      apiClient<LessonSummary>(`/lessons/${payload.id}`, { method: "PATCH", body: payload }),
+    mutationFn: ({ id, ...body }: { id: string } & Partial<LessonPayload>) =>
+      apiClient<LessonSummary>(`/lessons/${id}`, { method: "PATCH", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
 }

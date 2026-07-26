@@ -12,7 +12,8 @@ export class ProgressController {
   @Post('watch')
   updateWatchProgress(@Req() req: Request, @Body() dto: UpdateProgressDto) {
     const userId = (req.user as any).id;
-    return this.progressService.updateWatchProgress(userId, dto);
+    const role = (req.user as any).role;
+    return this.progressService.updateWatchProgress(userId, dto, role);
   }
 
   @Get('me')

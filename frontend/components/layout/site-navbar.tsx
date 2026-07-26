@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogOut, Bot } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,26 +13,24 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
+import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
+import { SiteLogo } from "@/components/layout/site-logo";
 
-const publicLinks = [
-  { label: "Ana Sayfa", href: "/" },
-  { label: "Programlar", href: "/programs" },
-  { label: "Hakkımızda", href: "/about" },
-  { label: "Blog", href: "/blog" },
-  { label: "İletişim", href: "/contact" },
-];
-
-export function SiteNavbar() {
+export function SiteNavbar({
+  siteContent = DEFAULT_SITE_CONTENT,
+}: {
+  siteContent?: SiteContentSettings;
+}) {
   const [open, setOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
+  const publicLinks = siteContent.navLinks;
 
   return (
     <header className="sticky top-0 z-50 h-[72px] w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            ORCA <span className="text-primary">TRADERS</span>
-          </span>
+        <Link href="/" className="flex items-center shrink-0">
+          <SiteLogo siteContent={siteContent} textClassName="text-lg text-foreground" imgClassName="h-12" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
@@ -77,6 +75,14 @@ export function SiteNavbar() {
               />
             </>
           )}
+          <Link
+            href={siteContent.aiMentorHref}
+            className="hidden lg:flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/15"
+          >
+            <Bot className="size-3.5" />
+            {siteContent.aiMentorLabel}
+            <span className="size-1.5 rounded-full bg-success animate-pulse" />
+          </Link>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -94,7 +100,7 @@ export function SiteNavbar() {
           >
             <SheetTitle className="sr-only">Menü</SheetTitle>
             <div className="flex items-center justify-between h-[72px] px-4 border-b border-sidebar-border">
-              <span className="font-bold text-foreground">ORCA TRADERS</span>
+              <SiteLogo siteContent={siteContent} imgClassName="h-8" />
               <Button
                 variant="ghost"
                 size="icon"

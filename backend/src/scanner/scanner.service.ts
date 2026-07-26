@@ -516,6 +516,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
+    let buildSetupAttempts = 0; // GEÇİCİ LOG (24s gözlem için) — kaldırılacak
 
     for (const { symbol } of symbols) {
       try {
@@ -526,6 +527,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const weekly = this.toWeekly(daily);
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
         const trend4h = this.getTrend(h4);
+        buildSetupAttempts++; // GEÇİCİ LOG
         const setup = this.buildSetup(daily, trend4h, weekly, fundingRate);
         if (!setup) continue;
 
@@ -546,6 +548,12 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
       if (!tooCorrelated) selected.push(c);
     }
+
+    // GEÇİCİ LOG (24s gözlem için) — hangi aşamada eleme oluyor: eşik mi, korelasyon mu?
+    // Davranışı değiştirmez, sadece konsola basar. Gözlem bitince kaldırılacak.
+    console.log(
+      `[scanCrypto][GEÇİCİ LOG] denenen=${buildSetupAttempts} eşiğiGeçen(candidates)=${candidates.length} korelasyonSonrası(selected)=${selected.length}`,
+    );
 
     for (const s of selected) {
       s.aiCommentary = await this.interpretWithAI(s.symbol, s);

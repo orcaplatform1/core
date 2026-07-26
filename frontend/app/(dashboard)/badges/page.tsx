@@ -127,7 +127,7 @@ export default function BadgesPage() {
               >
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-full"
-                  style={{ backgroundColor: badge.locked ? "#2E282022" : "#22C55E22" }}
+                  style={{ backgroundColor: badge.locked ? "#1C274022" : "#22C55E22" }}
                 >
                   {badge.locked ? (
                     <Lock size={20} color="#A69B8A" />
