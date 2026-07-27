@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 import { SiteLogo } from "@/components/layout/site-logo";
+import { AiMentorPreviewCard } from "@/components/marketing/ai-mentor-preview-card";
 
 export function SiteNavbar({
   siteContent = DEFAULT_SITE_CONTENT,
@@ -75,14 +76,20 @@ export function SiteNavbar({
               />
             </>
           )}
-          <Link
-            href={siteContent.aiMentorHref}
-            className="hidden lg:flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/15"
-          >
-            <Bot className="size-3.5" />
-            {siteContent.aiMentorLabel}
-            <span className="size-1.5 rounded-full bg-success animate-pulse" />
-          </Link>
+          <div className="group relative hidden lg:block">
+            <Link
+              href={siteContent.aiMentorHref}
+              className="flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/15"
+            >
+              <Bot className="size-3.5" />
+              {siteContent.aiMentorLabel}
+              <span className="size-1.5 rounded-full bg-success animate-pulse" />
+            </Link>
+
+            <div className="pointer-events-none absolute right-0 top-full z-50 translate-y-1 pt-3 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+              <AiMentorPreviewCard size="compact" className="w-[360px] max-w-[90vw]" />
+            </div>
+          </div>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -121,6 +128,11 @@ export function SiteNavbar({
                   {link.label}
                 </Link>
               ))}
+
+              <Link href={siteContent.aiMentorHref} onClick={() => setOpen(false)} className="mt-1 block">
+                <AiMentorPreviewCard size="compact" className="w-full" />
+              </Link>
+
               <Separator />
               {user ? (
                 <>
