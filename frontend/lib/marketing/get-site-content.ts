@@ -51,12 +51,24 @@ export async function getFooterPages(): Promise<LegalPageSummary[]> {
   }
 }
 
-export async function getPageBySlug(slug: string): Promise<LegalPage | null> {
+export type PageFetchResult =
+  | { status: "ok"; page: LegalPage }
+  | { status: "not-found" }
+  | { status: "forbidden" };
+
+// Anonim (sunucu tarafı) istek — kullanıcının JWT'si localStorage'da tutulduğundan
+// SSR sırasında erişilemez. Sayfa herkese açıksa (visibility boş) doğrudan içerik
+// döner; visibility kısıtlıysa backend 403 döner ve gerçek yetki kontrolü istemci
+// tarafında (giriş yapmış kullanıcının token'ıyla) ayrıca yapılır.
+export async function getPageBySlug(slug: string): Promise<PageFetchResult> {
   try {
     const res = await fetch(`${BASE_URL}/pages/${slug}`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    return await res.json();
+    if (res.status === 404) return { status: "not-found" };
+    if (res.status === 403) return { status: "forbidden" };
+    if (!res.ok) return { status: "not-found" };
+    const page = await res.json();
+    return { status: "ok", page };
   } catch {
-    return null;
+    return { status: "not-found" };
   }
 }

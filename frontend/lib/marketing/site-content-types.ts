@@ -122,7 +122,8 @@ export interface LegalPageSummary {
 }
 
 export interface LegalPage extends LegalPageSummary {
-  content: string;
+  blocks: import("./page-blocks-types").PageBlock[];
+  visibility: string[];
   showInFooter: boolean;
   order: number;
   createdAt: string;
