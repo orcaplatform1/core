@@ -16,7 +16,7 @@ export class FooterService {
     if (!settings) {
       settings = await this.prisma.footerSettings.create({
         data: {
-          companyName: 'ORCA TRADERS',
+          companyName: 'ORCA',
           copyrightText: '© 2026 ORCA. Tüm hakları saklıdır. Bu platformda yer alan tüm içerikler, tasarımlar, marka unsurları ve fikrî mülkiyet hakları ilgili yasal mevzuat kapsamında korunmaktadır.',
         },
       });

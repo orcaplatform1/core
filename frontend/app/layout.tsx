@@ -13,9 +13,23 @@ const inter = Inter({
 export async function generateMetadata(): Promise<Metadata> {
   const siteContent = await getSiteContent();
   return {
-    title: "ORCA TRADERS",
+    title: "ORCA",
     description: "Yapay zeka destekli finans ve trading eğitim platformu",
-    icons: siteContent.faviconUrl ? { icon: siteContent.faviconUrl } : undefined,
+    icons: siteContent.faviconUrl
+      ? {
+          // sizes/type belirtmezsek bazı tarayıcılar görseli tek boyut varsayıp
+          // olduğu gibi (kırpılmamışsa etrafındaki boşlukla) küçük render ediyor;
+          // aynı görseli standart favicon boyutlarında ayrı <link> olarak bildirmek
+          // tarayıcının en yakın boyutu seçmesini sağlıyor.
+          icon: [
+            { url: siteContent.faviconUrl, sizes: "32x32", type: "image/png" },
+            { url: siteContent.faviconUrl, sizes: "16x16", type: "image/png" },
+            { url: siteContent.faviconUrl, sizes: "192x192", type: "image/png" },
+          ],
+          apple: { url: siteContent.faviconUrl, sizes: "180x180", type: "image/png" },
+          shortcut: siteContent.faviconUrl,
+        }
+      : undefined,
   };
 }
 

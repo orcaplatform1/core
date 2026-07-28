@@ -38,7 +38,7 @@ const features = [
 
 const BANK_DETAILS = {
   bankName: "———— Bankası",
-  accountHolder: "ORCA TRADERS EĞİTİM A.Ş.",
+  accountHolder: "ORCA EĞİTİM A.Ş.",
   iban: "TR00 0000 0000 0000 0000 0000 00",
 };
 
@@ -142,7 +142,7 @@ export default function SubscriptionPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Abonelik</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          ORCA TRADERS eğitim paketine tek seferlik, ömür boyu erişim.
+          ORCA eğitim paketine tek seferlik, ömür boyu erişim.
         </p>
       </div>
 
@@ -160,7 +160,7 @@ export default function SubscriptionPage() {
         <div className="rounded-2xl border border-primary/20 bg-card p-8">
           <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">ORCA TRADERS Eğitim Paketi</h2>
+              <h2 className="text-lg font-semibold text-foreground">ORCA Eğitim Paketi</h2>
               <p className="mt-1 text-sm text-muted-foreground">Tek seferlik ödeme, ömür boyu erişim</p>
             </div>
             <div className="text-right">

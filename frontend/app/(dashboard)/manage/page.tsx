@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -132,6 +132,18 @@ export default function ManagePage() {
           <div>
             <p className="font-medium text-[#F5F1EA]">Site İçeriği</p>
             <p className="text-xs text-[#A69B8A]">Landing page, header, footer, logo ve favicon yönetimi</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/pages"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAB30822]">
+            <FileText size={20} color="#EAB308" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Sayfalar</p>
+            <p className="text-xs text-[#A69B8A]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
           </div>
         </Link>
       </div>

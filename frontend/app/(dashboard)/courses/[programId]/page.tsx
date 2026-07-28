@@ -39,7 +39,7 @@ export default function CourseDetailPage({
   return (
     <div className="flex flex-col gap-6">
       {program?.coverImageUrl && (
-        <div className="h-48 w-full overflow-hidden rounded-2xl border border-border sm:h-56">
+        <div className="h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-56">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={program.coverImageUrl}

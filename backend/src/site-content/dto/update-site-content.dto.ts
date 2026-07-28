@@ -50,25 +50,40 @@ export class UpdateSiteContentDto {
 
   @IsOptional()
   @IsString()
-  heroSocialProofCount?: string;
-
-  @IsOptional()
-  @IsString()
-  heroSocialProofLabel?: string;
-
-  @IsOptional()
-  @IsString()
   heroImageUrl?: string;
 
   @IsOptional()
-  statsItems?: { icon?: string; value: string; trend?: string; label: string; sublabel?: string }[];
-
-  @IsOptional()
   @IsString()
-  programsTableTitle?: string;
+  partnersTitle?: string;
 
   @IsOptional()
-  programsTableItems?: { level: string; title: string; duration: string }[];
+  partnersItems?: { icon?: string; brandKey?: string; name: string; href?: string }[];
+
+  @IsOptional()
+  @IsString({ each: true })
+  featuredProgramIds?: string[];
+
+  @IsOptional()
+  platformShowcase?: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    ctaLabel: string;
+    ctaHref: string;
+    greetingName: string;
+    quoteText: string;
+    quoteAuthor: string;
+    stats: { icon?: string; value: string; label: string }[];
+    chartOneLabel: string;
+    chartOneValue: string;
+    chartTwoLabel: string;
+    chartTwoValue: string;
+    streakDays: number;
+    mentorUsageDays: number;
+    activeProgramName: string;
+    upcomingLessonTitle: string;
+    upcomingLessonTime: string;
+  };
 
   @IsOptional()
   @IsString()
@@ -89,21 +104,10 @@ export class UpdateSiteContentDto {
 
   @IsOptional()
   @IsString()
-  featuresTitle?: string;
-
-  @IsOptional()
-  @IsString()
-  featuresSubtitle?: string;
-
-  @IsOptional()
-  featureItems?: { icon?: string; title: string; description: string; accent?: string }[];
-
-  @IsOptional()
-  @IsString()
   communityTitle?: string;
 
   @IsOptional()
-  communityStats?: { icon?: string; value: string; label: string }[];
+  communityStats?: { icon?: string; value: string; label: string; auto?: string }[];
 
   @IsOptional()
   @IsInt()

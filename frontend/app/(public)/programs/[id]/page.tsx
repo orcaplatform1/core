@@ -38,7 +38,7 @@ export default function ProgramDetailPage({
   return (
     <div className="mx-auto max-w-[1000px] px-4 py-16 sm:px-6">
       {program.coverImageUrl && (
-        <div className="mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border sm:h-64">
+        <div className="mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={program.coverImageUrl}

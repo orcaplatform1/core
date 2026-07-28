@@ -5,17 +5,17 @@ import type { ToolItemData, ToolPreviewKey } from "@/lib/marketing/site-content-
 
 function ScannerPreview() {
   const rows = [
-    { symbol: "BTC", side: "BUY", rsi: "34.2" },
-    { symbol: "ETH", side: "SELL", rsi: "71.8" },
-    { symbol: "SOL", side: "BUY", rsi: "28.5" },
+    { symbol: "BTC", side: "BUY", price: "67.842", change: "+2.4%" },
+    { symbol: "ETH", side: "SELL", price: "3.512", change: "-1.1%" },
+    { symbol: "SOL", side: "BUY", price: "178,3", change: "+5.7%" },
   ];
   return (
     <div className="space-y-1.5 text-[10px]">
       {rows.map((r) => (
         <div key={r.symbol} className="flex items-center justify-between rounded-md bg-black/20 px-2 py-1.5">
           <span className="font-medium text-foreground/80">{r.symbol}</span>
-          <span className={r.side === "BUY" ? "text-success" : "text-danger"}>{r.side}</span>
-          <span className="text-muted-foreground">RSI {r.rsi}</span>
+          <span className="text-muted-foreground">${r.price}</span>
+          <span className={r.side === "BUY" ? "text-success" : "text-danger"}>{r.change}</span>
         </div>
       ))}
     </div>
@@ -33,18 +33,44 @@ function BacktestPreview() {
   );
 }
 
+// Mini TradingView tarzı mum grafik — çubuk/çizgi yerine gerçek bir grafik terminaline
+// benzemesi için OHLC mumları (gövde + fitil) çiziyor.
 function SimulationPreview() {
+  const candles = [
+    { o: 30, c: 22, h: 34, l: 20 },
+    { o: 22, c: 26, h: 28, l: 18 },
+    { o: 26, c: 18, h: 27, l: 15 },
+    { o: 18, c: 24, h: 26, l: 16 },
+    { o: 24, c: 14, h: 25, l: 12 },
+    { o: 14, c: 19, h: 21, l: 11 },
+    { o: 19, c: 10, h: 20, l: 8 },
+    { o: 10, c: 15, h: 17, l: 8 },
+    { o: 15, c: 6, h: 16, l: 5 },
+    { o: 6, c: 12, h: 14, l: 4 },
+  ];
+  const step = 100 / candles.length;
   return (
     <svg viewBox="0 0 100 50" className="h-full w-full" preserveAspectRatio="none">
-      <polyline
-        points="0,40 15,32 30,36 45,18 60,24 75,10 100,15"
-        fill="none"
-        stroke="var(--primary)"
-        strokeWidth="2"
-        vectorEffect="non-scaling-stroke"
-      />
-      <circle cx="15" cy="32" r="2.2" fill="var(--success)" />
-      <circle cx="75" cy="10" r="2.2" fill="var(--danger)" />
+      {candles.map((c, i) => {
+        const x = i * step + step / 2;
+        const up = c.c < c.o; // svg y ekseni ters: küçük y = yukarı
+        const color = up ? "var(--success)" : "var(--danger)";
+        const bodyTop = Math.min(c.o, c.c);
+        const bodyBottom = Math.max(c.o, c.c);
+        return (
+          <g key={i}>
+            <line x1={x} x2={x} y1={c.h} y2={c.l} stroke={color} strokeWidth="0.6" vectorEffect="non-scaling-stroke" />
+            <rect
+              x={x - step * 0.28}
+              y={bodyTop}
+              width={step * 0.56}
+              height={Math.max(1.5, bodyBottom - bodyTop)}
+              fill={color}
+              rx="0.6"
+            />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -67,17 +93,36 @@ function CalendarPreview() {
   );
 }
 
+// Piyasa heatmap'i — her hücre bir varlığı ve yüzdesel performansına göre
+// yeşil/kırmızı yoğunluğunu temsil ediyor (gerçek heatmap araçlarına referansla).
 function LiveAnalysisPreview() {
+  const cells = [
+    { symbol: "BTC", change: 2.4 },
+    { symbol: "ETH", change: 1.1 },
+    { symbol: "SOL", change: 5.7 },
+    { symbol: "BNB", change: -0.8 },
+    { symbol: "XRP", change: -2.6 },
+    { symbol: "AVAX", change: 3.2 },
+    { symbol: "ADA", change: -1.4 },
+    { symbol: "DOGE", change: 0.6 },
+  ];
+  const maxAbs = Math.max(...cells.map((c) => Math.abs(c.change)));
   return (
-    <div className="flex h-full items-center justify-center">
-      <div
-        className="size-16 rounded-full"
-        style={{
-          background: "conic-gradient(var(--primary) 0deg 230deg, rgba(255,255,255,0.08) 230deg 360deg)",
-          mask: "radial-gradient(closest-side, transparent 62%, black 63%)",
-          WebkitMask: "radial-gradient(closest-side, transparent 62%, black 63%)",
-        }}
-      />
+    <div className="grid h-full grid-cols-4 gap-1">
+      {cells.map((c) => {
+        const alpha = 0.35 + (Math.abs(c.change) / maxAbs) * 0.55;
+        const rgb = c.change >= 0 ? "34,197,94" : "239,68,68";
+        return (
+          <div
+            key={c.symbol}
+            className="flex flex-col items-center justify-center rounded-sm text-[8px] font-medium text-white"
+            style={{ backgroundColor: `rgba(${rgb},${alpha})` }}
+          >
+            <span>{c.symbol}</span>
+            <span className="opacity-80">{c.change > 0 ? "+" : ""}{c.change.toFixed(1)}%</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -91,7 +136,7 @@ const PREVIEW_BY_KEY: Record<ToolPreviewKey, React.ReactNode> = {
 };
 
 export function ToolsShowcase({
-  title = "ORCA Araçları",
+  title = "Neden ORCA ?",
   subtitle = "Yapay zeka destekli araçlarımızla piyasayı daha iyi analiz edin, stratejinizi geliştirin ve bir adım önde olun.",
   tools,
 }: {

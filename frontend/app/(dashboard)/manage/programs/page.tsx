@@ -312,12 +312,18 @@ export default function AdminProgramsPage() {
           </select>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <input
-            className={inputClass()}
-            placeholder="Kapak görsel URL"
-            value={programForm.coverImageUrl}
-            onChange={(e) => setProgramForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
-          />
+          <div>
+            <input
+              className={inputClass()}
+              placeholder="Kapak görsel URL"
+              value={programForm.coverImageUrl}
+              onChange={(e) => setProgramForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
+            />
+            <p className="mt-1 text-xs text-[#A69B8A]">
+              Önerilen boyut: 1600×900px (16:9), min. 1200×675px. Alan otomatik doldurulur (cover); bu oranda
+              olmayan görsellerde üst/alt hafif kırpılabilir.
+            </p>
+          </div>
           <input
             className={inputClass()}
             placeholder="Süre (saat)"

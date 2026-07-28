@@ -3,12 +3,43 @@ export interface NavLinkItem {
   href: string;
 }
 
-export interface StatItemData {
+export interface PartnerItemData {
+  icon?: string;
+  /** Gerçek marka logosu için lib/marketing/partner-brands.ts anahtarı; boşsa isme göre otomatik tespit edilir. */
+  brandKey?: string;
+  name: string;
+  href?: string;
+}
+
+export interface PlatformShowcaseStatItem {
   icon?: string;
   value: string;
-  trend?: string;
   label: string;
-  sublabel?: string;
+}
+
+export interface PlatformShowcaseData {
+  eyebrow: string;
+  title: string;
+  description: string;
+  ctaLabel: string;
+  ctaHref: string;
+
+  greetingName: string;
+  quoteText: string;
+  quoteAuthor: string;
+
+  stats: PlatformShowcaseStatItem[];
+
+  chartOneLabel: string;
+  chartOneValue: string;
+  chartTwoLabel: string;
+  chartTwoValue: string;
+
+  streakDays: number;
+  mentorUsageDays: number;
+  activeProgramName: string;
+  upcomingLessonTitle: string;
+  upcomingLessonTime: string;
 }
 
 export type ToolPreviewKey = "scanner" | "backtest" | "simulation" | "calendar" | "live";
@@ -21,23 +52,14 @@ export interface ToolItemData {
   previewKey: ToolPreviewKey;
 }
 
-export interface FeatureItemData {
-  icon?: string;
-  title: string;
-  description: string;
-  accent?: "primary" | "purple";
-}
+export type CommunityStatAutoMetric = "totalUsers" | "dailyActive";
 
 export interface CommunityStatItemData {
   icon?: string;
   value: string;
   label: string;
-}
-
-export interface ProgramsTableRowData {
-  level: string;
-  title: string;
-  duration: string;
+  /** Ayarlıysa "value" backend tarafından gerçek verilerle otomatik hesaplanır (bkz. M Dashboard). */
+  auto?: CommunityStatAutoMetric;
 }
 
 export interface SiteContentSettings {
@@ -57,22 +79,18 @@ export interface SiteContentSettings {
   heroPrimaryCtaHref: string;
   heroSecondaryCtaLabel?: string | null;
   heroSecondaryCtaHref?: string | null;
-  heroSocialProofCount?: string | null;
-  heroSocialProofLabel?: string | null;
   heroImageUrl?: string | null;
 
-  statsItems: StatItemData[];
+  partnersTitle: string;
+  partnersItems: PartnerItemData[];
 
-  programsTableTitle: string;
-  programsTableItems: ProgramsTableRowData[];
+  featuredProgramIds: string[];
+
+  platformShowcase: PlatformShowcaseData;
 
   toolsTitle: string;
   toolsSubtitle: string;
   toolsItems: ToolItemData[];
-
-  featuresTitle: string;
-  featuresSubtitle: string;
-  featureItems: FeatureItemData[];
 
   communityTitle: string;
   communityStats: CommunityStatItemData[];
@@ -95,4 +113,18 @@ export interface FooterSettingsData {
   contactPhone?: string | null;
   socialLinks?: Record<string, string> | null;
   copyrightText?: string | null;
+}
+
+export interface LegalPageSummary {
+  id: string;
+  slug: string;
+  title: string;
+}
+
+export interface LegalPage extends LegalPageSummary {
+  content: string;
+  showInFooter: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
 }

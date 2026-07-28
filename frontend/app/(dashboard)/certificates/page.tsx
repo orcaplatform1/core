@@ -49,7 +49,7 @@ export default function CertificatesPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Sertifikam</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          ORCA TRADERS eğitim programının tamamını bitirince kazanacağın mezuniyet sertifikası.
+          ORCA eğitim programının tamamını bitirince kazanacağın mezuniyet sertifikası.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export default function CertificatesPage() {
           <div>
             <p className="text-xs font-medium text-muted-foreground">{status.certificate.code}</p>
             <h2 className="mt-1 text-lg font-semibold text-foreground">
-              ORCA TRADERS Mezuniyet Sertifikası
+              ORCA Mezuniyet Sertifikası
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {new Date(status.certificate.issuedAt).toLocaleDateString("tr-TR", {

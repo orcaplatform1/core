@@ -7,7 +7,8 @@ export function ProgramCard({ program }: { program: Program }) {
   return (
     <Link
       href={`/programs/${program.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-200 hover:-translate-y-1"
+      data-level={program.level ?? undefined}
+      className="program-card-accent group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1"
     >
       <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-primary/20 via-card to-purple/10">
         {program.coverImageUrl && (

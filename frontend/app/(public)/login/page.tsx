@@ -76,7 +76,7 @@ export default function GirisPage() {
       <div className="mx-auto w-full max-w-md rounded-2xl border border-primary/15 bg-card p-8 shadow-lg">
         <h1 className="text-2xl font-bold text-foreground">Giriş Yap</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          ORCA TRADERS hesabınla devam et.
+          ORCA hesabınla devam et.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">

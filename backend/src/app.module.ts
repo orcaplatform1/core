@@ -38,6 +38,7 @@ import { QuotesModule } from './quotes/quotes.module';
 import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { PagesModule } from './pages/pages.module';
+import { WhaleTrackerModule } from './whale-tracker/whale-tracker.module';
 import { FooterModule } from './footer/footer.module';
 import { SiteContentModule } from './site-content/site-content.module';
 import { SitemapModule } from './sitemap/sitemap.module';
@@ -45,6 +46,10 @@ import { SecurityLogModule } from './security-log/security-log.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { CacheModule } from './cache/cache.module';
 import { PublicToolsModule } from './public-tools/public-tools.module';
+import { TokenUnlockModule } from './token-unlock/token-unlock.module';
+import { IcoTrackerModule } from './ico-tracker/ico-tracker.module';
+import { CryptoCalendarModule } from './crypto-calendar/crypto-calendar.module';
+import { NewsSentimentModule } from './news-sentiment/news-sentiment.module';
 import { PointsModule } from './points/points.module';
 import { RetentionModule } from './retention/retention.module';
 
@@ -106,6 +111,11 @@ import { RetentionModule } from './retention/retention.module';
     SecurityLogModule,
     InvoicesModule,
     PublicToolsModule,
+    WhaleTrackerModule,
+    TokenUnlockModule,
+    IcoTrackerModule,
+    CryptoCalendarModule,
+    NewsSentimentModule,
     PointsModule,
     RetentionModule,
   ],

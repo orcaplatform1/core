@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { DEFAULT_FOOTER_SETTINGS } from "@/lib/marketing/default-site-content";
-import type { FooterSettingsData } from "@/lib/marketing/site-content-types";
+import type { FooterSettingsData, LegalPageSummary } from "@/lib/marketing/site-content-types";
 
-const footerColumns = [
+const staticFooterColumns = [
   {
     title: "Platform",
     links: [
@@ -20,14 +20,6 @@ const footerColumns = [
       { label: "Sıkça Sorulan Sorular", href: "/faq" },
       { label: "Destek Merkezi", href: "/contact" },
       { label: "İletişim", href: "/contact" },
-    ],
-  },
-  {
-    title: "Yasal",
-    links: [
-      { label: "Kullanım Şartları", href: "/terms-of-service" },
-      { label: "Gizlilik Politikası", href: "/privacy-policy" },
-      { label: "Çerez Politikası", href: "/privacy-policy" },
     ],
   },
 ];
@@ -67,13 +59,24 @@ const socialIcons: Record<string, React.ComponentType<React.SVGProps<SVGSVGEleme
 
 export function SiteFooter({
   footer = DEFAULT_FOOTER_SETTINGS,
+  legalPages = [],
 }: {
   footer?: FooterSettingsData;
+  legalPages?: LegalPageSummary[];
 }) {
   const socialLinks = Object.entries(footer.socialLinks ?? {})
     .filter(([label]) => socialIcons[label])
     .map(([label, href]) => ({ label, href, icon: socialIcons[label] }));
   const [logoFirst, ...logoRest] = footer.companyName.split(" ");
+  const footerColumns = legalPages.length
+    ? [
+        ...staticFooterColumns,
+        {
+          title: "Yasal",
+          links: legalPages.map((page) => ({ label: page.title, href: `/${page.slug}` })),
+        },
+      ]
+    : staticFooterColumns;
 
   return (
     <footer className="border-t border-border bg-secondary">
@@ -109,7 +112,15 @@ export function SiteFooter({
         </div>
 
         <div className="mt-12 flex flex-col-reverse items-center gap-6 border-t border-divider pt-8 sm:flex-row sm:justify-between">
-          <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
+          <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
+            <Link
+              href="/site-haritasi"
+              className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            >
+              Site Haritası
+            </Link>
+          </div>
           <div className="flex items-center gap-3">
             {socialLinks.map((s) => (
               <a

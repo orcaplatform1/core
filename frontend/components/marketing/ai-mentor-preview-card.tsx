@@ -1,8 +1,15 @@
-import { Bot, ArrowRight, Send } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Bot, Send, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import { useSendMentorMessage } from "@/lib/hooks/use-mentor";
+import { ApiError } from "@/lib/api-client";
 
-const waveform = [30, 55, 40, 80, 60, 90, 45, 70, 35, 60, 50, 85, 40, 65, 30];
+type ChatEntry = { role: "user" | "assistant"; content: string };
 
 export function AiMentorPreviewCard({
   size = "compact",
@@ -12,55 +19,110 @@ export function AiMentorPreviewCard({
   className?: string;
 }) {
   const expanded = size === "expanded";
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const sendMessage = useSendMentorMessage();
+
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatEntry[]>([]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const content = input.trim();
+    if (!content || sendMessage.isPending || authLoading) return;
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    setMessages((m) => [...m, { role: "user", content }]);
+    setInput("");
+
+    try {
+      const res = await sendMessage.mutateAsync({ content });
+      setMessages((m) => [...m, { role: "assistant", content: res.message.content }]);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : "Bir hata oluştu, lütfen tekrar dene.";
+      setMessages((m) => [...m, { role: "assistant", content: message }]);
+    }
+  }
 
   return (
-    <Card
-      variant="glass"
-      className={cn("gap-4 p-5", expanded ? "w-full" : "w-full max-w-[420px]", className)}
-    >
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <span className="flex size-6 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <Bot className="size-3.5" />
+    <div className={cn("relative", expanded ? "w-full" : "w-full max-w-[420px]", className)}>
+      {/* Katmanlı derinlik: kartın arkasında yumuşak mor bir parıltı — düz mavi temadan
+          ayrışan "premium" his için, göz yormaması adına düşük opasitede. */}
+      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-purple/20 opacity-70 blur-2xl" />
+
+      <Card
+        variant="glass"
+        className="relative gap-4 overflow-hidden border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] p-5 shadow-[0_24px_60px_-20px_rgba(139,92,246,0.45)]"
+      >
+        {/* İç üst kenar aydınlatması — cam katmanına ince bir "highlight" çizgisi */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple/50 to-transparent" />
+
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span className="flex size-6 items-center justify-center rounded-full bg-purple/20 text-purple">
+              <Bot className="size-3.5" />
+            </span>
+            ORCA AI Mentor
           </span>
-          ORCA AI Mentor
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-success">
-          <span className="size-1.5 animate-pulse rounded-full bg-success" />
-          Online
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-foreground/90">
-          Bugün Bitcoin&apos;de likidite bölgeleri hangi seviyelerde?
+          <span className="flex items-center gap-1.5 text-xs text-success">
+            <span className="size-1.5 animate-pulse rounded-full bg-success" />
+            Online
+          </span>
         </div>
-        <div className="rounded-2xl rounded-tl-sm border border-primary/20 bg-primary/10 px-3 py-2 text-xs text-foreground/90">
-          Likidite haritasına göre 68.200 – 68.800 bölgesi kritik. Bu bölge üzerinde kalıcılık gelirse 70.200 hedeflenebilir.
+
+        <div className="max-h-56 space-y-2 overflow-y-auto">
+          {messages.length === 0 ? (
+            <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-muted-foreground">
+              Piyasalarla ilgili bir soru sor, ORCA AI Mentor sana yardımcı olsun.
+            </div>
+          ) : (
+            messages.map((m, i) =>
+              m.role === "user" ? (
+                <div
+                  key={i}
+                  className="rounded-2xl rounded-tl-sm border border-purple/25 bg-purple/10 px-3 py-2 text-xs text-foreground/90"
+                >
+                  {m.content}
+                </div>
+              ) : (
+                <div key={i} className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-foreground/90">
+                  {m.content}
+                </div>
+              )
+            )
+          )}
+          {sendMessage.isPending && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3.5 animate-spin text-purple" />
+              ORCA düşünüyor...
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ArrowRight className="size-3.5 text-primary" />
-        ORCA düşünüyor...
-      </div>
-
-      <div className="flex h-8 items-end gap-[3px]">
-        {waveform.map((h, i) => (
-          <span
-            key={i}
-            className="w-[3px] rounded-full bg-primary/70"
-            style={{ height: `${h}%` }}
+        <form
+          onSubmit={handleSubmit}
+          className="card-inner flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 transition-colors duration-200 focus-within:border-purple/30"
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={user ? "Bir soru sor..." : "Sormak için giriş yap..."}
+            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
-        ))}
-      </div>
-
-      <div className="card-inner flex items-center gap-2 rounded-xl px-3 py-2">
-        <span className="flex-1 text-xs text-muted-foreground">Bir soru sor...</span>
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-          <Send className="size-3" />
-        </span>
-      </div>
-    </Card>
+          <button
+            type="submit"
+            disabled={sendMessage.isPending || !input.trim()}
+            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-purple text-white shadow-[0_4px_16px_-4px_rgba(139,92,246,0.7)] transition-opacity disabled:opacity-40"
+            aria-label="Gönder"
+          >
+            <Send className="size-3" />
+          </button>
+        </form>
+      </Card>
+    </div>
   );
 }

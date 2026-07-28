@@ -34,7 +34,7 @@ export function DashboardSidebar({
     <aside
       className={cn(
         "hidden md:flex flex-col fixed inset-y-0 left-0 z-40 border-r border-sidebar-border bg-sidebar transition-[width] duration-[220ms]",
-        collapsed ? "w-[88px]" : "w-[280px]"
+        collapsed ? "w-[88px]" : "w-[232px]"
       )}
     >
       <div className="flex items-center h-[72px] px-4 border-b border-sidebar-border shrink-0">
@@ -84,7 +84,7 @@ export function DashboardSidebar({
               </span>
             )}
             {section.items.map((item) => {
-              const active = pathname === item.href;
+              const active = pathname === item.href || pathname?.startsWith(item.href + "/");
               const link = (
                 <Link
                   key={item.href}

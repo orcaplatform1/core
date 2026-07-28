@@ -1,31 +1,17 @@
 import { MessageSquare } from "lucide-react";
 import { Hero } from "@/components/marketing/hero";
-import { StatsRow, type StatItem } from "@/components/marketing/stats-row";
+import { PartnersBar } from "@/components/marketing/partners-bar";
+import { PlatformShowcase } from "@/components/marketing/platform-showcase";
+import { ExpertisePrograms } from "@/components/marketing/expertise-programs";
 import { ToolsShowcase } from "@/components/marketing/tools-showcase";
-import { FeatureGrid, type FeatureItem } from "@/components/marketing/feature-grid";
 import { CommunityStats, type CommunityStatItem } from "@/components/marketing/community-stats";
 import { CtaBanner } from "@/components/marketing/cta-banner";
-import { ProgramsTable } from "@/components/marketing/programs-table";
 import { resolveIcon } from "@/lib/marketing/icon-registry";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
+import { getPrograms } from "@/lib/marketing/get-programs";
 
 export default async function Home() {
-  const siteContent = await getSiteContent();
-
-  const stats: StatItem[] = siteContent.statsItems.map((s) => ({
-    icon: resolveIcon(s.icon),
-    value: s.value,
-    trend: s.trend,
-    label: s.label,
-    sublabel: s.sublabel,
-  }));
-
-  const features: FeatureItem[] = siteContent.featureItems.map((f) => ({
-    icon: resolveIcon(f.icon),
-    title: f.title,
-    description: f.description,
-    accent: f.accent,
-  }));
+  const [siteContent, programs] = await Promise.all([getSiteContent(), getPrograms()]);
 
   const communityStats: CommunityStatItem[] = siteContent.communityStats.map((c) => ({
     icon: resolveIcon(c.icon),
@@ -45,21 +31,16 @@ export default async function Home() {
             ? { label: siteContent.heroSecondaryCtaLabel, href: siteContent.heroSecondaryCtaHref }
             : undefined
         }
-        socialProof={
-          siteContent.heroSocialProofCount && siteContent.heroSocialProofLabel
-            ? { count: siteContent.heroSocialProofCount, label: siteContent.heroSocialProofLabel }
-            : undefined
-        }
         heroImageSrc={siteContent.heroImageUrl ?? undefined}
       />
 
-      <StatsRow stats={stats} />
+      <PartnersBar title={siteContent.partnersTitle} partners={siteContent.partnersItems} />
 
-      <ProgramsTable title={siteContent.programsTableTitle} items={siteContent.programsTableItems} />
+      <PlatformShowcase data={siteContent.platformShowcase} />
+
+      <ExpertisePrograms programs={programs} featuredProgramIds={siteContent.featuredProgramIds} />
 
       <ToolsShowcase title={siteContent.toolsTitle} subtitle={siteContent.toolsSubtitle} tools={siteContent.toolsItems} />
-
-      <FeatureGrid title={siteContent.featuresTitle} subtitle={siteContent.featuresSubtitle} features={features} />
 
       <CommunityStats
         title={siteContent.communityTitle}
@@ -74,6 +55,7 @@ export default async function Home() {
         checklist={siteContent.ctaChecklist}
         ctaLabel={siteContent.ctaButtonLabel}
         ctaHref={siteContent.ctaButtonHref}
+        accent="purple"
       />
     </>
   );

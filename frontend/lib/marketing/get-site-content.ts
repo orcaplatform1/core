@@ -1,5 +1,5 @@
 import { DEFAULT_FOOTER_SETTINGS, DEFAULT_SITE_CONTENT } from "./default-site-content";
-import type { FooterSettingsData, SiteContentSettings } from "./site-content-types";
+import type { FooterSettingsData, LegalPage, LegalPageSummary, SiteContentSettings } from "./site-content-types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -38,5 +38,25 @@ export async function getFooterSettings(): Promise<FooterSettingsData> {
     return mergeDefined(DEFAULT_FOOTER_SETTINGS, data);
   } catch {
     return DEFAULT_FOOTER_SETTINGS;
+  }
+}
+
+export async function getFooterPages(): Promise<LegalPageSummary[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/pages/footer`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getPageBySlug(slug: string): Promise<LegalPage | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/pages/${slug}`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
   }
 }

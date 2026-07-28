@@ -1,30 +1,32 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, Plus, Trash2 } from "lucide-react";
+import { ShieldAlert, Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/context/auth-context";
 import { useSiteContent, useUpdateSiteContent } from "@/lib/hooks/use-site-content";
 import { useFooterSettings, useUpdateFooterSettings } from "@/lib/hooks/use-footer-settings";
+import { usePrograms } from "@/lib/hooks/use-curriculum";
 import { MARKETING_ICON_KEYS, resolveIcon } from "@/lib/marketing/icon-registry";
+import { PARTNER_BRANDS, type PartnerBrandKey } from "@/lib/marketing/partner-brands";
 import { DEFAULT_SITE_CONTENT, DEFAULT_FOOTER_SETTINGS } from "@/lib/marketing/default-site-content";
+import { LevelBadge } from "@/components/programs/level-badge";
 import type {
   CommunityStatItemData,
-  FeatureItemData,
   FooterSettingsData,
   NavLinkItem,
-  ProgramsTableRowData,
+  PartnerItemData,
   SiteContentSettings,
-  StatItemData,
   ToolItemData,
   ToolPreviewKey,
 } from "@/lib/marketing/site-content-types";
 
 const TOOL_PREVIEW_KEYS: ToolPreviewKey[] = ["scanner", "backtest", "simulation", "calendar", "live"];
+const PARTNER_BRAND_KEYS = Object.keys(PARTNER_BRANDS) as PartnerBrandKey[];
 const SOCIAL_KEYS = ["X", "YouTube", "Instagram", "Discord"];
-const LEVEL_PRESETS = ["🟢 Başlangıç", "🔵 Orta", "🟣 İleri", "🟠 İleri", "⭐ Uzman"];
+const MIN_FEATURED_PROGRAMS = 6;
 
 function inputClass() {
   return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
@@ -100,6 +102,7 @@ export default function SiteContentPage() {
   const updateSiteContent = useUpdateSiteContent();
   const { data: footerData, isLoading: loadingFooter } = useFooterSettings();
   const updateFooter = useUpdateFooterSettings();
+  const { data: allPrograms, isLoading: loadingPrograms } = usePrograms();
 
   const [form, setForm] = useState<SiteContentSettings>(DEFAULT_SITE_CONTENT);
   const [footerForm, setFooterForm] = useState<FooterSettingsData>(DEFAULT_FOOTER_SETTINGS);
@@ -169,10 +172,10 @@ export default function SiteContentPage() {
           <TabsList variant="line" className="flex-wrap">
             <TabsTrigger value="header">Header</TabsTrigger>
             <TabsTrigger value="hero">Hero</TabsTrigger>
-            <TabsTrigger value="stats">İstatistikler</TabsTrigger>
+            <TabsTrigger value="partners">Partnerler</TabsTrigger>
+            <TabsTrigger value="showcase">Platform Vitrini</TabsTrigger>
             <TabsTrigger value="programs">Programlar</TabsTrigger>
             <TabsTrigger value="tools">Araçlar</TabsTrigger>
-            <TabsTrigger value="features">Özellikler</TabsTrigger>
             <TabsTrigger value="community">Topluluk</TabsTrigger>
             <TabsTrigger value="cta">CTA</TabsTrigger>
             <TabsTrigger value="footer">Footer</TabsTrigger>
@@ -292,20 +295,6 @@ export default function SiteContentPage() {
                     onChange={(e) => set("heroSecondaryCtaHref", e.target.value || null)}
                   />
                 </Field>
-                <Field label="Sosyal kanıt sayısı (örn. 10.000+)">
-                  <input
-                    className={inputClass()}
-                    value={form.heroSocialProofCount ?? ""}
-                    onChange={(e) => set("heroSocialProofCount", e.target.value || null)}
-                  />
-                </Field>
-                <Field label="Sosyal kanıt yazısı">
-                  <input
-                    className={inputClass()}
-                    value={form.heroSocialProofLabel ?? ""}
-                    onChange={(e) => set("heroSocialProofLabel", e.target.value || null)}
-                  />
-                </Field>
               </div>
               <Field label="Hero görseli">
                 <ImagePreviewInput
@@ -322,79 +311,326 @@ export default function SiteContentPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="stats" className="mt-4">
+          <TabsContent value="partners" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              {form.statsItems.map((stat, i) => (
+              <Field label="Bölüm başlığı">
+                <input
+                  className={inputClass()}
+                  value={form.partnersTitle}
+                  onChange={(e) => set("partnersTitle", e.target.value)}
+                />
+              </Field>
+
+              {form.partnersItems.map((partner, i) => (
                 <RowCard
                   key={i}
                   onRemove={() =>
                     set(
-                      "statsItems",
-                      form.statsItems.filter((_, idx) => idx !== i)
+                      "partnersItems",
+                      form.partnersItems.filter((_, idx) => idx !== i)
                     )
                   }
                 >
                   <IconSelect
-                    value={stat.icon}
+                    value={partner.icon}
                     onChange={(v) => {
-                      const next: StatItemData[] = [...form.statsItems];
+                      const next: PartnerItemData[] = [...form.partnersItems];
                       next[i] = { ...next[i], icon: v };
-                      set("statsItems", next);
+                      set("partnersItems", next);
                     }}
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       className={inputClass()}
-                      placeholder="Değer (örn. 8.950+)"
-                      value={stat.value}
+                      placeholder="Partner adı"
+                      value={partner.name}
                       onChange={(e) => {
-                        const next: StatItemData[] = [...form.statsItems];
-                        next[i] = { ...next[i], value: e.target.value };
-                        set("statsItems", next);
+                        const next: PartnerItemData[] = [...form.partnersItems];
+                        next[i] = { ...next[i], name: e.target.value };
+                        set("partnersItems", next);
                       }}
                     />
                     <input
                       className={inputClass()}
-                      placeholder="Trend (örn. +24%, opsiyonel)"
-                      value={stat.trend ?? ""}
+                      placeholder="Link (opsiyonel)"
+                      value={partner.href ?? ""}
                       onChange={(e) => {
-                        const next: StatItemData[] = [...form.statsItems];
-                        next[i] = { ...next[i], trend: e.target.value };
-                        set("statsItems", next);
-                      }}
-                    />
-                    <input
-                      className={inputClass()}
-                      placeholder="Etiket"
-                      value={stat.label}
-                      onChange={(e) => {
-                        const next: StatItemData[] = [...form.statsItems];
-                        next[i] = { ...next[i], label: e.target.value };
-                        set("statsItems", next);
-                      }}
-                    />
-                    <input
-                      className={inputClass()}
-                      placeholder="Alt etiket (opsiyonel)"
-                      value={stat.sublabel ?? ""}
-                      onChange={(e) => {
-                        const next: StatItemData[] = [...form.statsItems];
-                        next[i] = { ...next[i], sublabel: e.target.value };
-                        set("statsItems", next);
+                        const next: PartnerItemData[] = [...form.partnersItems];
+                        next[i] = { ...next[i], href: e.target.value || undefined };
+                        set("partnersItems", next);
                       }}
                     />
                   </div>
+                  <Field label="Marka logosu (gerçek, renkli logo)">
+                    <select
+                      className={inputClass()}
+                      value={partner.brandKey ?? ""}
+                      onChange={(e) => {
+                        const next: PartnerItemData[] = [...form.partnersItems];
+                        next[i] = { ...next[i], brandKey: e.target.value || undefined };
+                        set("partnersItems", next);
+                      }}
+                    >
+                      <option value="">Otomatik (isme göre tespit et)</option>
+                      {PARTNER_BRAND_KEYS.map((k) => (
+                        <option key={k} value={k}>
+                          {PARTNER_BRANDS[k].label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
                 </RowCard>
               ))}
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  set("statsItems", [...form.statsItems, { icon: "users", value: "", label: "" }])
-                }
+                onClick={() => set("partnersItems", [...form.partnersItems, { icon: "line-chart", name: "" }])}
               >
-                <Plus size={14} className="mr-1" /> İstatistik ekle
+                <Plus size={14} className="mr-1" /> Partner ekle
               </Button>
+
+              <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
+                Site İçeriğini Kaydet
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="showcase" className="mt-4">
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <p className="text-xs text-[#A69B8A]">
+                Partnerler ile Uzmanlık Programları arasındaki, laptop görselli &quot;Gerçek Platform Deneyimi&quot;
+                bölümü. Soldaki metinler ve laptop ekranındaki dashboard içeriği buradan düzenlenir.
+              </p>
+
+              <Field label="Üst etiket (eyebrow)">
+                <input
+                  className={inputClass()}
+                  value={form.platformShowcase.eyebrow}
+                  onChange={(e) => set("platformShowcase", { ...form.platformShowcase, eyebrow: e.target.value })}
+                />
+              </Field>
+              <Field label="Başlık">
+                <textarea
+                  className={inputClass()}
+                  rows={2}
+                  value={form.platformShowcase.title}
+                  onChange={(e) => set("platformShowcase", { ...form.platformShowcase, title: e.target.value })}
+                />
+              </Field>
+              <Field label="Açıklama">
+                <textarea
+                  className={inputClass()}
+                  rows={2}
+                  value={form.platformShowcase.description}
+                  onChange={(e) =>
+                    set("platformShowcase", { ...form.platformShowcase, description: e.target.value })
+                  }
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Buton yazısı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.ctaLabel}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, ctaLabel: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Buton linki">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.ctaHref}
+                    onChange={(e) => set("platformShowcase", { ...form.platformShowcase, ctaHref: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <p className="pt-2 text-xs font-medium text-[#A69B8A]">Laptop ekranındaki dashboard mockup&apos;ı</p>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Karşılama ismi">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.greetingName}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, greetingName: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Alıntı metni">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.quoteText}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, quoteText: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Alıntı yazarı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.quoteAuthor}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, quoteAuthor: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[#A69B8A]">İstatistik kartları (5 tanesi ekranda görünür)</p>
+                {form.platformShowcase.stats.map((stat, i) => (
+                  <RowCard
+                    key={i}
+                    onRemove={() =>
+                      set("platformShowcase", {
+                        ...form.platformShowcase,
+                        stats: form.platformShowcase.stats.filter((_, idx) => idx !== i),
+                      })
+                    }
+                  >
+                    <IconSelect
+                      value={stat.icon}
+                      onChange={(v) => {
+                        const next = [...form.platformShowcase.stats];
+                        next[i] = { ...next[i], icon: v };
+                        set("platformShowcase", { ...form.platformShowcase, stats: next });
+                      }}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inputClass()}
+                        placeholder="Değer (örn. %82)"
+                        value={stat.value}
+                        onChange={(e) => {
+                          const next = [...form.platformShowcase.stats];
+                          next[i] = { ...next[i], value: e.target.value };
+                          set("platformShowcase", { ...form.platformShowcase, stats: next });
+                        }}
+                      />
+                      <input
+                        className={inputClass()}
+                        placeholder="Etiket"
+                        value={stat.label}
+                        onChange={(e) => {
+                          const next = [...form.platformShowcase.stats];
+                          next[i] = { ...next[i], label: e.target.value };
+                          set("platformShowcase", { ...form.platformShowcase, stats: next });
+                        }}
+                      />
+                    </div>
+                  </RowCard>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    set("platformShowcase", {
+                      ...form.platformShowcase,
+                      stats: [...form.platformShowcase.stats, { icon: "line-chart", value: "", label: "" }],
+                    })
+                  }
+                >
+                  <Plus size={14} className="mr-1" /> İstatistik ekle
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="1. grafik başlığı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.chartOneLabel}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, chartOneLabel: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="1. grafik değeri">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.chartOneValue}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, chartOneValue: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="2. grafik başlığı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.chartTwoLabel}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, chartTwoLabel: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="2. grafik değeri">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.chartTwoValue}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, chartTwoValue: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Günlük çalışma serisi (gün)">
+                  <input
+                    type="number"
+                    className={inputClass()}
+                    value={form.platformShowcase.streakDays}
+                    onChange={(e) =>
+                      set("platformShowcase", {
+                        ...form.platformShowcase,
+                        streakDays: Number(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="AI Mentor kullanımı (gün)">
+                  <input
+                    type="number"
+                    className={inputClass()}
+                    value={form.platformShowcase.mentorUsageDays}
+                    onChange={(e) =>
+                      set("platformShowcase", {
+                        ...form.platformShowcase,
+                        mentorUsageDays: Number(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+              <Field label="Aktif program adı">
+                <input
+                  className={inputClass()}
+                  value={form.platformShowcase.activeProgramName}
+                  onChange={(e) =>
+                    set("platformShowcase", { ...form.platformShowcase, activeProgramName: e.target.value })
+                  }
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Yaklaşan canlı ders başlığı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.upcomingLessonTitle}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, upcomingLessonTitle: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Yaklaşan canlı ders zamanı">
+                  <input
+                    className={inputClass()}
+                    value={form.platformShowcase.upcomingLessonTime}
+                    onChange={(e) =>
+                      set("platformShowcase", { ...form.platformShowcase, upcomingLessonTime: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
 
               <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
                 Site İçeriğini Kaydet
@@ -404,76 +640,65 @@ export default function SiteContentPage() {
 
           <TabsContent value="programs" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              <Field label="Bölüm başlığı">
-                <input
-                  className={inputClass()}
-                  value={form.programsTableTitle}
-                  onChange={(e) => set("programsTableTitle", e.target.value)}
-                />
-              </Field>
+              <div>
+                <p className="text-sm font-medium text-[#F5F1EA]">Uzmanlık Programlarımız (landing page)</p>
+                <p className="text-xs text-[#A69B8A]">
+                  Landing page&apos;de öne çıkarılacak programları seç. En az {MIN_FEATURED_PROGRAMS} program
+                  seçilmesi önerilir; sıralama seçim sırana göre landing page&apos;e yansır.
+                </p>
+              </div>
 
-              {form.programsTableItems.map((row, i) => (
-                <RowCard
-                  key={i}
-                  onRemove={() =>
-                    set(
-                      "programsTableItems",
-                      form.programsTableItems.filter((_, idx) => idx !== i)
-                    )
-                  }
-                >
-                  <div className="grid grid-cols-[1fr_2fr_1fr] gap-2">
-                    <input
-                      className={inputClass()}
-                      list="level-presets"
-                      placeholder="Seviye (örn. 🟢 Başlangıç)"
-                      value={row.level}
-                      onChange={(e) => {
-                        const next: ProgramsTableRowData[] = [...form.programsTableItems];
-                        next[i] = { ...next[i], level: e.target.value };
-                        set("programsTableItems", next);
-                      }}
-                    />
-                    <input
-                      className={inputClass()}
-                      placeholder="Program adı"
-                      value={row.title}
-                      onChange={(e) => {
-                        const next: ProgramsTableRowData[] = [...form.programsTableItems];
-                        next[i] = { ...next[i], title: e.target.value };
-                        set("programsTableItems", next);
-                      }}
-                    />
-                    <input
-                      className={inputClass()}
-                      placeholder="Süre (örn. 10 Saat)"
-                      value={row.duration}
-                      onChange={(e) => {
-                        const next: ProgramsTableRowData[] = [...form.programsTableItems];
-                        next[i] = { ...next[i], duration: e.target.value };
-                        set("programsTableItems", next);
-                      }}
-                    />
-                  </div>
-                </RowCard>
-              ))}
-              <datalist id="level-presets">
-                {LEVEL_PRESETS.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  set("programsTableItems", [
-                    ...form.programsTableItems,
-                    { level: "🟢 Başlangıç", title: "", duration: "" },
-                  ])
+              <p
+                className={
+                  form.featuredProgramIds.length < MIN_FEATURED_PROGRAMS
+                    ? "text-xs font-medium text-danger"
+                    : "text-xs font-medium text-success"
                 }
               >
-                <Plus size={14} className="mr-1" /> Program ekle
-              </Button>
+                {form.featuredProgramIds.length} program seçili
+                {form.featuredProgramIds.length < MIN_FEATURED_PROGRAMS &&
+                  ` (en az ${MIN_FEATURED_PROGRAMS} önerilir)`}
+              </p>
+
+              {loadingPrograms ? (
+                <p className="text-sm text-[#A69B8A]">Programlar yükleniyor...</p>
+              ) : (
+                <div className="space-y-2">
+                  {(allPrograms ?? []).map((program) => {
+                    const selected = form.featuredProgramIds.includes(program.id);
+                    return (
+                      <button
+                        key={program.id}
+                        type="button"
+                        onClick={() =>
+                          set(
+                            "featuredProgramIds",
+                            selected
+                              ? form.featuredProgramIds.filter((id) => id !== program.id)
+                              : [...form.featuredProgramIds, program.id]
+                          )
+                        }
+                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                          selected ? "border-primary bg-primary/10" : "border-border bg-card-inner"
+                        }`}
+                      >
+                        <span
+                          className={`flex size-5 shrink-0 items-center justify-center rounded-md border ${
+                            selected ? "border-primary bg-primary text-white" : "border-border"
+                          }`}
+                        >
+                          {selected && <Check size={12} />}
+                        </span>
+                        <span className="flex-1 text-sm text-[#F5F1EA]">{program.title}</span>
+                        <LevelBadge level={program.level} />
+                      </button>
+                    );
+                  })}
+                  {allPrograms?.length === 0 && (
+                    <p className="text-sm text-[#A69B8A]">Henüz hiç program oluşturulmamış.</p>
+                  )}
+                </div>
+              )}
 
               <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
                 Site İçeriğini Kaydet
@@ -579,93 +804,6 @@ export default function SiteContentPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="features" className="mt-4">
-            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Bölüm başlığı">
-                  <input className={inputClass()} value={form.featuresTitle} onChange={(e) => set("featuresTitle", e.target.value)} />
-                </Field>
-                <Field label="Bölüm alt yazısı">
-                  <input
-                    className={inputClass()}
-                    value={form.featuresSubtitle}
-                    onChange={(e) => set("featuresSubtitle", e.target.value)}
-                  />
-                </Field>
-              </div>
-
-              {form.featureItems.map((feature, i) => (
-                <RowCard
-                  key={i}
-                  onRemove={() =>
-                    set(
-                      "featureItems",
-                      form.featureItems.filter((_, idx) => idx !== i)
-                    )
-                  }
-                >
-                  <IconSelect
-                    value={feature.icon}
-                    onChange={(v) => {
-                      const next: FeatureItemData[] = [...form.featureItems];
-                      next[i] = { ...next[i], icon: v };
-                      set("featureItems", next);
-                    }}
-                  />
-                  <input
-                    className={inputClass()}
-                    placeholder="Başlık"
-                    value={feature.title}
-                    onChange={(e) => {
-                      const next: FeatureItemData[] = [...form.featureItems];
-                      next[i] = { ...next[i], title: e.target.value };
-                      set("featureItems", next);
-                    }}
-                  />
-                  <textarea
-                    className={inputClass()}
-                    rows={2}
-                    placeholder="Açıklama"
-                    value={feature.description}
-                    onChange={(e) => {
-                      const next: FeatureItemData[] = [...form.featureItems];
-                      next[i] = { ...next[i], description: e.target.value };
-                      set("featureItems", next);
-                    }}
-                  />
-                  <select
-                    className={inputClass()}
-                    value={feature.accent ?? "primary"}
-                    onChange={(e) => {
-                      const next: FeatureItemData[] = [...form.featureItems];
-                      next[i] = { ...next[i], accent: e.target.value as "primary" | "purple" };
-                      set("featureItems", next);
-                    }}
-                  >
-                    <option value="primary">Mavi vurgu</option>
-                    <option value="purple">Mor vurgu</option>
-                  </select>
-                </RowCard>
-              ))}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  set("featureItems", [
-                    ...form.featureItems,
-                    { icon: "bot", title: "", description: "", accent: "primary" },
-                  ])
-                }
-              >
-                <Plus size={14} className="mr-1" /> Özellik ekle
-              </Button>
-
-              <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
-                Site İçeriğini Kaydet
-              </Button>
-            </div>
-          </TabsContent>
-
           <TabsContent value="community" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -708,7 +846,8 @@ export default function SiteContentPage() {
                     <input
                       className={inputClass()}
                       placeholder="Değer"
-                      value={stat.value}
+                      value={stat.auto ? "(otomatik hesaplanıyor)" : stat.value}
+                      disabled={!!stat.auto}
                       onChange={(e) => {
                         const next: CommunityStatItemData[] = [...form.communityStats];
                         next[i] = { ...next[i], value: e.target.value };
@@ -726,6 +865,22 @@ export default function SiteContentPage() {
                       }}
                     />
                   </div>
+                  <Field label="Veri kaynağı">
+                    <select
+                      className={inputClass()}
+                      value={stat.auto ?? ""}
+                      onChange={(e) => {
+                        const next: CommunityStatItemData[] = [...form.communityStats];
+                        const auto = (e.target.value || undefined) as CommunityStatItemData["auto"];
+                        next[i] = { ...next[i], auto };
+                        set("communityStats", next);
+                      }}
+                    >
+                      <option value="">Elle gir</option>
+                      <option value="totalUsers">Toplam Üye Sayısı (otomatik)</option>
+                      <option value="dailyActive">Günlük Aktif Kullanıcı (otomatik)</option>
+                    </select>
+                  </Field>
                 </RowCard>
               ))}
               <Button

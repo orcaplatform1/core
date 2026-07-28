@@ -46,7 +46,7 @@ export const studentNav: NavSection[] = [
   {
     title: "Pratik",
     items: [
-      { label: "Araçlar", href: "/tools", icon: Wrench },
+      { label: "Araçlar", href: "/tools/crypto", icon: Wrench },
       { label: "Backtest", href: "/backtest", icon: LineChart },
       { label: "Simülasyon", href: "/simulation", icon: Repeat },
       { label: "Simülasyon DNA", href: "/simulation-dna", icon: Dna },

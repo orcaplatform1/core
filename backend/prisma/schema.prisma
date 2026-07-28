@@ -23,76 +23,76 @@ model User {
   role              Role               @default(GUEST)
   toolsSubscription SubscriptionStatus @default(NONE)
 
-  googleId          String?  @unique
-  appleId           String?  @unique
-  profileComplete   Boolean  @default(true)
+  googleId        String? @unique
+  appleId         String? @unique
+  profileComplete Boolean @default(true)
 
   emailVerified            Boolean   @default(false)
   emailVerificationToken   String?
-  phoneVerified             Boolean   @default(false)
-  phoneVerificationCode     String?
-  phoneVerificationExpires  DateTime?
+  phoneVerified            Boolean   @default(false)
+  phoneVerificationCode    String?
+  phoneVerificationExpires DateTime?
   passwordResetToken       String?
   passwordResetExpires     DateTime?
   refreshTokenHash         String?
 
-  dailyGoalLessons   Int @default(1)
-  weeklyGoalLessons  Int @default(5)
-  streakGoalDays     Int @default(30)
+  dailyGoalLessons  Int @default(1)
+  weeklyGoalLessons Int @default(5)
+  streakGoalDays    Int @default(30)
 
-  currentStreak     Int      @default(0)
-  longestStreak     Int      @default(0)
-  lastActivityDate  DateTime?
-  lastLoginAt       DateTime?
+  currentStreak    Int       @default(0)
+  longestStreak    Int       @default(0)
+  lastActivityDate DateTime?
+  lastLoginAt      DateTime?
 
-  sessionId         String?
-  bannedUntil       DateTime?
-  banCount          Int       @default(0)
+  sessionId   String?
+  bannedUntil DateTime?
+  banCount    Int       @default(0)
 
-  promoCode         String? @unique
-  mentorCredits     Int @default(0)
+  promoCode         String?           @unique
+  mentorCredits     Int               @default(0)
   referredByStaffId String?
   financialProfile  FinancialProfile?
 
   referredByUserId      String?
-  referredBy            User?    @relation("StudentReferral", fields: [referredByUserId], references: [id])
-  referrals              User[]  @relation("StudentReferral")
-  referralCreditsEarned Int      @default(0)
-  periodPoints          Int      @default(0)
-  totalPoints           Int      @default(0)
+  referredBy            User?   @relation("StudentReferral", fields: [referredByUserId], references: [id])
+  referrals             User[]  @relation("StudentReferral")
+  referralCreditsEarned Int     @default(0)
+  periodPoints          Int     @default(0)
+  totalPoints           Int     @default(0)
 
-  payments          Payment[]        @relation("PaymentBuyer")
-  referredPayments  Payment[]        @relation("PaymentReferrer")
-  studentReferredPayments Payment[]  @relation("PaymentStudentReferrer")
-  quizAttempts      QuizAttempt[]
-  progress          Progress[]
-  certificates      Certificate[]
-  invoices          Invoice[]
-  subscriptions     Subscription[]
-  enrollments       Enrollment[]
-  loginLogs         LoginLog[]
-  backtestTrades    BacktestTrade[]
-  notifications     Notification[]
-  statsSnapshots    StatsSnapshot[]
-  userBadges        UserBadge[]
-  commissionsEarned Commission[]
-  conversation      Conversation?
-  simulationAccount SimulationAccount?
-  simulationDnaReports SimulationDnaReport[]
+  payments                Payment[]             @relation("PaymentBuyer")
+  referredPayments        Payment[]             @relation("PaymentReferrer")
+  studentReferredPayments Payment[]             @relation("PaymentStudentReferrer")
+  quizAttempts            QuizAttempt[]
+  progress                Progress[]
+  certificates            Certificate[]
+  invoices                Invoice[]
+  subscriptions           Subscription[]
+  enrollments             Enrollment[]
+  loginLogs               LoginLog[]
+  backtestTrades          BacktestTrade[]
+  notifications           Notification[]
+  statsSnapshots          StatsSnapshot[]
+  userBadges              UserBadge[]
+  commissionsEarned       Commission[]
+  conversation            Conversation?
+  simulationAccount       SimulationAccount?
+  simulationDnaReports    SimulationDnaReport[]
 
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Lead {
-  id               String   @id @default(cuid())
-  phone            String   @unique
+  id               String           @id @default(cuid())
+  phone            String           @unique
   financialProfile FinancialProfile
   answers          Json?
   staffPromoCode   String?
   convertedUserId  String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model Commission {
@@ -106,15 +106,15 @@ model Commission {
 }
 
 model Program {
-  id          String  @id @default(cuid())
-  title       String
-  description String?
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
   coverImageUrl String?
-  level ProgramLevel?
+  level         ProgramLevel?
   durationHours Int?
 
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   modules Module[]
 
@@ -126,7 +126,7 @@ model Module {
   id          String  @id @default(cuid())
   title       String
   description String?
-  order       Int @default(1)
+  order       Int     @default(1)
 
   programId String
   program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
@@ -141,16 +141,16 @@ model Lesson {
   id          String  @id @default(cuid())
   title       String
   description String?
-  order       Int @default(1)
+  order       Int     @default(1)
 
   videoUrl        String?
   pdfUrl          String?
   durationSeconds Int?
 
-  resources   LessonResource[]
-  quizzes     Quiz[]
-  moduleId    String
-  module      Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  resources LessonResource[]
+  quizzes   Quiz[]
+  moduleId  String
+  module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -214,25 +214,26 @@ model QuizAttempt {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizId String
 
-  lessonId String
-  moduleId String
+  lessonId  String
+  moduleId  String
   programId String
 
   totalQuestions Int @default(0)
   correctAnswers Int @default(0)
-  wrongAnswers Int @default(0)
-  percentage Int @default(0)
-  score Int @default(0)
+  wrongAnswers   Int @default(0)
+  percentage     Int @default(0)
+  score          Int @default(0)
 
-  passed Boolean @default(false)
-  grade QuizGrade?
-  expired Boolean @default(false)
+  passed  Boolean    @default(false)
+  grade   QuizGrade?
+  expired Boolean    @default(false)
 
-  startedAt DateTime @default(now())
-  endedAt DateTime?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([quizId])
 }
@@ -261,46 +262,46 @@ model QuizAnswer {
 model Progress {
   id String @id @default(cuid())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   programId String?
-  moduleId String?
-  lessonId String?
-  quizId String?
+  moduleId  String?
+  lessonId  String?
+  quizId    String?
 
-  completed Boolean @default(false)
-  progress Int @default(0)
-  watchedSeconds Int @default(0)
+  completed      Boolean @default(false)
+  progress       Int     @default(0)
+  watchedSeconds Int     @default(0)
 
   lastAccessAt DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, lessonId])
 }
 
 model Certificate {
-  id        String   @id @default(cuid())
-  number    Int      @unique @default(autoincrement())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
-  programId String?
-  code      String   @unique
+  id          String   @id @default(cuid())
+  number      Int      @unique @default(autoincrement())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  programId   String?
+  code        String   @unique
   studentName String?
-  issuedAt  DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  issuedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Subscription {
-  id        String   @id @default(cuid())
+  id        String             @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   status    SubscriptionStatus @default(ACTIVE)
-  startedAt DateTime @default(now())
+  startedAt DateTime           @default(now())
   expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 }
 
 model Enrollment {
@@ -326,24 +327,25 @@ model Payment {
   approvedAt DateTime?
 
   cryptoProvider    CryptoProvider?
-  purpose           PaymentPurpose @default(PROGRAM)
+  purpose           PaymentPurpose  @default(PROGRAM)
   creditAmount      Int?
   promoCodeUsed     String?
   discountApplied   Float?
   referredByStaffId String?
-  referredByStaff   User?    @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
+  referredByStaff   User?           @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
   referralType      ReferralType?
   referredByUserId  String?
-  referredByUser    User?    @relation("PaymentStudentReferrer", fields: [referredByUserId], references: [id])
-  invoice    Invoice?
+  referredByUser    User?           @relation("PaymentStudentReferrer", fields: [referredByUserId], references: [id])
+  invoice           Invoice?
 
-  cryptoAsset         CryptoAsset?
-  cryptoAmountLocked  Float?
-  cryptoRateTRY       Float?
-  cryptoRateLockedAt  DateTime?
+  cryptoAsset        CryptoAsset?
+  cryptoAmountLocked Float?
+  cryptoRateTRY      Float?
+  cryptoRateLockedAt DateTime?
 
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([status])
 }
@@ -367,9 +369,9 @@ model MentorSuggestion {
 }
 
 model PlatformSettings {
-  id               String   @id @default("singleton")
-  programPriceTRY  Float    @default(4500)
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default("singleton")
+  programPriceTRY Float    @default(4500)
+  updatedAt       DateTime @updatedAt
 }
 
 enum CryptoAsset {
@@ -377,6 +379,7 @@ enum CryptoAsset {
   ETH
   BNB
 }
+
 model Invoice {
   id        String   @id @default(cuid())
   number    Int      @unique @default(autoincrement())
@@ -400,15 +403,15 @@ model Category {
 }
 
 model Badge {
-  id          String      @id @default(cuid())
-  name        String      @unique
-  description String
-  iconUrl     String?
-  triggerType BadgeTriggerType @default(CUSTOM)
-  requiredCount Int @default(1)
-  users       UserBadge[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String           @id @default(cuid())
+  name          String           @unique
+  description   String
+  iconUrl       String?
+  triggerType   BadgeTriggerType @default(CUSTOM)
+  requiredCount Int              @default(1)
+  users         UserBadge[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model UserBadge {
@@ -480,6 +483,7 @@ model SimulationDnaReport {
   weaknesses          Json?
   developmentPlan     String?
   createdAt           DateTime @default(now())
+
   @@index([userId])
 }
 
@@ -500,9 +504,9 @@ model HistoricalCandle {
 }
 
 model BacktestTrade {
-  id         String            @id @default(cuid())
+  id         String         @id @default(cuid())
   userId     String
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol     String
   direction  TradeDirection
   quantity   Float
@@ -511,8 +515,8 @@ model BacktestTrade {
   exitPrice  Float?
   exitDate   DateTime?
   pnl        Float?
-  status     TradeStatus       @default(OPEN)
-  createdAt  DateTime          @default(now())
+  status     TradeStatus    @default(OPEN)
+  createdAt  DateTime       @default(now())
 }
 
 model LoginLog {
@@ -570,22 +574,22 @@ model ScanResult {
 }
 
 model TrackedSignal {
-  id               String    @id @default(cuid())
-  symbol           String
-  direction        String
-  entryZoneTop     Float
-  entryZoneBottom  Float
-  stop             Float
-  tp1              Float
-  tp2              Float
-  tp3              Float
-  rr               Float     @default(0)
-  style            String    @default("SWING")
-  strength         String
-  status           String    @default("WATCHING")
-  createdAt        DateTime  @default(now())
-  triggeredAt      DateTime?
-  closedAt         DateTime?
+  id              String    @id @default(cuid())
+  symbol          String
+  direction       String
+  entryZoneTop    Float
+  entryZoneBottom Float
+  stop            Float
+  tp1             Float
+  tp2             Float
+  tp3             Float
+  rr              Float     @default(0)
+  style           String    @default("SWING")
+  strength        String
+  status          String    @default("WATCHING")
+  createdAt       DateTime  @default(now())
+  triggeredAt     DateTime?
+  closedAt        DateTime?
 
   @@index([status])
 }
@@ -758,7 +762,8 @@ model Page {
   id           String   @id @default(cuid())
   slug         String   @unique
   title        String
-  content      String
+  blocks       Json     @default("[]")
+  visibility   Role[]   @default([])
   showInFooter Boolean  @default(false)
   order        Int      @default(0)
   createdAt    DateTime @default(now())
@@ -766,59 +771,59 @@ model Page {
 }
 
 model FooterSettings {
-  id           String   @id @default(cuid())
-  companyName  String   @default("ORCA TRADERS")
-  description  String?
-  contactEmail String?
-  contactPhone String?
-  socialLinks  Json?
+  id            String   @id @default(cuid())
+  companyName   String   @default("ORCA")
+  description   String?
+  contactEmail  String?
+  contactPhone  String?
+  socialLinks   Json?
   copyrightText String?
-  updatedAt    DateTime @updatedAt
+  updatedAt     DateTime @updatedAt
 }
 
 model SiteContentSettings {
-  id                    String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  headerLogoText        String   @default("ORCA TRADERS")
-  headerLogoImageUrl    String?
-  navLinks              Json?
+  headerLogoText     String  @default("ORCA")
+  headerLogoImageUrl String?
+  navLinks           Json?
 
-  aiMentorLabel         String   @default("ORCA AI Mentor")
-  aiMentorHref          String   @default("/mentor")
+  aiMentorLabel String @default("ORCA AI Mentor")
+  aiMentorHref  String @default("/mentor")
 
   heroBadge             String?
-  heroTitle             String   @default("Piyasayı Anlamak Artık Daha Akıllı.")
-  heroDescription       String   @default("Yapay zeka destekli analiz, profesyonel eğitim ve gerçek piyasa simülasyonları ile trading yolculuğunu üst seviyeye taşı.")
-  heroPrimaryCtaLabel   String   @default("Keşfetmeye Başla")
-  heroPrimaryCtaHref    String   @default("/register")
+  heroTitle             String  @default("Piyasayı Anlamak Artık Daha Akıllı.")
+  heroDescription       String  @default("Yapay zeka destekli analiz, profesyonel eğitim ve gerçek piyasa simülasyonları ile trading yolculuğunu üst seviyeye taşı.")
+  heroPrimaryCtaLabel   String  @default("Keşfetmeye Başla")
+  heroPrimaryCtaHref    String  @default("/register")
   heroSecondaryCtaLabel String?
   heroSecondaryCtaHref  String?
   heroImageUrl          String?
 
-  partnersTitle         String?
-  partnersItems         Json?
+  partnersTitle String?
+  partnersItems Json?
 
-  featuredProgramIds    Json?
+  featuredProgramIds Json?
 
-  platformShowcase      Json?
+  platformShowcase Json?
 
-  toolsTitle            String?
-  toolsSubtitle         String?
-  toolsItems            Json?
+  toolsTitle    String?
+  toolsSubtitle String?
+  toolsItems    Json?
 
-  communityTitle        String?
-  communityStats        Json?
-  communityExtraCount   Int?
+  communityTitle      String?
+  communityStats      Json?
+  communityExtraCount Int?
 
-  ctaTitle              String?
-  ctaDescription        String?
-  ctaButtonLabel        String?
-  ctaButtonHref         String?
-  ctaChecklist          Json?
+  ctaTitle       String?
+  ctaDescription String?
+  ctaButtonLabel String?
+  ctaButtonHref  String?
+  ctaChecklist   Json?
 
-  faviconUrl            String?
+  faviconUrl String?
 
-  updatedAt             DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 model SecurityEvent {
@@ -851,4 +856,136 @@ model Liquidation {
 
   @@index([symbol, occurredAt])
   @@index([occurredAt])
+}
+
+// ---------- Kripto Takvim (CoinMarketCal) ----------
+
+model CryptoCalendarEvent {
+  id          String   @id @default(cuid())
+  externalId  String   @unique
+  title       String
+  description String?
+  coins       String[]
+  category    String?
+  eventDate   DateTime
+  hotScore    Int      @default(0)
+  sourceUrl   String?
+  isMock      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eventDate])
+}
+
+// ---------- Yaklaşan ICO'lar (ICObench) ----------
+
+enum IcoStatus {
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+model IcoProject {
+  id              String    @id @default(cuid())
+  externalId      String    @unique
+  name            String
+  tokenSymbol     String?
+  status          IcoStatus
+  raisedAmountUsd Float?
+  ratingScore     Float?
+  startDate       DateTime?
+  endDate         DateTime?
+  websiteUrl      String?
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// ---------- Kilidi Açılacak Coinler (CryptoRank) — iskelet, henüz veri yok ----------
+
+model TokenUnlockEvent {
+  id              String   @id @default(cuid())
+  externalId      String   @unique
+  tokenSymbol     String
+  unlockDate      DateTime
+  amountUsd       Float?
+  percentOfSupply Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([unlockDate])
+}
+
+// ---------- Bitcoin Balina Cüzdan Takibi (mempool.space, keyless) ----------
+
+enum WhaleCategory {
+  EXCHANGE
+  INSTITUTION
+  WHALE
+}
+
+enum MovementDirection {
+  IN
+  OUT
+}
+
+model WhaleAddress {
+  id        String        @id @default(cuid())
+  address   String        @unique
+  label     String
+  category  WhaleCategory
+  network   String        @default("BTC")
+  createdAt DateTime      @default(now())
+
+  balanceSnapshots WhaleBalanceSnapshot[]
+  movements        WhaleMovement[]
+}
+
+model WhaleBalanceSnapshot {
+  id         String       @id @default(cuid())
+  addressId  String
+  address    WhaleAddress @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  balanceSat BigInt
+  capturedAt DateTime     @default(now())
+
+  @@index([addressId, capturedAt])
+}
+
+model WhaleMovement {
+  id              String            @id @default(cuid())
+  addressId       String
+  address         WhaleAddress      @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  txid            String            @unique
+  amountSat       BigInt
+  direction       MovementDirection
+  balanceAfterSat BigInt
+  detectedAt      DateTime          @default(now())
+
+  @@index([addressId, detectedAt])
+}
+
+// ---------- Haber Sentiment Analizi (RSS + FinBERT mikroservisi) ----------
+
+enum SentimentLabel {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+model NewsArticle {
+  id             String          @id @default(cuid())
+  source         String
+  title          String
+  url            String          @unique
+  summary        String?
+  publishedAt    DateTime
+  fetchedAt      DateTime        @default(now())
+  sentimentLabel SentimentLabel?
+  sentimentScore Float?
+  scoredAt       DateTime?
+
+  @@index([publishedAt])
+  @@index([sentimentLabel])
 }

@@ -9,19 +9,23 @@ export function HeroBackground({ imageSrc }: { imageSrc?: string }) {
   return (
     // Mobilde metin/kartlar alt alta dizildiği için section çok uzuyor; görseli
     // o tam yüksekliğe object-cover ile sığdırmaya çalışmak balinayı kadraj dışına
-    // itiyordu. Bu yüzden mobilde görsel sabit yükseklikli bir bant, lg'de tam kaplama.
-    <div className="absolute inset-x-0 top-0 h-[420px] overflow-hidden sm:h-[480px] lg:inset-0 lg:h-auto">
+    // itiyordu. Bu yüzden mobilde görsel sabit yükseklikli bir bant, md'de tam kaplama
+    // (Hero'nun grid'i de md'de yan yana geçiyor, ikisi aynı breakpoint'te değişmeli).
+    <div className="absolute inset-x-0 top-0 h-[420px] overflow-hidden sm:h-[480px] md:inset-0 md:h-auto">
       {imageSrc ? (
         // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
         // ile birlikte dahili self-fetch yaparken 400 dönüyor; görsel zaten webp/önceden
         // sıkıştırılmış geldiği için optimizer'a ihtiyaç yok.
+        // md+ ekranlarda hero içeriği sağda AI Mentor kartıyla paylaşılıyor;
+        // object-position'ı 72%'ye çekmek görseli sola kaydırıp balinanın kartın
+        // altında kalmasını önlüyor.
         <Image
           src={imageSrc}
           alt=""
           fill
           priority
           unoptimized
-          className="hero-bg-zoom object-cover object-[58%_38%]"
+          className="hero-bg-zoom object-cover object-[58%_38%] md:object-[72%_38%]"
         />
       ) : (
         <div

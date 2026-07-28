@@ -102,11 +102,11 @@ export class CertificatesService {
       doc.on('error', reject);
 
       doc.rect(0, 0, doc.page.width, doc.page.height).fill('#060B16');
-      doc.fillColor('#FFFFFF').fontSize(28).font('Helvetica-Bold').text('ORCA TRADERS', 0, 80, { align: 'center' });
+      doc.fillColor('#FFFFFF').fontSize(28).font('Helvetica-Bold').text('ORCA', 0, 80, { align: 'center' });
       doc.fillColor('#4F6BFF').fontSize(16).text('Mezuniyet Sertifikası', { align: 'center' });
       doc.moveDown(2);
       doc.fillColor('#FFFFFF').fontSize(22).text(cert.studentName ?? 'Öğrenci', { align: 'center' });
-      doc.fillColor('#B7C0D6').fontSize(12).text('ORCA TRADERS Finans Eğitim Programının tamamını başarıyla tamamlamıştır.', { align: 'center' });
+      doc.fillColor('#B7C0D6').fontSize(12).text('ORCA Finans Eğitim Programının tamamını başarıyla tamamlamıştır.', { align: 'center' });
       doc.moveDown(1);
       doc.fillColor('#7C8BA8').fontSize(10).text(`Sertifika No: ${cert.code}`, { align: 'center' });
       doc.text(

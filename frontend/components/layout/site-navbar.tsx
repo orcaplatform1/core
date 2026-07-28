@@ -12,7 +12,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 import { SiteLogo } from "@/components/layout/site-logo";
@@ -50,23 +49,14 @@ export function SiteNavbar({
           {isLoading ? (
             <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />
           ) : user ? (
-            <>
-              <Link href="/profile" className="flex items-center gap-2">
-                <Avatar className="size-8">
-                  <AvatarImage src={user.avatarUrl ?? undefined} alt={user.fullName} />
-                  <AvatarFallback>{user.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-foreground">{user.fullName}</span>
-              </Link>
-              <Button
-                className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
-                render={
-                  <Link href="/dashboard">
-                    <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
-                  </Link>
-                }
-              />
-            </>
+            <Button
+              className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
+              render={
+                <Link href="/dashboard">
+                  <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
+                </Link>
+              }
+            />
           ) : (
             <>
               <Button variant="ghost" render={<Link href="/login">Giriş</Link>} />
@@ -103,10 +93,10 @@ export function SiteNavbar({
           />
           <SheetContent
             side="right"
-            className="w-[280px] bg-sidebar border-l border-sidebar-border p-0"
+            className="w-[300px] bg-sidebar border-l border-sidebar-border p-0"
           >
             <SheetTitle className="sr-only">Menü</SheetTitle>
-            <div className="flex items-center justify-between h-[72px] px-4 border-b border-sidebar-border">
+            <div className="flex items-center justify-between h-[72px] px-5 border-b border-sidebar-border">
               <SiteLogo siteContent={siteContent} imgClassName="h-8" />
               <Button
                 variant="ghost"
@@ -117,34 +107,27 @@ export function SiteNavbar({
                 <X className="size-5" />
               </Button>
             </div>
-            <nav className="flex flex-col gap-1 p-4">
+            <nav className="flex flex-col gap-2 p-5">
               {publicLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
+                  className="rounded-lg px-3.5 py-3 text-[15px] font-medium text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
                 >
                   {link.label}
                 </Link>
               ))}
 
-              <Link href={siteContent.aiMentorHref} onClick={() => setOpen(false)} className="mt-1 block">
+              <div className="mt-2">
                 <AiMentorPreviewCard size="compact" className="w-full" />
-              </Link>
+              </div>
 
-              <Separator />
+              <Separator className="my-1" />
               {user ? (
                 <>
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2.5">
-                    <Avatar className="size-8">
-                      <AvatarImage src={user.avatarUrl ?? undefined} alt={user.fullName} />
-                      <AvatarFallback>{user.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-foreground">{user.fullName}</span>
-                  </div>
                   <Button
-                    className="mt-2"
+                    className="h-11 mt-1 text-[15px]"
                     onClick={() => setOpen(false)}
                     render={
                       <Link href="/dashboard">
@@ -154,7 +137,7 @@ export function SiteNavbar({
                   />
                   <Button
                     variant="outline"
-                    className="mt-2"
+                    className="h-11 mt-2 text-[15px]"
                     onClick={() => {
                       setOpen(false);
                       logout();
@@ -167,11 +150,12 @@ export function SiteNavbar({
                 <>
                   <Button
                     variant="outline"
-                    className="mt-2"
+                    className="h-11 mt-1 text-[15px]"
                     onClick={() => setOpen(false)}
                     render={<Link href="/login">Giriş</Link>}
                   />
                   <Button
+                    className="h-11 mt-2 text-[15px]"
                     onClick={() => setOpen(false)}
                     render={<Link href="/register">Kayıt Ol</Link>}
                   />

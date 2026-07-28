@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { CreatePageDto } from './dto/create-page.dto';
@@ -25,11 +25,18 @@ export class PagesService {
     });
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string, requesterRole?: string) {
     const page = await this.prisma.page.findUnique({ where: { slug } });
 
     if (!page) {
       throw new NotFoundException('Sayfa bulunamadı.');
+    }
+
+    if (
+      page.visibility.length > 0 &&
+      (!requesterRole || !page.visibility.includes(requesterRole as any))
+    ) {
+      throw new ForbiddenException('Bu sayfayı görüntüleme yetkiniz yok.');
     }
 
     return page;
@@ -46,7 +53,8 @@ export class PagesService {
       data: {
         slug: dto.slug,
         title: dto.title,
-        content: dto.content,
+        blocks: dto.blocks as any,
+        visibility: (dto.visibility as any) ?? [],
         showInFooter: dto.showInFooter ?? false,
         order: dto.order ?? 0,
       },
@@ -59,7 +67,7 @@ export class PagesService {
   async update(id: string, dto: UpdatePageDto, actorId: string) {
     const updated = await this.prisma.page.update({
       where: { id },
-      data: dto,
+      data: dto as any,
     });
 
     await this.auditLogService.log(actorId, 'PAGE_UPDATE', 'Page', id);
