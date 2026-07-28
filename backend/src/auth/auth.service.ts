@@ -98,6 +98,17 @@ export class AuthService {
     const sessionId = randomUUID();
     const emailVerificationToken = dto.email ? randomUUID() : null;
 
+    // Öğrenci referans kodu = referans veren kişinin kullanıcı adı (username kalıcı/
+    // benzersiz olduğu için ayrı bir kod üretmeye gerek yok). Kendi kendine referans
+    // vermeyi ve staff kodlarıyla karışmayı önlemek için sadece STUDENT/GUEST hedeflenir.
+    let referredByUserId: string | undefined;
+    if (dto.referralCode) {
+      const referrer = await this.prisma.user.findFirst({
+        where: { username: dto.referralCode, role: { in: ['STUDENT', 'GUEST'] } },
+      });
+      referredByUserId = referrer?.id;
+    }
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -111,6 +122,7 @@ export class AuthService {
         sessionId,
         lastLoginAt: new Date(),
         emailVerificationToken,
+        referredByUserId,
       },
     });
 

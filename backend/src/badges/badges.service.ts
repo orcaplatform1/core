@@ -1,14 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { PointsService } from '../points/points.service';
 import { CreateBadgeDto } from './dto/create-badge.dto';
 import { UpdateBadgeDto } from './dto/update-badge.dto';
+
+const BADGE_POINTS_REWARD = 25;
 
 @Injectable()
 export class BadgesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async create(dto: CreateBadgeDto, actorId: string) {
@@ -60,6 +64,7 @@ export class BadgesService {
     const granted = await this.prisma.userBadge.create({
       data: { userId, badgeId },
     });
+    await this.pointsService.award(userId, BADGE_POINTS_REWARD);
     await this.auditLogService.log(actorId, 'BADGE_GRANT', 'UserBadge', granted.id, { userId, badgeId });
     return granted;
   }
@@ -79,6 +84,7 @@ export class BadgesService {
         await this.prisma.userBadge.create({
           data: { userId, badgeId: badge.id },
         });
+        await this.pointsService.award(userId, BADGE_POINTS_REWARD);
       }
     }
   }
@@ -93,6 +99,7 @@ export class BadgesService {
     await this.prisma.userBadge.create({
       data: { userId, badgeId: badge.id },
     });
+    await this.pointsService.award(userId, BADGE_POINTS_REWARD);
   }
 
   async findMine(userId: string) {

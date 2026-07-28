@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef }
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 import { BadgesService } from '../badges/badges.service';
+import { StreakService } from '../streak/streak.service';
 
 type ProgramLevel = 'BASLANGIC' | 'ORTA' | 'ILERI';
 
@@ -13,6 +14,7 @@ export class ProgressService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly badgesService: BadgesService,
+    private readonly streakService: StreakService,
   ) {}
 
   /** Kullanıcının bir programdaki tüm derslerin videosunu izleyip izlemediğini ve o derslerdeki
@@ -141,6 +143,7 @@ export class ProgressService {
         where: { userId, completed: true },
       });
       await this.badgesService.checkAndGrant(userId, 'FIRST_LESSON', completedCount);
+      await this.streakService.ping(userId);
     }
 
     return progress;

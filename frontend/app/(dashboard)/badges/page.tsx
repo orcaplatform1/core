@@ -1,15 +1,33 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Flame, Trophy, Lock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { useMyBadges, useUpdateStreakGoal } from "@/lib/hooks/use-badges";
+import { celebrate } from "@/lib/hooks/use-celebration";
+
+const SEEN_BADGES_KEY = "orca_seen_badge_ids";
 
 export default function BadgesPage() {
   const { user, refreshUser } = useAuth();
   const { data: badges, isLoading: badgesLoading } = useMyBadges();
   const updateGoal = useUpdateStreakGoal();
+
+  useEffect(() => {
+    if (!badges || badges.length === 0) return;
+    const earnedIds = badges.filter((b) => !b.locked).map((b) => b.id);
+    if (earnedIds.length === 0) return;
+
+    const seenRaw = localStorage.getItem(SEEN_BADGES_KEY);
+    const seen = new Set<string>(seenRaw ? JSON.parse(seenRaw) : []);
+    const newlyEarned = earnedIds.filter((id) => !seen.has(id));
+
+    if (newlyEarned.length > 0 && seenRaw !== null) {
+      celebrate();
+    }
+    localStorage.setItem(SEEN_BADGES_KEY, JSON.stringify(earnedIds));
+  }, [badges]);
 
   const currentStreak = Number(user?.currentStreak ?? 0);
   const longestStreak = Number(user?.longestStreak ?? 0);

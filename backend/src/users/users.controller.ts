@@ -31,6 +31,13 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/referral-stats')
+  getMyReferralStats(@Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.usersService.getReferralStats(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('me/delete')
   requestAccountDeletion(@Req() req: Request) {
     const userId = (req.user as any).id;

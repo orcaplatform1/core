@@ -41,6 +41,7 @@ export const registerSchema = z
     password: z.string().min(6, "Şifre en az 6 karakter olmalı"),
     passwordConfirm: z.string(),
     gender: z.enum(["ERKEK", "KADIN"], { message: "Cinsiyet seçin" }),
+    referralCode: z.string().optional().or(z.literal("")),
   })
   .refine(
     (data) =>

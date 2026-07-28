@@ -4,16 +4,15 @@ import {
   Get,
   Param,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 
 import { QuizAnswersService } from './quiz-answers.service';
 import { CreateQuizAnswerDto } from './dto/create-quiz-answer.dto';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma/enums';
 
 @Controller('quiz-answers')
 export class QuizAnswersController {
@@ -30,9 +29,9 @@ export class QuizAnswersController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN)
-  create(@Body() dto: CreateQuizAnswerDto) {
-    return this.quizAnswersService.create(dto);
+  @UseGuards(JwtAuthGuard)
+  create(@Req() req: Request, @Body() dto: CreateQuizAnswerDto) {
+    const userId = (req.user as any).id;
+    return this.quizAnswersService.create(userId, dto);
   }
 }

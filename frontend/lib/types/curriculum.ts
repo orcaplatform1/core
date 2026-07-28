@@ -106,7 +106,9 @@ export type Notification = {
     | "CERTIFICATE_READY"
     | "ANNOUNCEMENT"
     | "LIVE_LESSON_REMINDER"
-    | "SYSTEM";
+    | "SYSTEM"
+    | "REFERRAL_REWARD"
+    | "STREAK_REMINDER";
   title: string;
   message: string;
   link: string | null;

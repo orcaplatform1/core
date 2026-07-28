@@ -122,6 +122,19 @@ export class MentorService {
     return { message: mentorMessage, quotaSource };
   }
 
+  /** Zamanlanmış proaktif öneri işi tarafından çağrılır — sohbete kullanıcı mesajı
+   * olmadan doğrudan mentor mesajı ekler (kota/kredi düşümüne tabi değildir). */
+  async injectProactiveMessage(userId: string, content: string) {
+    const conversation = await this.getOrCreateConversation(userId);
+    return this.prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        role: 'MENTOR',
+        content,
+      },
+    });
+  }
+
   async getHistory(userId: string, lessonId?: string) {
     await this.ensureAccess(userId);
     const conversation = await this.prisma.conversation.findUnique({

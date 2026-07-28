@@ -31,6 +31,7 @@ import { useAuth } from "@/context/auth-context";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
+import { celebrate } from "@/lib/hooks/use-celebration";
 
 function playNotificationSound() {
   try {
@@ -87,6 +88,20 @@ export function DashboardTopbar({
     ...(notifications ?? []),
     ...(announcements ?? []),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Referans ödülü hediye kredisi eklendiği an — yeni gelen bildirimi tespit edip confetti tetikler.
+  const prevNotifIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!notifications) return;
+    const currentIds = new Set(notifications.map((n) => n.id));
+    if (prevNotifIdsRef.current) {
+      const isNew = (n: (typeof notifications)[number]) => !prevNotifIdsRef.current!.has(n.id);
+      if (notifications.some((n) => isNew(n) && n.type === "REFERRAL_REWARD")) {
+        celebrate();
+      }
+    }
+    prevNotifIdsRef.current = currentIds;
+  }, [notifications]);
 
   function handleItemClick(id: string, read: boolean, type: string) {
     if (read) return;

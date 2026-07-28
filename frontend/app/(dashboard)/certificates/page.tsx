@@ -8,6 +8,7 @@ import {
 } from "@/lib/hooks/use-curriculum";
 import { authStorage } from "@/lib/auth-storage";
 import { Button } from "@/components/ui/button";
+import { celebrate } from "@/lib/hooks/use-celebration";
 
 export default function CertificatesPage() {
   const { data: status, isLoading } = useMyCertificateStatus();
@@ -35,7 +36,10 @@ export default function CertificatesPage() {
 
   const handleIssue = () => {
     issueCertificate(undefined, {
-      onSuccess: () => toast.success("🎓 Sertifikan hazır!"),
+      onSuccess: () => {
+        toast.success("🎓 Sertifikan hazır!");
+        celebrate();
+      },
       onError: () => toast.error("Sertifika verilemedi, tekrar dene."),
     });
   };

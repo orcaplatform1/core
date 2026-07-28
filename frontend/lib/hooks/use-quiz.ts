@@ -29,7 +29,7 @@ export function useStartAttempt() {
     }) =>
       apiClient<QuizAttempt>("/quiz-attempts/start", {
         method: "POST",
-        body: { ...payload, answers: [] },
+        body: payload,
       }),
   });
 }

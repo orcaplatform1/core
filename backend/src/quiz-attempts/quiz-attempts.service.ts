@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
+import { PointsService } from '../points/points.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { getMondayWeekStart } from '../common/week';
+import { CreateQuizAttemptDto } from './dto/create-quiz-attempt.dto';
 
 function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EXCELLENT' {
   if (percentage < 70) return 'FAILED';
@@ -8,9 +13,20 @@ function calculateGrade(percentage: number): 'FAILED' | 'GOOD' | 'SUCCESS' | 'EX
   return 'EXCELLENT';
 }
 
+const QUIZ_PASS_POINTS_REWARD = 10;
+const WEEKLY_CHALLENGE_QUIZ_COUNT = 3;
+const WEEKLY_CHALLENGE_BADGE_NAME = 'Haftalık Meydan Okuma';
+const WEEKLY_CHALLENGE_CREDIT_REWARD = 25;
+const WEEKLY_CHALLENGE_POINTS_REWARD = 20;
+
 @Injectable()
 export class QuizAttemptsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+    private readonly pointsService: PointsService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   private async expireIfStale(attempt: any, timeLimitMinutes: number) {
     if (attempt.endedAt) return attempt;
@@ -33,7 +49,7 @@ export class QuizAttemptsService {
     return attempt;
   }
 
-  async create(userId: string, dto: any) {
+  async create(userId: string, dto: CreateQuizAttemptDto) {
     const quiz = await this.prisma.quiz.findUnique({ where: { id: dto.quizId } });
 
     if (!quiz) {
@@ -62,7 +78,7 @@ export class QuizAttemptsService {
         lessonId: dto.lessonId,
         moduleId: dto.moduleId,
         programId: dto.programId,
-        totalQuestions: dto.totalQuestions ?? 0,
+        totalQuestions: 0,
         correctAnswers: 0,
         wrongAnswers: 0,
         percentage: 0,
@@ -104,7 +120,7 @@ export class QuizAttemptsService {
     const grade = calculateGrade(percentage);
     const passed = percentage >= 70;
 
-    return this.prisma.quizAttempt.update({
+    const updated = await this.prisma.quizAttempt.update({
       where: { id: attemptId },
       data: {
         totalQuestions,
@@ -116,6 +132,53 @@ export class QuizAttemptsService {
         passed,
         endedAt: new Date(),
       },
+    });
+
+    if (passed) {
+      await this.pointsService.award(attempt.userId, QUIZ_PASS_POINTS_REWARD);
+
+      const passedCount = await this.prisma.quizAttempt.count({
+        where: { userId: attempt.userId, passed: true },
+      });
+      await this.badgesService.checkAndGrant(attempt.userId, 'QUIZ_PASS_COUNT', passedCount);
+
+      await this.checkWeeklyChallenge(attempt.userId);
+    }
+
+    return updated;
+  }
+
+  private async checkWeeklyChallenge(userId: string) {
+    const weekStart = getMondayWeekStart(new Date());
+
+    const alreadyRewarded = await this.prisma.weeklyChallengeCompletion.findUnique({
+      where: { userId_weekStart: { userId, weekStart } },
+    });
+    if (alreadyRewarded) return;
+
+    const passedThisWeek = await this.prisma.quizAttempt.count({
+      where: { userId, passed: true, endedAt: { gte: weekStart } },
+    });
+    if (passedThisWeek < WEEKLY_CHALLENGE_QUIZ_COUNT) return;
+
+    await this.prisma.weeklyChallengeCompletion.create({
+      data: { userId, weekStart },
+    });
+
+    await this.badgesService.grantByNameIfEligible(userId, WEEKLY_CHALLENGE_BADGE_NAME);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mentorCredits: { increment: WEEKLY_CHALLENGE_CREDIT_REWARD } },
+    });
+    await this.pointsService.award(userId, WEEKLY_CHALLENGE_POINTS_REWARD);
+
+    await this.notificationsService.create({
+      userId,
+      type: 'QUIZ_RESULT' as any,
+      title: 'Haftalık Meydan Okuma tamamlandı!',
+      message: `Bu hafta 3 quiz'i başarıyla geçtin — ${WEEKLY_CHALLENGE_CREDIT_REWARD} Mentor Kredisi hesabına eklendi.`,
+      link: '/badges',
     });
   }
 

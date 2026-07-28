@@ -1,5 +1,6 @@
 import {
   type LucideIcon,
+  Home,
   LayoutDashboard,
   Bell,
   GraduationCap,
@@ -12,6 +13,8 @@ import {
   Medal,
   CreditCard,
   User,
+  Wrench,
+  Trophy,
 } from "lucide-react";
 
 export type NavItem = {
@@ -28,7 +31,10 @@ export type NavSection = {
 
 export const studentNav: NavSection[] = [
   {
-    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      { label: "Anasayfa", href: "/", icon: Home },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
   },
   {
     title: "Eğitim",
@@ -40,6 +46,7 @@ export const studentNav: NavSection[] = [
   {
     title: "Pratik",
     items: [
+      { label: "Araçlar", href: "/tools", icon: Wrench },
       { label: "Backtest", href: "/backtest", icon: LineChart },
       { label: "Simülasyon", href: "/simulation", icon: Repeat },
       { label: "Simülasyon DNA", href: "/simulation-dna", icon: Dna },
@@ -51,6 +58,7 @@ export const studentNav: NavSection[] = [
     items: [
       { label: "Sertifikalar", href: "/certificates", icon: Award },
       { label: "Rozetler", href: "/badges", icon: Medal },
+      { label: "Liderlik Tablosu", href: "/leaderboard", icon: Trophy },
     ],
   },
   {

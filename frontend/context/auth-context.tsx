@@ -18,6 +18,7 @@ type RegisterPayload = {
   phone?: string;
   password: string;
   gender: "ERKEK" | "KADIN";
+  referralCode?: string;
 };
 
 type LoginPayload = {

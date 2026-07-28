@@ -12,6 +12,8 @@ import {
   Award,
   Radio,
   Info,
+  Gift,
+  Flame,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -41,6 +43,8 @@ const typeIcons: Record<Notification["type"], LucideIcon> = {
   ANNOUNCEMENT: Megaphone,
   LIVE_LESSON_REMINDER: Radio,
   SYSTEM: Info,
+  REFERRAL_REWARD: Gift,
+  STREAK_REMINDER: Flame,
 };
 
 function NotificationRow({

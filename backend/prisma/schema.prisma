@@ -54,8 +54,16 @@ model User {
   referredByStaffId String?
   financialProfile  FinancialProfile?
 
+  referredByUserId      String?
+  referredBy            User?    @relation("StudentReferral", fields: [referredByUserId], references: [id])
+  referrals              User[]  @relation("StudentReferral")
+  referralCreditsEarned Int      @default(0)
+  periodPoints          Int      @default(0)
+  totalPoints           Int      @default(0)
+
   payments          Payment[]        @relation("PaymentBuyer")
   referredPayments  Payment[]        @relation("PaymentReferrer")
+  studentReferredPayments Payment[]  @relation("PaymentStudentReferrer")
   quizAttempts      QuizAttempt[]
   progress          Progress[]
   certificates      Certificate[]
@@ -324,6 +332,9 @@ model Payment {
   discountApplied   Float?
   referredByStaffId String?
   referredByStaff   User?    @relation("PaymentReferrer", fields: [referredByStaffId], references: [id])
+  referralType      ReferralType?
+  referredByUserId  String?
+  referredByUser    User?    @relation("PaymentStudentReferrer", fields: [referredByUserId], references: [id])
   invoice    Invoice?
 
   cryptoAsset         CryptoAsset?
@@ -335,6 +346,24 @@ model Payment {
   updatedAt  DateTime      @updatedAt
   @@index([userId])
   @@index([status])
+}
+
+model WeeklyChallengeCompletion {
+  id         String   @id @default(cuid())
+  userId     String
+  weekStart  DateTime
+  rewardedAt DateTime @default(now())
+
+  @@unique([userId, weekStart])
+}
+
+model MentorSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  weekStart DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([userId, weekStart])
 }
 
 model PlatformSettings {
@@ -658,6 +687,13 @@ enum NotificationType {
   ANNOUNCEMENT
   LIVE_LESSON_REMINDER
   SYSTEM
+  REFERRAL_REWARD
+  STREAK_REMINDER
+}
+
+enum ReferralType {
+  STAFF
+  STUDENT
 }
 
 enum BadgeTriggerType {
@@ -757,22 +793,18 @@ model SiteContentSettings {
   heroPrimaryCtaHref    String   @default("/register")
   heroSecondaryCtaLabel String?
   heroSecondaryCtaHref  String?
-  heroSocialProofCount  String?
-  heroSocialProofLabel  String?
   heroImageUrl          String?
 
-  statsItems            Json?
+  partnersTitle         String?
+  partnersItems         Json?
 
-  programsTableTitle    String?
-  programsTableItems    Json?
+  featuredProgramIds    Json?
+
+  platformShowcase      Json?
 
   toolsTitle            String?
   toolsSubtitle         String?
   toolsItems            Json?
-
-  featuresTitle         String?
-  featuresSubtitle      String?
-  featureItems          Json?
 
   communityTitle        String?
   communityStats        Json?
@@ -805,4 +837,18 @@ model SecurityEvent {
 enum PaymentPurpose {
   PROGRAM
   MENTOR_CREDITS
+}
+
+model Liquidation {
+  id         String   @id @default(cuid())
+  symbol     String
+  side       String // LONG | SHORT
+  price      Float
+  quantity   Float
+  usdValue   Float
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([symbol, occurredAt])
+  @@index([occurredAt])
 }

@@ -1,11 +1,4 @@
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class CreateQuizAnswerDto {
   @IsString()
@@ -19,9 +12,6 @@ export class CreateQuizAnswerDto {
   @IsString()
   @MinLength(1)
   selectedAnswerId!: string;
-
-  @IsBoolean()
-  isCorrect!: boolean;
 
   @IsOptional()
   @IsInt()

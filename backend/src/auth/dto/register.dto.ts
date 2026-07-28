@@ -24,4 +24,8 @@ export class RegisterDto {
 
   @IsIn(['ERKEK', 'KADIN'])
   gender!: string;
+
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

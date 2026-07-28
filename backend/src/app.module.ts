@@ -43,6 +43,10 @@ import { SiteContentModule } from './site-content/site-content.module';
 import { SitemapModule } from './sitemap/sitemap.module';
 import { SecurityLogModule } from './security-log/security-log.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { CacheModule } from './cache/cache.module';
+import { PublicToolsModule } from './public-tools/public-tools.module';
+import { PointsModule } from './points/points.module';
+import { RetentionModule } from './retention/retention.module';
 
 @Module({
   imports: [
@@ -62,6 +66,7 @@ import { InvoicesModule } from './invoices/invoices.module';
       },
     ]),
     PrismaModule,
+    CacheModule,
     AuthModule,
     UsersModule,
     ProgramsModule,
@@ -100,6 +105,9 @@ import { InvoicesModule } from './invoices/invoices.module';
     SitemapModule,
     SecurityLogModule,
     InvoicesModule,
+    PublicToolsModule,
+    PointsModule,
+    RetentionModule,
   ],
   providers: [
     {

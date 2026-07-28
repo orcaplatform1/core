@@ -257,6 +257,27 @@ export class UsersService {
     };
   }
 
+  async getReferralStats(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        username: true,
+        referralCreditsEarned: true,
+        _count: { select: { referrals: true } },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+
+    return {
+      code: user.username,
+      invitedCount: user._count.referrals,
+      creditsEarned: user.referralCreditsEarned,
+    };
+  }
+
   async requestAccountDeletion(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 

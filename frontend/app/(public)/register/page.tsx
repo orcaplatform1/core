@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -33,7 +33,16 @@ const basicFields = [
 ] as const;
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register: registerUser, user, isLoading } = useAuth();
 
   useEffect(() => {
@@ -51,7 +60,11 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { contactMethod: "email", phoneCountryCode: "+90" },
+    defaultValues: {
+      contactMethod: "email",
+      phoneCountryCode: "+90",
+      referralCode: searchParams.get("ref") ?? "",
+    },
   });
 
   const contactMethod = watch("contactMethod");
@@ -73,6 +86,7 @@ export default function RegisterPage() {
             : undefined,
         password: values.password,
         gender: values.gender,
+        referralCode: values.referralCode || undefined,
       });
       toast.success("Kayıt başarılı, hoş geldin!");
       router.push("/dashboard");
@@ -228,6 +242,14 @@ export default function RegisterPage() {
               {errors.username && (
                 <span className="text-xs text-danger">{errors.username.message}</span>
               )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="referralCode">Referans Kodu (opsiyonel)</Label>
+              <Input id="referralCode" placeholder="Bir arkadaşının kullanıcı adı" {...register("referralCode")} />
+              <p className="text-xs text-muted-foreground">
+                Bir arkadaşın seni davet ettiyse kullanıcı adını buraya gir, ilk ödemende %15 indirim kazan.
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">

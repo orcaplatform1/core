@@ -1,17 +1,4 @@
-import {
-  IsArray,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-
-class QuizAnswerDto {
-  @IsString()
-  questionId!: string;
-
-  @IsString()
-  answerId!: string;
-}
+import { IsString } from 'class-validator';
 
 export class CreateQuizAttemptDto {
   @IsString()
@@ -25,9 +12,4 @@ export class CreateQuizAttemptDto {
 
   @IsString()
   programId!: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => QuizAnswerDto)
-  answers!: QuizAnswerDto[];
 }

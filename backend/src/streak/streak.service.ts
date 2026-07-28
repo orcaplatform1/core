@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadgesService } from '../badges/badges.service';
+import { PointsService } from '../points/points.service';
+
+const STREAK_DAY_POINTS_REWARD = 5;
 
 @Injectable()
 export class StreakService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly badgesService: BadgesService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async ping(userId: string) {
@@ -20,6 +24,7 @@ export class StreakService {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     let newStreak = user.currentStreak;
+    let isNewDay = true;
 
     if (!user.lastActivityDate) {
       newStreak = 1;
@@ -30,6 +35,7 @@ export class StreakService {
 
       if (diffDays === 0) {
         newStreak = user.currentStreak;
+        isNewDay = false;
       } else if (diffDays === 1) {
         newStreak = user.currentStreak + 1;
       } else {
@@ -55,6 +61,10 @@ export class StreakService {
     });
 
     await this.badgesService.checkAndGrant(userId, 'STREAK_DAYS', newStreak);
+
+    if (isNewDay) {
+      await this.pointsService.award(userId, STREAK_DAY_POINTS_REWARD);
+    }
 
     return updated;
   }

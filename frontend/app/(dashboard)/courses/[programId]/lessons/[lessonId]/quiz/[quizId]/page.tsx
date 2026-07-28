@@ -13,6 +13,7 @@ import {
 import { useLesson } from "@/lib/hooks/use-curriculum";
 import type { QuizAttempt } from "@/lib/types/quiz";
 import { Button } from "@/components/ui/button";
+import { celebrate } from "@/lib/hooks/use-celebration";
 
 const gradeLabels: Record<NonNullable<QuizAttempt["grade"]>, string> = {
   FAILED: "Başarısız",
@@ -80,6 +81,7 @@ export default function QuizPage({
     finishAttempt(attempt.id, {
       onSuccess: (data) => {
         setResult(data);
+        if (data.passed) celebrate();
       },
       onError: () => {
         toast.error("Sınav bitirilirken bir sorun oluştu.");

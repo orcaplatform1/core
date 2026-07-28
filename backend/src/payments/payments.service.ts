@@ -3,9 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { createHmac, randomUUID } from 'crypto';
 import { InvoicesService } from '../invoices/invoices.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const STAFF_DISCOUNT_RATE = 0.15;
 const STAFF_COMMISSION_RATE = 0.05;
+const STUDENT_DISCOUNT_RATE = 0.15;
+const STUDENT_REFERRAL_CREDIT_REWARD = 50;
+const STUDENT_REFERRAL_POINTS_REWARD = 25;
 
 const MENTOR_CREDIT_PRICES: Record<number, number> = {
   100: 149,
@@ -23,6 +27,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly invoicesService: InvoicesService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async createBinancePayOrder(paymentId: string, amount: number, currency: string) {
@@ -180,6 +185,8 @@ export class PaymentsService {
 
     let discountApplied: number | null = null;
     let referredByStaffId: string | null = null;
+    let referralType: 'STAFF' | 'STUDENT' | null = null;
+    let referredByUserId: string | null = null;
 
     if (dto.promoCode && purpose === 'PROGRAM') {
       const staff = await this.prisma.user.findUnique({
@@ -190,6 +197,20 @@ export class PaymentsService {
         discountApplied = Math.round(finalAmount * STAFF_DISCOUNT_RATE * 100) / 100;
         finalAmount = finalAmount - discountApplied;
         referredByStaffId = staff.id;
+        referralType = 'STAFF';
+      }
+    }
+
+    // Öğrenci referans indirimi staff promo koduyla asla çakışmaz — staff indirimi
+    // zaten uygulandıysa (referralType === 'STAFF') bu dal atlanır.
+    if (!referralType && purpose === 'PROGRAM') {
+      const buyer = await this.prisma.user.findUnique({ where: { id: userId } });
+
+      if (buyer?.referredByUserId) {
+        discountApplied = Math.round(finalAmount * STUDENT_DISCOUNT_RATE * 100) / 100;
+        finalAmount = finalAmount - discountApplied;
+        referredByUserId = buyer.referredByUserId;
+        referralType = 'STUDENT';
       }
     }
 
@@ -224,6 +245,8 @@ export class PaymentsService {
         promoCodeUsed: dto.promoCode,
         discountApplied,
         referredByStaffId,
+        referralType: referralType as any,
+        referredByUserId,
         purpose: purpose as any,
         creditAmount,
       },
@@ -344,6 +367,26 @@ export class PaymentsService {
           data: { convertedUserId: payment.userId },
         });
       }
+    }
+
+    if (payment.referralType === 'STUDENT' && payment.referredByUserId) {
+      await this.prisma.user.update({
+        where: { id: payment.referredByUserId },
+        data: {
+          mentorCredits: { increment: STUDENT_REFERRAL_CREDIT_REWARD },
+          referralCreditsEarned: { increment: STUDENT_REFERRAL_CREDIT_REWARD },
+          totalPoints: { increment: STUDENT_REFERRAL_POINTS_REWARD },
+          periodPoints: { increment: STUDENT_REFERRAL_POINTS_REWARD },
+        },
+      });
+
+      await this.notificationsService.create({
+        userId: payment.referredByUserId,
+        type: 'REFERRAL_REWARD' as any,
+        title: 'Referans ödülün hesaba geçti!',
+        message: `Davet ettiğin kişi ödemesini tamamladı, hesabına ${STUDENT_REFERRAL_CREDIT_REWARD} Mentor Kredisi eklendi.`,
+        link: '/profile',
+      });
     }
 
     await this.invoicesService.createForPayment(payment.id);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Lock, Download, Trash2, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
+import { Lock, Download, Trash2, ShieldAlert, ShieldCheck, ShieldX, Copy, Gift } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { profileSchema, type ProfileFormValues } from "@/lib/schemas/auth";
 import {
@@ -12,6 +12,7 @@ import {
   useExportMyData,
   useRequestAccountDeletion,
 } from "@/lib/hooks/use-profile";
+import { useReferralStats } from "@/lib/hooks/use-referral";
 import {
   useRequestPhoneVerification,
   useConfirmPhoneVerification,
@@ -65,6 +66,7 @@ export default function ProfilePage() {
   const { mutate: requestDeletion, isPending: deleting } = useRequestAccountDeletion();
   const { mutate: requestPhoneCode, isPending: sendingCode } = useRequestPhoneVerification();
   const { mutate: confirmPhoneCode, isPending: confirmingCode } = useConfirmPhoneVerification();
+  const { data: referralStats } = useReferralStats();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const initialPhone = user?.phone ?? "";
@@ -147,6 +149,13 @@ export default function ProfilePage() {
     });
   };
 
+  const copyReferralCode = () => {
+    const code = referralStats?.code ?? user?.username;
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    toast.success("Referans kodun kopyalandı");
+  };
+
   const handleDeletion = () => {
     if (!confirmDelete) {
       setConfirmDelete(true);
@@ -208,6 +217,46 @@ export default function ProfilePage() {
         <p className="mt-4 text-xs text-muted-foreground">
           Yukarıdaki alanlar yalnızca yöneticiye talepte bulunmanız halinde değiştirilebilir.
         </p>
+      </div>
+
+      {/* Referans Programı */}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent p-6">
+        <div className="flex items-center gap-2">
+          <Gift className="size-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Referans Programın</h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Referans kodun kullanıcı adın — arkadaşların kayıt olurken bu kodu girerse %15 indirim
+          kazanır, ödemesini tamamladığında sana 50 Mentor Kredisi hediye edilir.
+        </p>
+
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3">
+            <span className="text-xs text-muted-foreground">Referans kodun:</span>
+            <span className="font-mono text-sm font-bold text-primary">
+              {referralStats?.code ?? user?.username}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 shrink-0"
+              onClick={copyReferralCode}
+              aria-label="Referans kodunu kopyala"
+            >
+              <Copy className="size-3.5" />
+            </Button>
+          </div>
+          <div className="flex gap-6">
+            <div className="text-center">
+              <p className="text-xl font-bold text-foreground">{referralStats?.invitedCount ?? 0}</p>
+              <p className="text-[11px] text-muted-foreground">davet edilen</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-bold text-success">{referralStats?.creditsEarned ?? 0}</p>
+              <p className="text-[11px] text-muted-foreground">kredi kazanıldı</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* İletişim — doğrulama durumuna göre kilitli/editable */}
