@@ -57,7 +57,7 @@ export function TradingChart({ symbol, timeframe, timeframeLabel, context }: Pro
     const chart = createChart(containerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: "#0E1626" },
-        textColor: "#A69B8A",
+        textColor: "#A8A6A0",
       },
       grid: {
         vertLines: { color: "#1C2740" },
@@ -175,7 +175,7 @@ export function TradingChart({ symbol, timeframe, timeframeLabel, context }: Pro
         <div className="relative flex-1 rounded-2xl border border-border bg-card p-2">
           <div ref={containerRef} className="w-full" style={{ height: "min(70vh, 640px)", minHeight: 420 }} />
           {candlesLoading && (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-[#A69B8A] bg-card/80">
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-[#A8A6A0] bg-card/80">
               Grafik yükleniyor...
             </div>
           )}
@@ -189,7 +189,7 @@ export function TradingChart({ symbol, timeframe, timeframeLabel, context }: Pro
             value={noteInput}
             onChange={(e) => setNoteInput(e.target.value)}
             placeholder="Not metni..."
-            className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
+            className="flex-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 confirmNote(noteInput);
@@ -230,7 +230,7 @@ export function TradingChart({ symbol, timeframe, timeframeLabel, context }: Pro
                 {s.locked ? " 🔒" : ""}
               </span>
               <span className="flex gap-3">
-                <button onClick={() => toggleLock(s.id)} className="text-[#A69B8A] hover:underline">
+                <button onClick={() => toggleLock(s.id)} className="text-[#A8A6A0] hover:underline">
                   {s.locked ? "Kilidi Aç" : "Kilitle"}
                 </button>
                 <button
@@ -248,13 +248,13 @@ export function TradingChart({ symbol, timeframe, timeframeLabel, context }: Pro
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <div>
-          <label className="mb-1 block text-sm text-[#A69B8A]">Not</label>
+          <label className="mb-1 block text-sm text-[#A8A6A0]">Not</label>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={4}
             placeholder="Bu grafikte gördüğün formasyon/yapı hakkında not al..."
-            className="w-full rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A69B8A] outline-none focus:border-primary"
+            className="w-full rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A8A6A0] outline-none focus:border-primary"
           />
         </div>
         <div className="flex flex-wrap gap-3">

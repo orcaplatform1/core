@@ -7,6 +7,10 @@ import { AdminUpdateProfileDto } from './dto/admin-update-profile.dto';
 import { AdjustMentorCreditsDto } from './dto/adjust-mentor-credits.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 
+// Staff/Super Admin avatarı cinsiyetten bağımsız her zaman ORCA amblemi olmalı
+// (bkz. manage.service.ts makeStaff() ile aynı görsel).
+const ORCA_STAFF_AVATAR = 'https://traders.tr/avatars/admin-staff.png';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -14,11 +18,21 @@ export class UsersService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, limit = 20, search?: string) {
     const skip = (page - 1) * limit;
+    const where = search
+      ? {
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' as const } },
+            { username: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : undefined;
 
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -34,7 +48,7 @@ export class UsersService {
           createdAt: true,
         },
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
 
     return {
@@ -165,9 +179,15 @@ export class UsersService {
     if (!exists) {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
+    // Staff/Super Admin'in avatarı cinsiyetten bağımsız her zaman ORCA amblemi olmalı;
+    // aksi halde register() sırasında atanan cinsiyete göre avatar (mavi/pembe) kalıyor.
+    const isStaffOrAdmin = role === 'STAFF' || role === 'SUPER_ADMIN';
     const updated = await this.prisma.user.update({
       where: { id },
-      data: { role: role as any },
+      data: {
+        role: role as any,
+        ...(isStaffOrAdmin ? { avatarUrl: ORCA_STAFF_AVATAR } : {}),
+      },
       select: { id: true, fullName: true, username: true, role: true },
     });
     await this.auditLogService.log(actorId, 'USER_ROLE_UPDATE', 'User', id, { role });

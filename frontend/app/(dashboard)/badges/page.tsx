@@ -61,7 +61,7 @@ export default function BadgesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#F5F1EA]">Rozetler & Seri</h1>
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Öğrenme serini takip et, hedeflerine ulaş ve rozetler kazan.
         </p>
       </div>
@@ -73,16 +73,16 @@ export default function BadgesPage() {
           </div>
           <div>
             <p className="text-3xl font-semibold text-[#F5F1EA]">{currentStreak} gün</p>
-            <p className="text-sm text-[#A69B8A]">Mevcut seri</p>
+            <p className="text-sm text-[#A8A6A0]">Mevcut seri</p>
           </div>
           <div className="ml-auto text-right">
             <p className="text-lg font-medium text-[#F5F1EA]">{longestStreak} gün</p>
-            <p className="text-xs text-[#A69B8A]">En uzun seri</p>
+            <p className="text-xs text-[#A8A6A0]">En uzun seri</p>
           </div>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between text-xs text-[#A69B8A]">
+          <div className="mb-1 flex items-center justify-between text-xs text-[#A8A6A0]">
             <span>Hedef: {streakGoalDays} gün</span>
             <span>{progressPct}%</span>
           </div>
@@ -101,7 +101,7 @@ export default function BadgesPage() {
               min={1}
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
-              className="w-24 rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
+              className="w-24 rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary"
             />
             <Button size="sm" disabled={updateGoal.isPending} onClick={handleSaveGoal}>
               Kaydet
@@ -126,15 +126,15 @@ export default function BadgesPage() {
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-medium text-[#F5F1EA]">Rozetler</h2>
-          <span className="text-sm text-[#A69B8A]">
+          <span className="text-sm text-[#A8A6A0]">
             {earnedCount}/{totalCount}
           </span>
         </div>
 
         {badgesLoading ? (
-          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !badges || badges.length === 0 ? (
-          <p className="text-sm text-[#A69B8A]">Henüz rozet tanımlanmamış.</p>
+          <p className="text-sm text-[#A8A6A0]">Henüz rozet tanımlanmamış.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {badges.map((badge) => (
@@ -148,13 +148,13 @@ export default function BadgesPage() {
                   style={{ backgroundColor: badge.locked ? "#1C274022" : "#22C55E22" }}
                 >
                   {badge.locked ? (
-                    <Lock size={20} color="#A69B8A" />
+                    <Lock size={20} color="#A8A6A0" />
                   ) : (
                     <Trophy size={20} color="#22C55E" />
                   )}
                 </div>
                 <p className="text-sm font-medium text-[#F5F1EA]">{badge.name}</p>
-                <p className="text-xs text-[#A69B8A]">{badge.description}</p>
+                <p className="text-xs text-[#A8A6A0]">{badge.description}</p>
                 {!badge.locked && badge.earnedAt && (
                   <p className="flex items-center gap-1 text-[10px] text-[#22C55E]">
                     <Check size={10} />

@@ -29,13 +29,13 @@ const SOCIAL_KEYS = ["X", "YouTube", "Instagram", "Discord"];
 const MIN_FEATURED_PROGRAMS = 6;
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-medium text-[#A69B8A]">{label}</span>
+      <span className="text-xs font-medium text-[#A8A6A0]">{label}</span>
       {children}
     </label>
   );
@@ -79,7 +79,7 @@ function ImagePreviewInput({
         )}
         <input className={inputClass()} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
       </div>
-      {hint && <p className="text-xs text-[#A69B8A]">{hint}</p>}
+      {hint && <p className="text-xs text-[#A8A6A0]">{hint}</p>}
     </div>
   );
 }
@@ -116,13 +116,13 @@ export default function SiteContentPage() {
   }, [footerData]);
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function SiteContentPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">Site İçeriği</h1>
-          <p className="text-sm text-[#A69B8A]">Landing page header, hero, bölümler, footer, logo ve favicon yönetimi.</p>
+          <p className="text-sm text-[#A8A6A0]">Landing page header, hero, bölümler, footer, logo ve favicon yönetimi.</p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
           ← M Dashboard
@@ -166,7 +166,7 @@ export default function SiteContentPage() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : (
         <Tabs defaultValue="header">
           <TabsList variant="line" className="flex-wrap">
@@ -204,7 +204,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A69B8A]">Navigasyon linkleri</p>
+                <p className="text-xs font-medium text-[#A8A6A0]">Navigasyon linkleri</p>
                 {form.navLinks.map((link, i) => (
                   <RowCard
                     key={i}
@@ -397,7 +397,7 @@ export default function SiteContentPage() {
 
           <TabsContent value="showcase" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              <p className="text-xs text-[#A69B8A]">
+              <p className="text-xs text-[#A8A6A0]">
                 Partnerler ile Uzmanlık Programları arasındaki, laptop görselli &quot;Gerçek Platform Deneyimi&quot;
                 bölümü. Soldaki metinler ve laptop ekranındaki dashboard içeriği buradan düzenlenir.
               </p>
@@ -446,191 +446,14 @@ export default function SiteContentPage() {
                 </Field>
               </div>
 
-              <p className="pt-2 text-xs font-medium text-[#A69B8A]">Laptop ekranındaki dashboard mockup&apos;ı</p>
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="Karşılama ismi">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.greetingName}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, greetingName: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Alıntı metni">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.quoteText}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, quoteText: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Alıntı yazarı">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.quoteAuthor}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, quoteAuthor: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A69B8A]">İstatistik kartları (5 tanesi ekranda görünür)</p>
-                {form.platformShowcase.stats.map((stat, i) => (
-                  <RowCard
-                    key={i}
-                    onRemove={() =>
-                      set("platformShowcase", {
-                        ...form.platformShowcase,
-                        stats: form.platformShowcase.stats.filter((_, idx) => idx !== i),
-                      })
-                    }
-                  >
-                    <IconSelect
-                      value={stat.icon}
-                      onChange={(v) => {
-                        const next = [...form.platformShowcase.stats];
-                        next[i] = { ...next[i], icon: v };
-                        set("platformShowcase", { ...form.platformShowcase, stats: next });
-                      }}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        className={inputClass()}
-                        placeholder="Değer (örn. %82)"
-                        value={stat.value}
-                        onChange={(e) => {
-                          const next = [...form.platformShowcase.stats];
-                          next[i] = { ...next[i], value: e.target.value };
-                          set("platformShowcase", { ...form.platformShowcase, stats: next });
-                        }}
-                      />
-                      <input
-                        className={inputClass()}
-                        placeholder="Etiket"
-                        value={stat.label}
-                        onChange={(e) => {
-                          const next = [...form.platformShowcase.stats];
-                          next[i] = { ...next[i], label: e.target.value };
-                          set("platformShowcase", { ...form.platformShowcase, stats: next });
-                        }}
-                      />
-                    </div>
-                  </RowCard>
-                ))}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    set("platformShowcase", {
-                      ...form.platformShowcase,
-                      stats: [...form.platformShowcase.stats, { icon: "line-chart", value: "", label: "" }],
-                    })
-                  }
-                >
-                  <Plus size={14} className="mr-1" /> İstatistik ekle
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="1. grafik başlığı">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.chartOneLabel}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, chartOneLabel: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="1. grafik değeri">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.chartOneValue}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, chartOneValue: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="2. grafik başlığı">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.chartTwoLabel}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, chartTwoLabel: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="2. grafik değeri">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.chartTwoValue}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, chartTwoValue: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Günlük çalışma serisi (gün)">
-                  <input
-                    type="number"
-                    className={inputClass()}
-                    value={form.platformShowcase.streakDays}
-                    onChange={(e) =>
-                      set("platformShowcase", {
-                        ...form.platformShowcase,
-                        streakDays: Number(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="AI Mentor kullanımı (gün)">
-                  <input
-                    type="number"
-                    className={inputClass()}
-                    value={form.platformShowcase.mentorUsageDays}
-                    onChange={(e) =>
-                      set("platformShowcase", {
-                        ...form.platformShowcase,
-                        mentorUsageDays: Number(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </Field>
-              </div>
-              <Field label="Aktif program adı">
-                <input
-                  className={inputClass()}
-                  value={form.platformShowcase.activeProgramName}
-                  onChange={(e) =>
-                    set("platformShowcase", { ...form.platformShowcase, activeProgramName: e.target.value })
-                  }
+              <Field label="Laptop ekranındaki dashboard görseli (PNG/JPG URL)">
+                <ImagePreviewInput
+                  placeholder="https://.../dashboard-preview.png"
+                  value={form.platformShowcase.imageUrl ?? ""}
+                  onChange={(v) => set("platformShowcase", { ...form.platformShowcase, imageUrl: v || null })}
+                  hint="Laptop ekranına tam kaplayacak şekilde yerleşir (16:10.2 oranında bir görsel önerilir)."
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Yaklaşan canlı ders başlığı">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.upcomingLessonTitle}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, upcomingLessonTitle: e.target.value })
-                    }
-                  />
-                </Field>
-                <Field label="Yaklaşan canlı ders zamanı">
-                  <input
-                    className={inputClass()}
-                    value={form.platformShowcase.upcomingLessonTime}
-                    onChange={(e) =>
-                      set("platformShowcase", { ...form.platformShowcase, upcomingLessonTime: e.target.value })
-                    }
-                  />
-                </Field>
-              </div>
 
               <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
                 Site İçeriğini Kaydet
@@ -642,7 +465,7 @@ export default function SiteContentPage() {
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
               <div>
                 <p className="text-sm font-medium text-[#F5F1EA]">Uzmanlık Programlarımız (landing page)</p>
-                <p className="text-xs text-[#A69B8A]">
+                <p className="text-xs text-[#A8A6A0]">
                   Landing page&apos;de öne çıkarılacak programları seç. En az {MIN_FEATURED_PROGRAMS} program
                   seçilmesi önerilir; sıralama seçim sırana göre landing page&apos;e yansır.
                 </p>
@@ -661,7 +484,7 @@ export default function SiteContentPage() {
               </p>
 
               {loadingPrograms ? (
-                <p className="text-sm text-[#A69B8A]">Programlar yükleniyor...</p>
+                <p className="text-sm text-[#A8A6A0]">Programlar yükleniyor...</p>
               ) : (
                 <div className="space-y-2">
                   {(allPrograms ?? []).map((program) => {
@@ -695,7 +518,7 @@ export default function SiteContentPage() {
                     );
                   })}
                   {allPrograms?.length === 0 && (
-                    <p className="text-sm text-[#A69B8A]">Henüz hiç program oluşturulmamış.</p>
+                    <p className="text-sm text-[#A8A6A0]">Henüz hiç program oluşturulmamış.</p>
                   )}
                 </div>
               )}
@@ -806,6 +629,15 @@ export default function SiteContentPage() {
 
           <TabsContent value="community" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={form.communityEnabled}
+                  onChange={(e) => set("communityEnabled", e.target.checked)}
+                  className="size-4 rounded border-border accent-primary"
+                />
+                Bu bölüm sitede gösterilsin (pasifse landing page&apos;de hiç görünmez)
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Bölüm başlığı">
                   <input
@@ -920,7 +752,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A69B8A]">Kontrol listesi (opsiyonel)</p>
+                <p className="text-xs font-medium text-[#A8A6A0]">Kontrol listesi (opsiyonel)</p>
                 {form.ctaChecklist.map((item, i) => (
                   <RowCard
                     key={i}
@@ -995,7 +827,109 @@ export default function SiteContentPage() {
               </Field>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A69B8A]">Sosyal medya linkleri</p>
+                <p className="text-xs font-medium text-[#A8A6A0]">Platform linkleri (footer)</p>
+                {(footerForm.platformLinks ?? []).map((link, i) => (
+                  <RowCard
+                    key={i}
+                    onRemove={() =>
+                      setFooterForm((f) => ({
+                        ...f,
+                        platformLinks: (f.platformLinks ?? []).filter((_, idx) => idx !== i),
+                      }))
+                    }
+                  >
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inputClass()}
+                        placeholder="Etiket"
+                        value={link.label}
+                        onChange={(e) =>
+                          setFooterForm((f) => {
+                            const next = [...(f.platformLinks ?? [])];
+                            next[i] = { ...next[i], label: e.target.value };
+                            return { ...f, platformLinks: next };
+                          })
+                        }
+                      />
+                      <input
+                        className={inputClass()}
+                        placeholder="Link"
+                        value={link.href}
+                        onChange={(e) =>
+                          setFooterForm((f) => {
+                            const next = [...(f.platformLinks ?? [])];
+                            next[i] = { ...next[i], href: e.target.value };
+                            return { ...f, platformLinks: next };
+                          })
+                        }
+                      />
+                    </div>
+                  </RowCard>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setFooterForm((f) => ({ ...f, platformLinks: [...(f.platformLinks ?? []), { label: "", href: "" }] }))
+                  }
+                >
+                  <Plus size={14} className="mr-1" /> Platform linki ekle
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[#A8A6A0]">Destek linkleri (footer)</p>
+                {(footerForm.supportLinks ?? []).map((link, i) => (
+                  <RowCard
+                    key={i}
+                    onRemove={() =>
+                      setFooterForm((f) => ({
+                        ...f,
+                        supportLinks: (f.supportLinks ?? []).filter((_, idx) => idx !== i),
+                      }))
+                    }
+                  >
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className={inputClass()}
+                        placeholder="Etiket"
+                        value={link.label}
+                        onChange={(e) =>
+                          setFooterForm((f) => {
+                            const next = [...(f.supportLinks ?? [])];
+                            next[i] = { ...next[i], label: e.target.value };
+                            return { ...f, supportLinks: next };
+                          })
+                        }
+                      />
+                      <input
+                        className={inputClass()}
+                        placeholder="Link"
+                        value={link.href}
+                        onChange={(e) =>
+                          setFooterForm((f) => {
+                            const next = [...(f.supportLinks ?? [])];
+                            next[i] = { ...next[i], href: e.target.value };
+                            return { ...f, supportLinks: next };
+                          })
+                        }
+                      />
+                    </div>
+                  </RowCard>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setFooterForm((f) => ({ ...f, supportLinks: [...(f.supportLinks ?? []), { label: "", href: "" }] }))
+                  }
+                >
+                  <Plus size={14} className="mr-1" /> Destek linki ekle
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-[#A8A6A0]">Sosyal medya linkleri</p>
                 <div className="grid grid-cols-2 gap-2">
                   {SOCIAL_KEYS.map((key) => (
                     <input

@@ -20,13 +20,13 @@ export default function AdminPagesListPage() {
   const deletePage = useDeletePage();
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export default function AdminPagesListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">Sayfalar</h1>
-          <p className="text-sm text-[#A69B8A]">Yasal sayfalar ve özel içerik sayfaları.</p>
+          <p className="text-sm text-[#A8A6A0]">Yasal sayfalar ve özel içerik sayfaları.</p>
         </div>
         <Button size="sm" render={<Link href="/manage/pages/new" />}>
           <Plus size={14} className="mr-1" /> Yeni Sayfa
@@ -54,11 +54,11 @@ export default function AdminPagesListPage() {
       </div>
 
       {loadingPages ? (
-        <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : !pages || pages.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-          <FileText size={32} className="mx-auto text-[#A69B8A]" />
-          <p className="text-sm text-[#A69B8A]">Henüz sayfa yok.</p>
+          <FileText size={32} className="mx-auto text-[#A8A6A0]" />
+          <p className="text-sm text-[#A8A6A0]">Henüz sayfa yok.</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-card divide-y divide-border">
@@ -66,7 +66,7 @@ export default function AdminPagesListPage() {
             <div key={page.id} className="flex flex-wrap items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-[#F5F1EA]">{page.title}</p>
-                <p className="truncate text-xs text-[#A69B8A]">/{page.slug}</p>
+                <p className="truncate text-xs text-[#A8A6A0]">/{page.slug}</p>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 {page.visibility.length === 0 ? (
@@ -82,7 +82,7 @@ export default function AdminPagesListPage() {
               <Badge variant={page.showInFooter ? "default" : "outline"}>
                 {page.showInFooter ? "Footer'da" : "Footer'da değil"}
               </Badge>
-              <span className="text-xs text-[#A69B8A]">Sıra: {page.order}</span>
+              <span className="text-xs text-[#A8A6A0]">Sıra: {page.order}</span>
               <div className="flex items-center gap-1">
                 <Button
                   size="icon-sm"

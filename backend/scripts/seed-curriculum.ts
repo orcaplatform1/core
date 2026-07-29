@@ -116,6 +116,14 @@ const programs: ProgramSeed[] = [
     ],
   },
   {
+    title: 'Risk Yönetimi ve Trading Psikolojisi',
+    level: 'BASLANGIC',
+    modules: [
+      { title: 'Modül 1', lessons: ['Risk Yönetimi', 'Sermaye Yönetimi', 'Pozisyon Boyutu', 'Risk/Ödül'] },
+      { title: 'Modül 2', lessons: ['Psikoloji', 'Disiplin', 'FOMO', 'Overtrading', 'Revenge Trade', 'Trading Planı'] },
+    ],
+  },
+  {
     title: 'Teknik Analiz',
     modules: [
       {
@@ -147,77 +155,6 @@ const programs: ProgramSeed[] = [
     ],
   },
   {
-    title: 'ICT Foundations',
-    modules: [
-      {
-        title: 'Modül 1',
-        lessons: [
-          'ICT Terminolojisi',
-          'Dealing Range',
-          'Premium Discount',
-          'Liquidity',
-          'Market Structure',
-          'BOS',
-          'MSS',
-          'CHOCH',
-          'PD Arrays',
-        ],
-      },
-    ],
-  },
-  {
-    title: 'ICT Institutional Concepts',
-    modules: [
-      {
-        title: 'Modül 1',
-        lessons: ['Order Block', 'Refined Order Block', 'Breaker Block', 'Mitigation Block', 'Rejection Block'],
-      },
-      {
-        title: 'Modül 2',
-        lessons: [
-          'Fair Value Gap',
-          'Inverse FVG',
-          'Balanced Price Range',
-          'Liquidity Void',
-          'Volume Imbalance',
-          'Consequent Encroachment',
-        ],
-      },
-      {
-        title: 'Modül 3',
-        lessons: [
-          'Buy Side Liquidity',
-          'Sell Side Liquidity',
-          'Internal Liquidity',
-          'External Liquidity',
-          'Equal High',
-          'Equal Low',
-        ],
-      },
-    ],
-  },
-  {
-    title: 'ICT Advanced Models',
-    modules: [
-      { title: 'Modül 1', lessons: ['AMD', 'Power of Three', 'OTE', 'SMT', 'CISD'] },
-      {
-        title: 'Modül 2',
-        lessons: ['Killzone', 'Judas Swing', 'Silver Bullet', 'Turtle Soup', 'Unicorn', 'MMXM', 'Venom Model'],
-      },
-      {
-        title: 'Modül 3',
-        lessons: [
-          'Multi Timeframe',
-          'Daily Bias',
-          'Weekly Bias',
-          'Monthly Bias',
-          'Execution Model',
-          'Trade Management',
-        ],
-      },
-    ],
-  },
-  {
     title: 'Wyckoff Metodu',
     modules: [
       {
@@ -236,10 +173,128 @@ const programs: ProgramSeed[] = [
     ],
   },
   {
-    title: 'Risk Yönetimi ve Trading Psikolojisi',
+    title: 'ICT 2022 - Temel Modeller',
+    level: 'ILERI',
     modules: [
-      { title: 'Modül 1', lessons: ['Risk Yönetimi', 'Sermaye Yönetimi', 'Pozisyon Boyutu', 'Risk/Ödül'] },
-      { title: 'Modül 2', lessons: ['Psikoloji', 'Disiplin', 'FOMO', 'Overtrading', 'Revenge Trade', 'Trading Planı'] },
+      {
+        title: 'Modül 1',
+        lessons: [
+          'ICT Terminolojisi',
+          'Market Structure',
+          'BOS & CHOCH (MSS)',
+          'Premium & Discount',
+          'Dealing Range',
+        ],
+      },
+      {
+        title: 'Modül 2',
+        lessons: [
+          'Buy Side Liquidity',
+          'Sell Side Liquidity',
+          'Internal Range Liquidity (IRL)',
+          'External Range Liquidity (ERL)',
+        ],
+      },
+      {
+        title: 'Modül 3',
+        lessons: [
+          'Fair Value Gap (FVG)',
+          'Order Block',
+          'Breaker Block',
+          'Mitigation Block',
+          'Rejection Block',
+          'Inversion FVG',
+          'Balanced Price Range (BPR)',
+        ],
+      },
+      {
+        title: 'Modül 4',
+        lessons: [
+          'Power of Three (PO3)',
+          'Market Efficiency Paradigm (MEP)',
+          'Institutional Order Flow',
+          'Daily Range Delivery',
+        ],
+      },
+      {
+        title: 'Modül 5',
+        lessons: ['Optimal Trade Entry (OTE)', 'Precision Technician Model (PAM)', 'Elements of a Trade Setup'],
+      },
+    ],
+  },
+  {
+    title: 'ICT 2023 - Narrative Modelleri',
+    level: 'ILERI',
+    modules: [
+      {
+        title: 'Modül 1',
+        lessons: [
+          'Reaper Model',
+          'Reaper PD Array',
+          'Weekly Narrative',
+          'Weekly Bias',
+          'Narrative Building',
+          'Higher Timeframe Forecasting',
+          'Weekly Templates',
+          'Time Based Trading Model',
+          'Algorithmic Narrative',
+        ],
+      },
+    ],
+  },
+  {
+    title: 'ICT 2024 - Açılış Modelleri',
+    level: 'ILERI',
+    modules: [
+      {
+        title: 'Modül 1',
+        lessons: [
+          'New Day Opening Gap (NDOG)',
+          'First Presented Fair Value Gap',
+          'Opening Range',
+          'Opening Price Manipulation',
+          'Daily Open Framework',
+          'Opening Kill Zone Model',
+          'Advanced PD Array Combinations',
+        ],
+      },
+    ],
+  },
+  {
+    title: 'ICT 2025 - İleri Seviye Execution',
+    level: 'ILERI',
+    modules: [
+      {
+        title: 'Modül 1',
+        lessons: [
+          'Advanced Trade Management',
+          'Position Scaling',
+          'Partial Exit Management',
+          'Multi Timeframe Execution',
+          'Advanced Narrative Refinement',
+          'High Probability Execution',
+          'Risk Optimization',
+          'Session Combination Models',
+        ],
+      },
+    ],
+  },
+  {
+    title: 'ICT 2026 - Uzman Seviye Execution',
+    level: 'ILERI',
+    modules: [
+      {
+        title: 'Modül 1',
+        lessons: [
+          'Advanced Algorithmic Delivery',
+          'Model Refinement',
+          'Execution Optimization',
+          'Precision Entry Refinement',
+          'Advanced Liquidity Mapping',
+          'Complex Narrative Construction',
+          'Institutional Timing Models',
+        ],
+      },
     ],
   },
 ];
@@ -248,7 +303,7 @@ async function main() {
   for (const programSeed of programs) {
     let program = await prisma.program.findFirst({ where: { title: programSeed.title } });
     if (!program) {
-      program = await prisma.program.create({ data: { title: programSeed.title } });
+      program = await prisma.program.create({ data: { title: programSeed.title, level: programSeed.level } });
       console.log(`+ Program: ${program.title}`);
     } else {
       console.log(`= Program zaten var, atlanıyor: ${program.title}`);

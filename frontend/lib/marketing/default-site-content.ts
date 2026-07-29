@@ -51,25 +51,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
     description: "Analiz et, test et, öğren ve geliş. ORCA ile piyasalarda bir adım önde ol.",
     ctaLabel: "Platformu Keşfet",
     ctaHref: "/register",
-    greetingName: "Mert",
-    quoteText: "Bildiğin şeye yatırım yap.",
-    quoteAuthor: "Peter Lynch",
-    stats: [
-      { icon: "line-chart", value: "78", label: "Genel Finans Skoru" },
-      { icon: "graduation-cap", value: "%65", label: "Eğitim Tamamlama" },
-      { icon: "trophy", value: "%82", label: "Quiz Başarı Oranı" },
-      { icon: "activity", value: "%74", label: "Backtest Başarı Oranı" },
-      { icon: "waypoints", value: "+%18", label: "Simülasyon Performansı" },
-    ],
-    chartOneLabel: "Backtest Performansı",
-    chartOneValue: "+$2.456,78",
-    chartTwoLabel: "Simülasyon Performansı",
-    chartTwoValue: "+$1.892,35",
-    streakDays: 7,
-    mentorUsageDays: 7,
-    activeProgramName: "ICT Advanced Execution & Model Library",
-    upcomingLessonTitle: "Piyasa Analizi & Trade Review",
-    upcomingLessonTime: "Bugün 21:00",
+    imageUrl: null,
   },
 
   toolsTitle: "Neden ORCA ?",
@@ -113,6 +95,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
     },
   ],
 
+  communityEnabled: true,
   communityTitle: "Güçlü Topluluk, Gerçek Başarılar",
   communityStats: [
     { icon: "users", value: "0", label: "Topluluk Üyesi", auto: "totalUsers" },
@@ -144,4 +127,17 @@ export const DEFAULT_FOOTER_SETTINGS: FooterSettingsData = {
     Discord: "https://discord.com",
   },
   copyrightText: `© ${new Date().getFullYear()} ORCA. Tüm hakları saklıdır.`,
+  platformLinks: [
+    { label: "Programlar", href: "/programs" },
+    { label: "AI Mentor", href: "/mentor" },
+    { label: "Araçlar", href: "/manage/scanner" },
+    { label: "Topluluk", href: "/programs" },
+    { label: "Blog", href: "/blog" },
+    { label: "Güçlendiriciler", href: "/enhancers" },
+  ],
+  supportLinks: [
+    { label: "Sıkça Sorulan Sorular", href: "/faq" },
+    { label: "Destek Merkezi", href: "/contact" },
+    { label: "İletişim", href: "/contact" },
+  ],
 };

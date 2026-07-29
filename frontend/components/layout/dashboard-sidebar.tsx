@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Crown, Flame, ShieldAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { studentNav } from "@/lib/nav-config";
 import { useMyStats } from "@/lib/hooks/use-dashboard";
@@ -14,7 +14,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
@@ -121,39 +120,27 @@ export function DashboardSidebar({
 
       {!collapsed && (
         <div className="flex flex-col gap-3 border-t border-sidebar-border p-3">
-          <div className="rounded-xl bg-purple/[0.15] border border-purple/25 p-4">
-            <div className="flex items-center gap-2">
-              <Crown className="size-4 text-purple" />
-              <span className="text-sm font-semibold text-foreground">ORCA Premium</span>
+          <div className="relative">
+            <div className="pointer-events-none absolute -inset-2 rounded-2xl bg-purple/10 opacity-40 blur-xl" />
+            <div className="relative overflow-hidden rounded-xl border border-purple/25 bg-gradient-to-b from-purple/[0.08] to-card p-4 shadow-[0_16px_40px_-20px_rgba(139,92,246,0.35)]">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple/50 to-transparent" />
+              <div className="flex items-center gap-2">
+                <Flame className="size-4 text-purple" />
+                <span className="text-sm font-semibold text-foreground">Günlük Çalışma Serisi</span>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {stats?.currentStreak ?? 0} <span className="text-sm font-medium text-muted-foreground">gün</span>
+              </p>
+              <div className="mt-2 h-1.5 w-full rounded-full bg-secondary">
+                <div
+                  className="h-1.5 rounded-full bg-purple transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, ((stats?.currentStreak ?? 0) / 30) * 100)}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">Hedef: 30 gün</p>
             </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Tüm özelliklere erişin, gelişiminizi katlayın.
-            </p>
-            <Button
-              size="sm"
-              className="mt-3 h-8 w-full bg-purple text-white border-purple/40 hover:bg-purple/90"
-            >
-              Premium&apos;a Geç
-            </Button>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2">
-              <Flame className="size-4 text-purple" />
-              <span className="text-sm font-semibold text-foreground">Günlük Çalışma Serisi</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold text-foreground">
-              {stats?.currentStreak ?? 0} <span className="text-sm font-medium text-muted-foreground">gün</span>
-            </p>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-secondary">
-              <div
-                className="h-1.5 rounded-full bg-purple transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, ((stats?.currentStreak ?? 0) / 30) * 100)}%`,
-                }}
-              />
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Hedef: 30 gün</p>
           </div>
         </div>
       )}

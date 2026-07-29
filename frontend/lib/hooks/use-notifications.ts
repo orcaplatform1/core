@@ -40,10 +40,15 @@ export function useMarkAllNotificationsRead() {
   });
 }
 
-export function useMyAnnouncements() {
+export type AnnouncementList = {
+  data: Notification[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+};
+
+export function useMyAnnouncements(page: number = 1, limit: number = 10) {
   return useQuery({
-    queryKey: ["notifications", "inbox"],
-    queryFn: () => apiClient<Notification[]>("/notifications/me/inbox"),
+    queryKey: ["notifications", "inbox", page, limit],
+    queryFn: () => apiClient<AnnouncementList>(`/notifications/me/inbox?page=${page}&limit=${limit}`),
   });
 }
 

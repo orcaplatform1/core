@@ -1,11 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, Send, Megaphone } from "lucide-react";
+import { ShieldAlert, Send, Megaphone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import { useBroadcastAnnouncement } from "@/lib/hooks/use-admin-announcements";
+import {
+  useBroadcastAnnouncement,
+  useAdminAnnouncementsList,
+  useDeleteAnnouncement,
+} from "@/lib/hooks/use-admin-announcements";
+
+const TARGET_LABELS: Record<string, string> = { ALL: "Herkese", PAID: "Ücretli Öğrenciler", FREE: "Ücretsiz Üyeler" };
 
 const TARGETS: { value: "ALL" | "PAID" | "FREE"; label: string; desc: string }[] = [
   { value: "ALL", label: "Herkese", desc: "Ücretsiz + ücretli tüm kullanıcılar" },
@@ -14,12 +20,14 @@ const TARGETS: { value: "ALL" | "PAID" | "FREE"; label: string; desc: string }[]
 ];
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 export default function AdminAnnouncementsPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const broadcast = useBroadcastAnnouncement();
+  const { data: sentAnnouncements, isLoading: loadingSent } = useAdminAnnouncementsList();
+  const deleteAnnouncement = useDeleteAnnouncement();
 
   const [form, setForm] = useState({
     title: "",
@@ -29,13 +37,13 @@ export default function AdminAnnouncementsPage() {
   });
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -61,12 +69,22 @@ export default function AdminAnnouncementsPage() {
     }
   }
 
+  async function handleDelete(id: string, title: string) {
+    if (!confirm(`"${title}" duyurusunu silmek istediğine emin misin? Kullanıcıların gelen kutusundan da kalkacak.`)) return;
+    try {
+      await deleteAnnouncement.mutateAsync(id);
+      toast.success("Duyuru silindi");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Silinemedi");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">Duyuru Gönder</h1>
-          <p className="text-sm text-[#A69B8A]">
+          <p className="text-sm text-[#A8A6A0]">
             Seçtiğin gruba bildirim olarak gönderilir.
           </p>
         </div>
@@ -80,13 +98,13 @@ export default function AdminAnnouncementsPage() {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#3B5BFF22]">
             <Megaphone size={18} color="#3B5BFF" />
           </div>
-          <p className="text-sm text-[#A69B8A]">
+          <p className="text-sm text-[#A8A6A0]">
             Duyuru site içi bildirim (zil ikonu) olarak düşer. Email/SMS gönderimi yok.
           </p>
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-[#A69B8A]">Hedef Kitle</label>
+          <label className="text-xs text-[#A8A6A0]">Hedef Kitle</label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {TARGETS.map((t) => (
               <button
@@ -100,7 +118,7 @@ export default function AdminAnnouncementsPage() {
                 }`}
               >
                 <p className="text-sm font-medium text-[#F5F1EA]">{t.label}</p>
-                <p className="mt-0.5 text-[11px] text-[#A69B8A]">{t.desc}</p>
+                <p className="mt-0.5 text-[11px] text-[#A8A6A0]">{t.desc}</p>
               </button>
             ))}
           </div>
@@ -129,6 +147,37 @@ export default function AdminAnnouncementsPage() {
         <Button onClick={submit} disabled={broadcast.isPending} className="h-11">
           <Send size={16} className="mr-2" /> Duyuruyu Gönder
         </Button>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold text-[#F5F1EA]">Gönderilen Duyurular</h2>
+        {loadingSent ? (
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        ) : !sentAnnouncements || sentAnnouncements.length === 0 ? (
+          <p className="text-sm text-[#A8A6A0]">Henüz duyuru gönderilmemiş.</p>
+        ) : (
+          sentAnnouncements.map((a) => (
+            <div key={a.id} className="rounded-2xl border border-border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-[#F5F1EA]">{a.title}</p>
+                  <p className="mt-1 text-sm text-[#A8A6A0]">{a.message}</p>
+                  <p className="mt-2 text-xs text-[#A8A6A0]">
+                    {TARGET_LABELS[a.target]} · {a.recipientCount} alıcı · {new Date(a.createdAt).toLocaleString("tr-TR")}
+                    {a.createdByName ? ` · ${a.createdByName}` : ""}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDelete(a.id, a.title)}
+                  disabled={deleteAnnouncement.isPending}
+                  className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[#EF4444] hover:bg-[#EF444422]"
+                >
+                  <Trash2 size={14} /> Sil
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

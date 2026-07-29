@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -101,7 +102,9 @@ export default function NotificationsPage() {
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
 
-  const { data: announcements, isLoading: loadingAnn } = useMyAnnouncements();
+  const [annPage, setAnnPage] = useState(1);
+  const { data: announcementList, isLoading: loadingAnn } = useMyAnnouncements(annPage, 10);
+  const announcements = announcementList?.data;
   const { data: unreadAnn } = useAnnouncementUnreadCount();
   const { mutate: markAllAnnRead } = useMarkAllAnnouncementsRead();
 
@@ -184,11 +187,36 @@ export default function NotificationsPage() {
               <p className="mt-3 text-sm text-muted-foreground">Henüz bir duyuru yok.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              {announcements.map((n) => (
-                <NotificationRow key={n.id} notification={n} />
-              ))}
-            </div>
+            <>
+              <div className="flex flex-col gap-2">
+                {announcements.map((n) => (
+                  <NotificationRow key={n.id} notification={n} />
+                ))}
+              </div>
+              {announcementList && announcementList.pagination.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={annPage <= 1}
+                    onClick={() => setAnnPage((p) => p - 1)}
+                  >
+                    Önceki
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {annPage} / {announcementList.pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={annPage >= announcementList.pagination.totalPages}
+                    onClick={() => setAnnPage((p) => p + 1)}
+                  >
+                    Sonraki
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

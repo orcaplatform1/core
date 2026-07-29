@@ -1,13 +1,34 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: NotificationsGateway,
+  ) {}
+
+  private static readonly MAX_KEPT_NOTIFICATIONS = 15;
+
+  // Duyuru olmayan bildirimlerde kullanıcı başına son 15'i tutar, gerisini kalıcı
+  // olarak siler (duyurular bu kapsam dışı — bkz. findMyAnnouncements, ayrı ve
+  // sınırsız arşivlenir).
+  private async trimOldNotifications(userId: string) {
+    const old = await this.prisma.notification.findMany({
+      where: { userId, type: { not: 'ANNOUNCEMENT' } },
+      orderBy: { createdAt: 'desc' },
+      skip: NotificationsService.MAX_KEPT_NOTIFICATIONS,
+      select: { id: true },
+    });
+    if (old.length > 0) {
+      await this.prisma.notification.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
+    }
+  }
 
   async create(dto: CreateNotificationDto) {
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         userId: dto.userId,
         type: dto.type as any,
@@ -16,25 +37,42 @@ export class NotificationsService {
         link: dto.link,
       },
     });
+    this.gateway.emitToUser(dto.userId, 'notification', notification);
+    if (dto.type !== 'ANNOUNCEMENT') {
+      await this.trimOldNotifications(dto.userId);
+    }
+    return notification;
   }
 
-  async createForManyUsers(userIds: string[], dto: Omit<CreateNotificationDto, 'userId'>) {
-    return this.prisma.notification.createMany({
+  async createForManyUsers(
+    userIds: string[],
+    dto: Omit<CreateNotificationDto, 'userId'> & { broadcastId?: string },
+  ) {
+    const result = await this.prisma.notification.createMany({
       data: userIds.map((userId) => ({
         userId,
         type: dto.type as any,
         title: dto.title,
         message: dto.message,
         link: dto.link,
+        broadcastId: dto.broadcastId,
       })),
     });
+    const event = dto.type === 'ANNOUNCEMENT' ? 'announcement' : 'notification';
+    for (const userId of userIds) {
+      this.gateway.emitToUser(userId, event, { title: dto.title, message: dto.message, link: dto.link });
+    }
+    if (dto.type !== 'ANNOUNCEMENT') {
+      await Promise.all(userIds.map((userId) => this.trimOldNotifications(userId)));
+    }
+    return result;
   }
 
   async findMine(userId: string) {
     return this.prisma.notification.findMany({
       where: { userId, type: { not: 'ANNOUNCEMENT' } },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: NotificationsService.MAX_KEPT_NOTIFICATIONS,
     });
   }
 
@@ -46,11 +84,22 @@ export class NotificationsService {
     return { count };
   }
 
-  async findMyAnnouncements(userId: string) {
-    return this.prisma.notification.findMany({
-      where: { userId, type: 'ANNOUNCEMENT' },
-      orderBy: { createdAt: 'desc' },
-    });
+  async findMyAnnouncements(userId: string, page = 1, limit = 10) {
+    const where = { userId, type: 'ANNOUNCEMENT' as const };
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+    return {
+      data,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async unreadAnnouncementCount(userId: string) {

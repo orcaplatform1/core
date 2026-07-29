@@ -96,10 +96,10 @@
   --secondary: #080D1A;
   --secondary-foreground: #F5F1EA;
   --muted: #080D1A;
-  --muted-foreground: #A69B8A;
-  --text-secondary: #A69B8A;
-  --text-muted: #A69B8A;
-  --text-disabled: #6B6255;
+  --muted-foreground: #A8A6A0;
+  --text-secondary: #A8A6A0;
+  --text-muted: #A8A6A0;
+  --text-disabled: #6E6C67;
 
   --accent: #141E32;
   --accent-foreground: #F5F1EA;
@@ -140,7 +140,7 @@
   --orange: #F39C3D;
   --info: #E8A63C;
   --purple: #8B5CF6;
-  --gray-tone: #A69B8A;
+  --gray-tone: #A8A6A0;
 
   --ring: #3B5BFF;
 
@@ -348,7 +348,7 @@ header {
 .method-tab {
   background-color: var(--card-inner) !important;
   border-color: var(--border) !important;
-  color: #A69B8A !important;
+  color: #A8A6A0 !important;
 }
 .method-tab:hover {
   background-color: var(--card-hover) !important;
@@ -455,5 +455,5 @@ header {
   font-weight: 600 !important;
 }
 [data-sonner-toast] [data-description] {
-  color: #A69B8A !important;
+  color: #A8A6A0 !important;
 }

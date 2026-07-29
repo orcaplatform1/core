@@ -59,7 +59,7 @@ export function SiteNavbar({
             />
           ) : (
             <>
-              <Button variant="ghost" render={<Link href="/login">Giriş</Link>} />
+              <Button variant="outline" render={<Link href="/login">Giriş</Link>} />
               <Button
                 className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
                 render={<Link href="/register">Kayıt Ol</Link>}
@@ -118,10 +118,6 @@ export function SiteNavbar({
                   {link.label}
                 </Link>
               ))}
-
-              <div className="mt-2">
-                <AiMentorPreviewCard size="compact" className="w-full" />
-              </div>
 
               <Separator className="my-1" />
               {user ? (

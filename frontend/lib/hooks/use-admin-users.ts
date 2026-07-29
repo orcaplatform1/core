@@ -3,10 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { AdminUserList } from "@/lib/types/curriculum";
 
-export function useAdminUsers(page: number, limit: number = 20) {
+export function useAdminUsers(page: number, limit: number = 20, search: string = "") {
   return useQuery({
-    queryKey: ["admin", "users", page, limit],
-    queryFn: () => apiClient<AdminUserList>(`/users?page=${page}&limit=${limit}`),
+    queryKey: ["admin", "users", page, limit, search],
+    queryFn: () =>
+      apiClient<AdminUserList>(
+        `/users?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`
+      ),
   });
 }
 

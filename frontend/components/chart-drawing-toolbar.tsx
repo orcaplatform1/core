@@ -79,7 +79,7 @@ export function ChartDrawingToolbar({
         style={{
           borderColor: activeTool === null ? "#3B5BFF" : "#1C2740",
           backgroundColor: activeTool === null ? "#3B5BFF22" : "#141E32",
-          color: activeTool === null ? "#F5F1EA" : "#A69B8A",
+          color: activeTool === null ? "#F5F1EA" : "#A8A6A0",
         }}
       >
         <MousePointer2 size={18} />
@@ -101,7 +101,7 @@ export function ChartDrawingToolbar({
                 style={{
                   borderColor: activeTool === tool ? TOOL_COLORS[tool] : "#1C2740",
                   backgroundColor: activeTool === tool ? TOOL_COLORS[tool] + "22" : "#141E32",
-                  color: activeTool === tool ? "#F5F1EA" : "#A69B8A",
+                  color: activeTool === tool ? "#F5F1EA" : "#A8A6A0",
                 }}
               >
                 <Icon size={18} />
@@ -122,14 +122,14 @@ export function ChartDrawingToolbar({
         style={{
           borderColor: magnet ? "#3B5BFF" : "#1C2740",
           backgroundColor: magnet ? "#3B5BFF22" : "#141E32",
-          color: magnet ? "#F5F1EA" : "#A69B8A",
+          color: magnet ? "#F5F1EA" : "#A8A6A0",
         }}
       >
         <Magnet size={18} />
       </button>
 
       {activeTool && (
-        <span className="text-center text-[10px] leading-tight text-[#A69B8A]">
+        <span className="text-center text-[10px] leading-tight text-[#A8A6A0]">
           {pendingActive ? "İkinci noktayı işaretle" : "Noktayı işaretle"}
         </span>
       )}
@@ -141,7 +141,7 @@ export function ChartDrawingToolbar({
             onClick={onUndo}
             title="Geri al (son şekli sil)"
             aria-label="Geri al (son şekli sil)"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-[#A69B8A] hover:text-[#F5F1EA]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-[#A8A6A0] hover:text-[#F5F1EA]"
           >
             <Undo2 size={18} />
           </button>

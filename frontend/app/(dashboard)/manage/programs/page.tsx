@@ -25,7 +25,7 @@ import type { Program, CourseModule, LessonSummary } from "@/lib/types/curriculu
 const LEVELS = ["BASLANGIC", "ORTA", "ILERI"] as const;
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 export default function AdminProgramsPage() {
@@ -75,13 +75,13 @@ export default function AdminProgramsPage() {
   const [categoryName, setCategoryName] = useState("");
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -319,7 +319,7 @@ export default function AdminProgramsPage() {
               value={programForm.coverImageUrl}
               onChange={(e) => setProgramForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
             />
-            <p className="mt-1 text-xs text-[#A69B8A]">
+            <p className="mt-1 text-xs text-[#A8A6A0]">
               Önerilen boyut: 1600×900px (16:9), min. 1200×675px. Alan otomatik doldurulur (cover); bu oranda
               olmayan görsellerde üst/alt hafif kırpılabilir.
             </p>
@@ -357,7 +357,7 @@ export default function AdminProgramsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">Programlar</h1>
-          <p className="text-sm text-[#A69B8A]">Program / Modül / Ders yönetimi.</p>
+          <p className="text-sm text-[#A8A6A0]">Program / Modül / Ders yönetimi.</p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
           ← M Dashboard
@@ -395,16 +395,16 @@ export default function AdminProgramsPage() {
           {categories?.map((c) => (
             <span
               key={c.id}
-              className="flex items-center gap-2 rounded-full border border-border bg-card-inner px-3 py-1 text-xs text-[#A69B8A]"
+              className="flex items-center gap-2 rounded-full border border-border bg-card-inner px-3 py-1 text-xs text-[#A8A6A0]"
             >
               {c.name}
               <button onClick={() => handleDeleteCategory(c.id)} aria-label="Sil">
-                <X size={12} className="text-[#A69B8A] hover:text-danger" />
+                <X size={12} className="text-[#A8A6A0] hover:text-danger" />
               </button>
             </span>
           ))}
           {(!categories || categories.length === 0) && (
-            <span className="text-xs text-[#A69B8A]">Henüz kategori yok.</span>
+            <span className="text-xs text-[#A8A6A0]">Henüz kategori yok.</span>
           )}
         </div>
       </div>
@@ -420,9 +420,9 @@ export default function AdminProgramsPage() {
       {/* Program Listesi */}
       <div className="space-y-3">
         {loadingPrograms ? (
-          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !programs || programs.length === 0 ? (
-          <p className="text-sm text-[#A69B8A]">Henüz program yok.</p>
+          <p className="text-sm text-[#A8A6A0]">Henüz program yok.</p>
         ) : (
           programs.map((p) => {
             const isExpanded = expandedProgram === p.id;
@@ -436,13 +436,13 @@ export default function AdminProgramsPage() {
                     onClick={() => setExpandedProgram(isExpanded ? null : p.id)}
                   >
                     {isExpanded ? (
-                      <ChevronDown size={16} className="text-[#A69B8A] shrink-0" />
+                      <ChevronDown size={16} className="text-[#A8A6A0] shrink-0" />
                     ) : (
-                      <ChevronRight size={16} className="text-[#A69B8A] shrink-0" />
+                      <ChevronRight size={16} className="text-[#A8A6A0] shrink-0" />
                     )}
                     <div>
                       <p className="font-medium text-[#F5F1EA]">{p.title}</p>
-                      <p className="text-xs text-[#A69B8A]">
+                      <p className="text-xs text-[#A8A6A0]">
                         {p.level ?? "—"} · {p.durationHours ? `${p.durationHours} saat` : "süre yok"} ·{" "}
                         {programModules.length} modül
                       </p>
@@ -474,12 +474,12 @@ export default function AdminProgramsPage() {
                               onClick={() => setExpandedModule(moduleExpanded ? null : m.id)}
                             >
                               {moduleExpanded ? (
-                                <ChevronDown size={14} className="text-[#A69B8A] shrink-0" />
+                                <ChevronDown size={14} className="text-[#A8A6A0] shrink-0" />
                               ) : (
-                                <ChevronRight size={14} className="text-[#A69B8A] shrink-0" />
+                                <ChevronRight size={14} className="text-[#A8A6A0] shrink-0" />
                               )}
                               <span className="text-sm text-[#F5F1EA]">{m.title}</span>
-                              <span className="text-xs text-[#A69B8A]">({moduleLessons.length} ders)</span>
+                              <span className="text-xs text-[#A8A6A0]">({moduleLessons.length} ders)</span>
                             </button>
                             <div className="flex items-center gap-1 shrink-0">
                               <Button
@@ -558,7 +558,7 @@ export default function AdminProgramsPage() {
                                       </div>
                                     ) : (
                                       <div className="flex items-center justify-between gap-2">
-                                        <span className="text-xs text-[#A69B8A]">{l.title}</span>
+                                        <span className="text-xs text-[#A8A6A0]">{l.title}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                           <Button
                                             size="sm"
@@ -594,7 +594,7 @@ export default function AdminProgramsPage() {
                                     onChange={(e) => setLessonForm((f) => ({ ...f, title: e.target.value }))}
                                     autoFocus
                                   />
-                                  <p className="text-xs text-[#A69B8A]">
+                                  <p className="text-xs text-[#A8A6A0]">
                                     Her satıra bir ders adı yaz — birden fazla ders aynı anda eklenebilir. Video/PDF
                                     URL sadece tek ders eklerken uygulanır.
                                   </p>
@@ -644,7 +644,7 @@ export default function AdminProgramsPage() {
                           onChange={(e) => setModuleTitle(e.target.value)}
                           autoFocus
                         />
-                        <p className="text-xs text-[#A69B8A]">
+                        <p className="text-xs text-[#A8A6A0]">
                           Her satıra bir modül adı yaz — birden fazla modül aynı anda eklenebilir.
                         </p>
                         <div className="flex gap-2">

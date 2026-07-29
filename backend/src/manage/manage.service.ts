@@ -102,11 +102,17 @@ export class ManageService {
       }
     }
 
+    const actor = await this.prisma.user.findUnique({ where: { id: actorId }, select: { fullName: true } });
+    const broadcast = await this.prisma.announcementBroadcast.create({
+      data: { title, message, target, link, createdByName: actor?.fullName },
+    });
+
     await this.notificationsService.createForManyUsers(userIds, {
       type: 'ANNOUNCEMENT',
       title,
       message,
       link,
+      broadcastId: broadcast.id,
     });
 
     await this.auditLogService.log(actorId, 'ANNOUNCEMENT_BROADCAST', 'Notification', undefined, {
@@ -116,6 +122,35 @@ export class ManageService {
     });
 
     return { message: `${userIds.length} kullanıcıya duyuru gönderildi.`, target };
+  }
+
+  async listAnnouncementBroadcasts() {
+    const broadcasts = await this.prisma.announcementBroadcast.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { _count: { select: { notifications: true } } },
+    });
+    return broadcasts.map((b) => ({
+      id: b.id,
+      title: b.title,
+      message: b.message,
+      target: b.target,
+      link: b.link,
+      createdByName: b.createdByName,
+      createdAt: b.createdAt,
+      recipientCount: b._count.notifications,
+    }));
+  }
+
+  async deleteAnnouncementBroadcast(id: string, actorId: string) {
+    const broadcast = await this.prisma.announcementBroadcast.findUnique({ where: { id } });
+    if (!broadcast) {
+      throw new NotFoundException('Duyuru bulunamadı.');
+    }
+    // Notification satırları AnnouncementBroadcast'a onDelete: Cascade ile bağlı —
+    // duyuruyu silmek kullanıcıların gelen kutusundan da otomatik kaldırır.
+    await this.prisma.announcementBroadcast.delete({ where: { id } });
+    await this.auditLogService.log(actorId, 'ANNOUNCEMENT_DELETE', 'AnnouncementBroadcast', id, { title: broadcast.title });
+    return { message: 'Duyuru silindi.' };
   }
 
   private async generatePromoCode(fullName: string): Promise<string> {
@@ -219,6 +254,97 @@ export class ManageService {
       GROUP BY date
       ORDER BY date ASC
     `;
+  }
+
+  async getReferralOverview() {
+    const referrers = await this.prisma.user.findMany({
+      where: { referrals: { some: {} } },
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        avatarUrl: true,
+        referralCreditsEarned: true,
+        _count: { select: { referrals: true } },
+      },
+      orderBy: { referralCreditsEarned: 'desc' },
+    });
+    return referrers.map((r) => ({
+      id: r.id,
+      fullName: r.fullName,
+      username: r.username,
+      avatarUrl: r.avatarUrl,
+      invitedCount: r._count.referrals,
+      creditsEarned: r.referralCreditsEarned,
+    }));
+  }
+
+  async getReferralInvitees(userId: string) {
+    return this.prisma.user.findMany({
+      where: { referredByUserId: userId },
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        email: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getReferralEarningsStats() {
+    const REFERRAL_CREDIT_REWARD = 50;
+    const withCredits = (rows: { period: Date; count: number }[]) =>
+      rows.map((r) => ({ ...r, creditsAwarded: r.count * REFERRAL_CREDIT_REWARD }));
+
+    const [daily, monthly, yearly] = await Promise.all([
+      this.prisma.$queryRaw<{ period: Date; count: number }[]>`
+        SELECT DATE_TRUNC('day', COALESCE("approvedAt", "createdAt"))::date AS period, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND "referralType" = 'STUDENT' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '30 days'
+        GROUP BY period ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw<{ period: Date; count: number }[]>`
+        SELECT DATE_TRUNC('month', COALESCE("approvedAt", "createdAt"))::date AS period, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND "referralType" = 'STUDENT' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '12 months'
+        GROUP BY period ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw<{ period: Date; count: number }[]>`
+        SELECT DATE_TRUNC('year', COALESCE("approvedAt", "createdAt"))::date AS period, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND "referralType" = 'STUDENT' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '5 years'
+        GROUP BY period ORDER BY period ASC
+      `,
+    ]);
+
+    return { daily: withCredits(daily), monthly: withCredits(monthly), yearly: withCredits(yearly) };
+  }
+
+  async getPackageSalesStats() {
+    const [daily, monthly, yearly] = await Promise.all([
+      this.prisma.$queryRaw`
+        SELECT DATE_TRUNC('day', COALESCE("approvedAt", "createdAt"))::date AS period, SUM(amount)::float AS revenue, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND purpose = 'PROGRAM' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '30 days'
+        GROUP BY period ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw`
+        SELECT DATE_TRUNC('month', COALESCE("approvedAt", "createdAt"))::date AS period, SUM(amount)::float AS revenue, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND purpose = 'PROGRAM' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '12 months'
+        GROUP BY period ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw`
+        SELECT DATE_TRUNC('year', COALESCE("approvedAt", "createdAt"))::date AS period, SUM(amount)::float AS revenue, COUNT(*)::int AS count
+        FROM "Payment"
+        WHERE status = 'APPROVED' AND purpose = 'PROGRAM' AND COALESCE("approvedAt", "createdAt") >= NOW() - INTERVAL '5 years'
+        GROUP BY period ORDER BY period ASC
+      `,
+    ]);
+    return { daily, monthly, yearly };
   }
 
   async getTopPrograms(limit = 5) {

@@ -1,16 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, Bell, LogOut, User, CheckCheck, ShieldAlert, Megaphone } from "lucide-react";
-import {
-  useMyNotifications,
-  useUnreadCount,
-  useMarkNotificationRead,
-  useMarkAllNotificationsRead,
-  useMyAnnouncements,
-  useAnnouncementUnreadCount,
-  useMarkAllAnnouncementsRead,
-} from "@/lib/hooks/use-notifications";
+import { useQueryClient } from "@tanstack/react-query";
+import { Menu, Bell, LogOut, User, ShieldAlert } from "lucide-react";
+import { getNotificationSocket, disconnectNotificationSocket } from "@/lib/socket";
+import { useMyNotifications, useUnreadCount, useAnnouncementUnreadCount } from "@/lib/hooks/use-notifications";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -65,13 +59,25 @@ export function DashboardTopbar({
   const sections = studentNav;
   const [open, setOpen] = useState(false);
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+    const socket = getNotificationSocket();
+    if (!socket) return;
+    const onNotification = () => queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    socket.on("notification", onNotification);
+    socket.on("announcement", onNotification);
+    return () => {
+      socket.off("notification", onNotification);
+      socket.off("announcement", onNotification);
+      disconnectNotificationSocket();
+    };
+  }, [user, queryClient]);
+
   const { data: notifications } = useMyNotifications();
   const { data: unread } = useUnreadCount();
-  const { data: announcements } = useMyAnnouncements();
   const { data: announcementUnread } = useAnnouncementUnreadCount();
-  const { mutate: markRead } = useMarkNotificationRead();
-  const { mutate: markAllRead } = useMarkAllNotificationsRead();
-  const { mutate: markAllAnnouncementsRead } = useMarkAllAnnouncementsRead();
   const userName = user?.fullName ?? "Kullanici";
   const userAvatarUrl = user?.avatarUrl ?? undefined;
 
@@ -83,11 +89,6 @@ export function DashboardTopbar({
     }
     prevUnreadRef.current = totalUnread;
   }, [totalUnread]);
-
-  const merged = [
-    ...(notifications ?? []),
-    ...(announcements ?? []),
-  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Referans ödülü hediye kredisi eklendiği an — yeni gelen bildirimi tespit edip confetti tetikler.
   const prevNotifIdsRef = useRef<Set<string> | null>(null);
@@ -102,12 +103,6 @@ export function DashboardTopbar({
     }
     prevNotifIdsRef.current = currentIds;
   }, [notifications]);
-
-  function handleItemClick(id: string, read: boolean, type: string) {
-    if (read) return;
-    markRead(id);
-    if (type === "ANNOUNCEMENT") markAllAnnouncementsRead();
-  }
 
   return (
     <header className="sticky top-0 z-30 h-[72px] border-b border-border bg-background/80 backdrop-blur flex items-center justify-between px-4 sm:px-6">
@@ -164,60 +159,20 @@ export function DashboardTopbar({
       </Sheet>
       <div className="flex-1" />
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon" className="relative" aria-label="Bildirimler">
-                <Bell className="size-5" />
-                {!!totalUnread && (
-                  <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end" className="w-80">
-            <div className="flex items-center justify-between px-2 py-1.5">
-              <span className="text-sm font-semibold text-foreground">Bildirimler</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="Bildirimler"
+          render={
+            <Link href="/notifications">
+              <Bell className="size-5" />
               {!!totalUnread && (
-                <button
-                  onClick={() => {
-                    markAllRead();
-                    markAllAnnouncementsRead();
-                  }}
-                  className="flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <CheckCheck className="size-3" /> Tümünü okundu işaretle
-                </button>
+                <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
               )}
-            </div>
-            <DropdownMenuSeparator />
-            <div className="max-h-80 overflow-y-auto">
-              {merged.length === 0 ? (
-                <p className="px-2 py-6 text-center text-xs text-muted-foreground">
-                  Henüz bildirimin yok.
-                </p>
-              ) : (
-                merged.slice(0, 8).map((n) => (
-                  <DropdownMenuItem
-                    key={n.id}
-                    className={`flex flex-col items-start gap-0.5 whitespace-normal py-2 ${
-                      !n.read ? "bg-primary/5" : ""
-                    }`}
-                    onClick={() => handleItemClick(n.id, n.read, n.type)}
-                  >
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                      {n.type === "ANNOUNCEMENT" && <Megaphone className="size-3 text-primary" />}
-                      {n.title}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{n.message}</span>
-                  </DropdownMenuItem>
-                ))
-              )}
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/notifications">Tüm Bildirimleri Gör</Link>} />
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </Link>
+          }
+        />
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

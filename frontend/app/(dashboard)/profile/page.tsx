@@ -40,7 +40,7 @@ const educationLabels: Record<string, string> = {
 
 const occupationLabels: Record<string, string> = {
   OGRENCI: "Öğrenci",
-  ISSIZ: "İşsiz",
+  ISSIZ: "Çalışmıyor",
   SERBEST_MESLEK: "Serbest Meslek",
   OZEL_SEKTOR: "Özel Sektör Çalışanı",
   KAMU: "Kamu Çalışanı",

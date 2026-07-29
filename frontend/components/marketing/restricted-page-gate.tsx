@@ -6,6 +6,7 @@ import { apiClient, ApiError } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
 import type { PageBlock } from "@/lib/marketing/page-blocks-types";
 import { PageBlocksRenderer } from "./page-blocks-renderer";
+import { PageHero } from "./page-hero";
 
 type RestrictedPage = { title: string; blocks: PageBlock[] };
 
@@ -13,7 +14,7 @@ type RestrictedPage = { title: string; blocks: PageBlock[] };
 // component zaten anonim istekte 403 aldı). JWT localStorage'da tutulduğundan
 // (cookie değil) yetki kontrolü ancak istemci tarafında, giriş yapmış kullanıcının
 // token'ı ile yeniden istek atılarak yapılabilir.
-export function RestrictedPageGate({ slug }: { slug: string }) {
+export function RestrictedPageGate({ slug, heroImageSrc }: { slug: string; heroImageSrc?: string }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["page", slug, "restricted"],
     queryFn: () => apiClient<RestrictedPage>(`/pages/${slug}`),
@@ -35,23 +36,26 @@ export function RestrictedPageGate({ slug }: { slug: string }) {
 
   if (!data) {
     return (
-      <div className="mx-auto flex max-w-[800px] flex-col items-center gap-3 px-4 py-24 text-center sm:px-6">
-        <p className="text-base text-muted-foreground">
-          Bu sayfayı görüntülemek için giriş yapmanız veya yetkili bir hesapla giriş yapmanız gerekiyor.
-        </p>
-        <Link href="/login" className="text-sm font-semibold text-primary hover:underline">
-          Giriş yap
-        </Link>
-      </div>
+      <>
+        <PageHero title="Kısıtlı Sayfa" heroImageSrc={heroImageSrc} />
+        <div className="mx-auto flex max-w-[800px] flex-col items-center gap-3 px-4 py-24 text-center sm:px-6">
+          <p className="text-base text-muted-foreground">
+            Bu sayfayı görüntülemek için giriş yapmanız veya yetkili bir hesapla giriş yapmanız gerekiyor.
+          </p>
+          <Link href="/login" className="text-sm font-semibold text-primary hover:underline">
+            Giriş yap
+          </Link>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[800px] px-4 py-16 sm:px-6">
-      <h1 className="text-3xl font-bold text-foreground">{data.title}</h1>
-      <div className="mt-8">
+    <>
+      <PageHero title={data.title} heroImageSrc={heroImageSrc} />
+      <div className="mx-auto max-w-[800px] px-4 py-16 sm:px-6">
         <PageBlocksRenderer blocks={data.blocks} />
       </div>
-    </div>
+    </>
   );
 }

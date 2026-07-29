@@ -1,0 +1,23 @@
+import { HeroBackground } from "./hero-background";
+
+// CMS'ten eklenen düz sayfalar (legal/bilgi sayfaları) için ortak banner: Header'ın
+// hemen altında, sayfa içeriğinin üstünde. Ana sayfadaki Hero ile aynı görsel dili
+// (HeroBackground) kullanır ama CTA/badge içermez — bu sayfalarda o veriler yok.
+export function PageHero({
+  title,
+  heroImageSrc,
+}: {
+  title: React.ReactNode;
+  heroImageSrc?: string;
+}) {
+  return (
+    <section className="relative overflow-hidden border-b border-border">
+      <HeroBackground imageSrc={heroImageSrc} fill />
+      <div className="relative mx-auto max-w-[1440px] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+          {title}
+        </h1>
+      </div>
+    </section>
+  );
+}

@@ -18,23 +18,24 @@ const ROLES = ["GUEST", "STUDENT", "STAFF", "SUPER_ADMIN"] as const;
 export default function AdminUsersPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [enrollingUserId, setEnrollingUserId] = useState<string | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string>("");
 
-  const { data: userList, isLoading } = useAdminUsers(page, 20);
+  const { data: userList, isLoading } = useAdminUsers(page, 20, search);
   const { data: programs } = usePrograms();
   const updateRole = useUpdateUserRole();
   const grantEnrollment = useGrantEnrollment();
   const unban = useUnbanUser();
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -76,16 +77,29 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#F5F1EA]">Kullanıcılar</h1>
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Rol değiştir, program erişimi ver, ban kaldır.
         </p>
       </div>
 
+      <div className="relative max-w-sm">
+        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A6A0]" />
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="İsim, kullanıcı adı veya e-posta ara..."
+          className="w-full rounded-lg border border-border bg-card-inner py-2 pl-9 pr-3 text-sm text-[#F5F1EA] outline-none focus:border-primary"
+        />
+      </div>
+
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {isLoading ? (
-          <p className="p-6 text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="p-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !userList || userList.data.length === 0 ? (
-          <p className="p-6 text-sm text-[#A69B8A]">Kullanıcı bulunamadı.</p>
+          <p className="p-6 text-sm text-[#A8A6A0]">Kullanıcı bulunamadı.</p>
         ) : (
           <div className="divide-y divide-border">
             {userList.data.map((u) => (
@@ -93,7 +107,7 @@ export default function AdminUsersPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Link href={`/manage/users/${u.id}`} className="hover:opacity-80">
                     <p className="font-medium text-[#F5F1EA]">{u.fullName}</p>
-                    <p className="text-xs text-[#A69B8A]">
+                    <p className="text-xs text-[#A8A6A0]">
                       @{u.username} · {u.email ?? "email yok"}
                     </p>
                   </Link>
@@ -101,7 +115,7 @@ export default function AdminUsersPage() {
                     value={u.role}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
                     disabled={updateRole.isPending || u.id === me?.id}
-                    className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
+                    className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary"
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
@@ -117,7 +131,7 @@ export default function AdminUsersPage() {
                       <select
                         value={selectedProgramId}
                         onChange={(e) => setSelectedProgramId(e.target.value)}
-                        className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary"
+                        className="rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary"
                       >
                         <option value="">Program seç...</option>
                         {programs?.map((p) => (
@@ -166,7 +180,7 @@ export default function AdminUsersPage() {
           >
             Önceki
           </Button>
-          <span className="text-sm text-[#A69B8A]">
+          <span className="text-sm text-[#A8A6A0]">
             {page} / {userList.pagination.totalPages}
           </span>
           <Button

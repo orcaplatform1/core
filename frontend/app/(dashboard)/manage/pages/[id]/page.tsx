@@ -70,7 +70,7 @@ function defaultBlockFor(type: PageBlockType): PageBlock {
 }
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 export default function AdminPageEditorPage({
@@ -114,23 +114,23 @@ export default function AdminPageEditorPage({
   }, [existing, isNew, hydrated]);
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
   if (!isNew && loadingPages) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (!isNew && !loadingPages && !existing) {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-        <p className="text-sm text-[#A69B8A]">Sayfa bulunamadı.</p>
+        <p className="text-sm text-[#A8A6A0]">Sayfa bulunamadı.</p>
         <Link href="/manage/pages" className="text-sm text-primary hover:underline">
           Sayfalara dön
         </Link>
@@ -201,7 +201,7 @@ export default function AdminPageEditorPage({
         </Button>
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">{isNew ? "Yeni Sayfa" : "Sayfayı Düzenle"}</h1>
-          <p className="text-sm text-[#A69B8A]">Sayfa meta bilgilerini ve içerik bloklarını düzenle.</p>
+          <p className="text-sm text-[#A8A6A0]">Sayfa meta bilgilerini ve içerik bloklarını düzenle.</p>
         </div>
       </div>
 
@@ -209,11 +209,11 @@ export default function AdminPageEditorPage({
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="text-xs text-[#A69B8A]">Başlık</label>
+            <label className="text-xs text-[#A8A6A0]">Başlık</label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Sayfa başlığı" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs text-[#A69B8A]">Slug</label>
+            <label className="text-xs text-[#A8A6A0]">Slug</label>
             <Input
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
@@ -223,7 +223,7 @@ export default function AdminPageEditorPage({
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="text-xs text-[#A69B8A]">Sıra</label>
+            <label className="text-xs text-[#A8A6A0]">Sıra</label>
             <Input type="number" value={order} onChange={(e) => setOrder(e.target.value)} />
           </div>
           <div className="flex items-end gap-2 pb-1.5">
@@ -234,13 +234,13 @@ export default function AdminPageEditorPage({
               onChange={(e) => setShowInFooter(e.target.checked)}
               className="size-4 rounded border-border accent-primary"
             />
-            <label htmlFor="showInFooter" className="text-sm text-[#A69B8A]">
+            <label htmlFor="showInFooter" className="text-sm text-[#A8A6A0]">
               Footer&apos;da göster
             </label>
           </div>
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs text-[#A69B8A]">Görünürlük</label>
+          <label className="text-xs text-[#A8A6A0]">Görünürlük</label>
           <div className="flex flex-wrap gap-2">
             {ROLES.map((role) => {
               const active = visibility.includes(role);
@@ -252,7 +252,7 @@ export default function AdminPageEditorPage({
                   className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                     active
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-transparent text-[#A69B8A] hover:border-primary/40"
+                      : "border-border bg-transparent text-[#A8A6A0] hover:border-primary/40"
                   }`}
                 >
                   {ROLE_LABELS[role]}
@@ -260,7 +260,7 @@ export default function AdminPageEditorPage({
               );
             })}
           </div>
-          <p className="text-xs text-[#A69B8A]">
+          <p className="text-xs text-[#A8A6A0]">
             {visibility.length === 0
               ? "Herkese Açık — hiçbir rol seçilmediğinde sayfa herkes tarafından görüntülenebilir."
               : "Sadece seçili roller görüntüleyebilir."}
@@ -273,7 +273,7 @@ export default function AdminPageEditorPage({
         {blocks.map((block, i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-medium text-[#A69B8A]">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-[#A8A6A0]">
                 {BLOCK_TYPE_ICONS[block.type]}
                 {BLOCK_TYPE_LABELS[block.type]}
               </span>
@@ -356,7 +356,7 @@ export default function AdminPageEditorPage({
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
-                      value={block.color ?? "#A69B8A"}
+                      value={block.color ?? "#A8A6A0"}
                       onChange={(e) => updateBlock(i, { ...block, color: e.target.value })}
                       className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent p-0.5"
                     />
@@ -411,19 +411,19 @@ export default function AdminPageEditorPage({
             )}
 
             {block.type === "divider" && (
-              <p className="text-xs text-[#A69B8A]">Bu blok bir ayırıcı çizgi ekler.</p>
+              <p className="text-xs text-[#A8A6A0]">Bu blok bir ayırıcı çizgi ekler.</p>
             )}
           </div>
         ))}
 
         {blocks.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-[#A69B8A]">
+          <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-[#A8A6A0]">
             Henüz blok yok. Aşağıdan blok ekleyerek başla.
           </p>
         )}
 
         <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3">
-          <span className="w-full text-xs text-[#A69B8A]">+ Blok Ekle</span>
+          <span className="w-full text-xs text-[#A8A6A0]">+ Blok Ekle</span>
           {(Object.keys(BLOCK_TYPE_LABELS) as PageBlockType[]).map((type) => (
             <Button key={type} size="sm" variant="outline" onClick={() => addBlock(type)}>
               {BLOCK_TYPE_ICONS[type]}

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { ManageService } from './manage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -41,6 +41,17 @@ export class ManageController {
     return this.manageService.broadcastAnnouncement(dto.title, dto.message, dto.target, actorId, dto.link);
   }
 
+  @Get('announcements')
+  listAnnouncements() {
+    return this.manageService.listAnnouncementBroadcasts();
+  }
+
+  @Delete('announcements/:id')
+  deleteAnnouncement(@Req() req: Request, @Param('id') id: string) {
+    const actorId = (req.user as any).id;
+    return this.manageService.deleteAnnouncementBroadcast(id, actorId);
+  }
+
   @Post('staff/:id')
   makeStaff(@Req() req: Request, @Param('id') id: string) {
     const actorId = (req.user as any).id;
@@ -65,6 +76,26 @@ export class ManageController {
   @Get('stats/top-programs')
   getTopPrograms() {
     return this.manageService.getTopPrograms();
+  }
+
+  @Get('stats/package-sales')
+  getPackageSalesStats() {
+    return this.manageService.getPackageSalesStats();
+  }
+
+  @Get('referrals')
+  getReferralOverview() {
+    return this.manageService.getReferralOverview();
+  }
+
+  @Get('referrals/:userId/invitees')
+  getReferralInvitees(@Param('userId') userId: string) {
+    return this.manageService.getReferralInvitees(userId);
+  }
+
+  @Get('referrals/stats/earnings')
+  getReferralEarningsStats() {
+    return this.manageService.getReferralEarningsStats();
   }
 
   @Get('stats/completion-rate')

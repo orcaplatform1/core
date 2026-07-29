@@ -36,18 +36,18 @@ export default function LiveLessonsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#F5F1EA]">Canlı Dersler</h1>
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Canlı dersler Discord üzerinden yapılır. Ders başladığında aşağıdaki buton aktif olur.
         </p>
       </div>
 
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card p-6">
-          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
         </div>
       ) : !lesson ? (
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
-          <p className="text-sm text-[#A69B8A]">Şu anda planlanmış bir canlı ders yok.</p>
+          <p className="text-sm text-[#A8A6A0]">Şu anda planlanmış bir canlı ders yok.</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
@@ -58,7 +58,7 @@ export default function LiveLessonsPage() {
                 CANLI
               </span>
             ) : (
-              <span className="rounded-full bg-card-inner px-3 py-1 text-xs text-[#A69B8A]">
+              <span className="rounded-full bg-card-inner px-3 py-1 text-xs text-[#A8A6A0]">
                 Yaklaşan Ders
               </span>
             )}
@@ -66,7 +66,7 @@ export default function LiveLessonsPage() {
 
           <h2 className="text-xl font-semibold text-[#F5F1EA]">{lesson.title}</h2>
 
-          <div className="flex flex-wrap gap-4 text-sm text-[#A69B8A]">
+          <div className="flex flex-wrap gap-4 text-sm text-[#A8A6A0]">
             <div className="flex items-center gap-2">
               <Calendar size={16} />
               {new Date(lesson.scheduledAt).toLocaleString("tr-TR", {
@@ -85,7 +85,7 @@ export default function LiveLessonsPage() {
 
           {!lesson.isLive && (
             <div className="rounded-xl border border-border bg-card-inner p-4 text-center">
-              <p className="mb-1 text-xs text-[#A69B8A]">Başlamasına kalan süre</p>
+              <p className="mb-1 text-xs text-[#A8A6A0]">Başlamasına kalan süre</p>
               <p className="text-2xl font-semibold text-[#F5F1EA] tabular-nums">
                 {formatCountdown(secondsLeft)}
               </p>

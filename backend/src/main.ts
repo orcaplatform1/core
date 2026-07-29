@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -8,6 +9,7 @@ async function bootstrap() {
   app.use(helmet());
   app.enableShutdownHooks();
   app.enableCors();
+  app.useWebSocketAdapter(new IoAdapter(app));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

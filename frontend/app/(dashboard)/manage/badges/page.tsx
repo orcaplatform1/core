@@ -25,7 +25,7 @@ const TRIGGER_TYPES: AdminBadge["triggerType"][] = [
 ];
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A69B8A] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 type FormState = {
@@ -63,13 +63,13 @@ export default function AdminBadgesPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -207,7 +207,7 @@ export default function AdminBadgesPage() {
             onChange={(e) => setForm((f) => ({ ...f, requiredCount: e.target.value }))}
           />
         </div>
-        <p className="text-xs text-[#A69B8A]">
+        <p className="text-xs text-[#A8A6A0]">
           CUSTOM tipi otomatik tetiklenmez, sadece manuel "Ver" ile atanır. Diğer tipler ilgili sayaç
           gerekli sayıya ulaşınca otomatik verilir.
         </p>
@@ -228,7 +228,7 @@ export default function AdminBadgesPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">Rozetler</h1>
-          <p className="text-sm text-[#A69B8A]">Rozet tanımları ve manuel rozet verme.</p>
+          <p className="text-sm text-[#A8A6A0]">Rozet tanımları ve manuel rozet verme.</p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
           ← M Dashboard
@@ -250,9 +250,9 @@ export default function AdminBadgesPage() {
 
       <div className="space-y-3">
         {loadingBadges ? (
-          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !badges || badges.length === 0 ? (
-          <p className="text-sm text-[#A69B8A]">Henüz rozet yok.</p>
+          <p className="text-sm text-[#A8A6A0]">Henüz rozet yok.</p>
         ) : (
           badges.map((b) => (
             <div key={b.id} className="rounded-2xl border border-border bg-card p-4 space-y-3">
@@ -272,8 +272,8 @@ export default function AdminBadgesPage() {
                   )}
                   <div>
                     <p className="font-medium text-[#F5F1EA]">{b.name}</p>
-                    <p className="text-xs text-[#A69B8A]">{b.description}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-wide text-[#A69B8A]">
+                    <p className="text-xs text-[#A8A6A0]">{b.description}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-wide text-[#A8A6A0]">
                       {b.triggerType} · {b.requiredCount}
                     </p>
                   </div>

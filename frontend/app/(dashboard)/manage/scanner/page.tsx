@@ -87,7 +87,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
                 href={`https://www.binance.com/en/futures/${signal.symbol}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#A69B8A] hover:text-primary"
+                className="text-[#A8A6A0] hover:text-primary"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
                   <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
@@ -98,7 +98,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
                 </svg>
               </a>
             </div>
-            <p className="text-xs text-[#A69B8A]">{bullish ? "LONG" : "SHORT"}</p>
+            <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
         <span
@@ -141,39 +141,39 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">Giriş Bölgesi</p>
+          <p className="text-[10px] text-[#A8A6A0]">Giriş Bölgesi</p>
           <p className="text-xs font-semibold text-[#F5F1EA]">
             {fmt(signal.entryZoneBottom)} - {fmt(signal.entryZoneTop)}
           </p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">Stop</p>
+          <p className="text-[10px] text-[#A8A6A0]">Stop</p>
           <p className="text-xs font-semibold text-[#EF4444]">{fmt(signal.stop)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">R:R</p>
+          <p className="text-[10px] text-[#A8A6A0]">R:R</p>
           <p className="text-xs font-semibold text-[#F5F1EA]">1:{signal.rr}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#A69B8A]">TP1</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP1</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp1)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#A69B8A]">TP2</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP2</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp2)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5 text-center">
-          <p className="text-[10px] text-[#A69B8A]">TP3</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP3</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp3)}</p>
         </div>
       </div>
 
       <div className="space-y-1">
         {signal.reasons.map((r, i) => (
-          <p key={i} className="text-xs text-[#A69B8A]">
+          <p key={i} className="text-xs text-[#A8A6A0]">
             • {r}
           </p>
         ))}
@@ -181,12 +181,12 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
 
       {signal.aiCommentary && (
         <div className="rounded-lg border border-[#3B5BFF40] bg-[#3B5BFF11] p-3">
-          <p className="text-xs text-[#A69B8A]">{signal.aiCommentary}</p>
+          <p className="text-xs text-[#A8A6A0]">{signal.aiCommentary}</p>
         </div>
       )}
 
       {signal.fundingRate !== null && (
-        <p className="text-[10px] text-[#A69B8A]">
+        <p className="text-[10px] text-[#A8A6A0]">
           Funding rate: {(signal.fundingRate as number).toFixed(4)}%
         </p>
       )}
@@ -195,7 +195,7 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
 }
 
 const STATUS_STYLES: Record<TrackedSignal["status"], { label: string; bg: string; color: string }> = {
-  WATCHING: { label: "IZLENIYOR", bg: "#A69B8A22", color: "#A69B8A" },
+  WATCHING: { label: "IZLENIYOR", bg: "#A8A6A022", color: "#A8A6A0" },
   TRIGGERED: { label: "TETIKLENDI", bg: "#3B5BFF22", color: "#3B5BFF" },
   HIT_TP1: { label: "TP1 VURULDU", bg: "#22C55E22", color: "#22C55E" },
   HIT_TP2: { label: "TP2 VURULDU", bg: "#22C55E22", color: "#22C55E" },
@@ -234,7 +234,7 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
                 href={`https://www.binance.com/en/futures/${signal.symbol}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#A69B8A] hover:text-primary"
+                className="text-[#A8A6A0] hover:text-primary"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
                   <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
@@ -245,7 +245,7 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
                 </svg>
               </a>
             </div>
-            <p className="text-xs text-[#A69B8A]">{bullish ? "LONG" : "SHORT"}</p>
+            <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -281,21 +281,21 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
       )}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">Giriş Bölgesi</p>
+          <p className="text-[10px] text-[#A8A6A0]">Giriş Bölgesi</p>
           <p className="text-xs font-semibold text-[#F5F1EA]">
             {fmt(signal.entryZoneBottom)} - {fmt(signal.entryZoneTop)}
           </p>
         </div>
         <div className={stopBoxClass}>
-          <p className="text-[10px] text-[#A69B8A]">Stop</p>
+          <p className="text-[10px] text-[#A8A6A0]">Stop</p>
           <p className="text-xs font-semibold text-[#EF4444]">{fmt(signal.stop)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">R:R</p>
+          <p className="text-[10px] text-[#A8A6A0]">R:R</p>
           <p className="text-xs font-semibold text-[#F5F1EA]">1:{signal.rr}</p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
-          <p className="text-[10px] text-[#A69B8A]">Oluşturuldu</p>
+          <p className="text-[10px] text-[#A8A6A0]">Oluşturuldu</p>
           <p className="text-xs font-semibold text-[#F5F1EA]">
             {new Date(signal.createdAt).toLocaleString("tr-TR")}
           </p>
@@ -303,15 +303,15 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className={tpBoxClass(1)}>
-          <p className="text-[10px] text-[#A69B8A]">TP1</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP1</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp1)}</p>
         </div>
         <div className={tpBoxClass(2)}>
-          <p className="text-[10px] text-[#A69B8A]">TP2</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP2</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp2)}</p>
         </div>
         <div className={tpBoxClass(3)}>
-          <p className="text-[10px] text-[#A69B8A]">TP3</p>
+          <p className="text-[10px] text-[#A8A6A0]">TP3</p>
           <p className="text-xs font-semibold text-[#22C55E]">{fmt(signal.tp3)}</p>
         </div>
       </div>
@@ -327,13 +327,13 @@ export default function AdminScannerPage() {
   const triggerScan = useTriggerScan(style);
 
   if (authLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -356,7 +356,7 @@ export default function AdminScannerPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">AI Chart Scanner</h1>
-          <p className="text-sm text-[#A69B8A]">
+          <p className="text-sm text-[#A8A6A0]">
             Sadece kişisel kullanım — öğrencilere kapalı. Binance top 200 kripto, 15 dakikada bir otomatik tarama.
           </p>
         </div>
@@ -392,20 +392,20 @@ export default function AdminScannerPage() {
           {triggerScan.isPending ? "Kuyruğa ekleniyor..." : "Şimdi Tara"}
         </Button>
         {results?.scannedAt && (
-          <span className="text-xs text-[#A69B8A]">
+          <span className="text-xs text-[#A8A6A0]">
             Son tarama: {new Date(results.scannedAt).toLocaleString("tr-TR")}
           </span>
         )}
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : (
         <>
           {activeSignals.length === 0 && (
             <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-              <Zap size={28} className="mx-auto text-[#A69B8A]" />
-              <p className="text-sm text-[#A69B8A]">
+              <Zap size={28} className="mx-auto text-[#A8A6A0]" />
+              <p className="text-sm text-[#A8A6A0]">
                 Şu an aktif (girilebilir) sinyal yok. Bu normal — filtreler sıkı, her taramada çıkmayabilir.
               </p>
             </div>
@@ -426,7 +426,7 @@ export default function AdminScannerPage() {
                 <h2 className="text-sm font-semibold text-[#F5F1EA]">
                   Takip Edilenler ({tracked.signals.length})
                 </h2>
-                <div className="flex items-center gap-3 text-xs text-[#A69B8A] flex-wrap">
+                <div className="flex items-center gap-3 text-xs text-[#A8A6A0] flex-wrap">
                   <span>Toplam: {tracked.stats.total}</span>
                   <span className="text-[#22C55E]">Kazandi: {tracked.stats.wins}</span>
                   <span className="text-[#EF4444]">Stop: {tracked.stats.losses}</span>

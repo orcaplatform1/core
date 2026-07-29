@@ -3,27 +3,6 @@ import { X } from "lucide-react";
 import { DEFAULT_FOOTER_SETTINGS } from "@/lib/marketing/default-site-content";
 import type { FooterSettingsData, LegalPageSummary } from "@/lib/marketing/site-content-types";
 
-const staticFooterColumns = [
-  {
-    title: "Platform",
-    links: [
-      { label: "Programlar", href: "/programs" },
-      { label: "AI Mentor", href: "/mentor" },
-      { label: "Araçlar", href: "/manage/scanner" },
-      { label: "Topluluk", href: "/programs" },
-      { label: "Blog", href: "/blog" },
-    ],
-  },
-  {
-    title: "Destek",
-    links: [
-      { label: "Sıkça Sorulan Sorular", href: "/faq" },
-      { label: "Destek Merkezi", href: "/contact" },
-      { label: "İletişim", href: "/contact" },
-    ],
-  },
-];
-
 // lucide-react bu projede YouTube/Instagram/Discord marka ikonlarını içermiyor
 // (sadece jenerik ikonlar var) — bu üçü için küçük, sade satır-ikon SVG'ler.
 function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -68,15 +47,19 @@ export function SiteFooter({
     .filter(([label]) => socialIcons[label])
     .map(([label, href]) => ({ label, href, icon: socialIcons[label] }));
   const [logoFirst, ...logoRest] = footer.companyName.split(" ");
+  const baseFooterColumns = [
+    { title: "Platform", links: footer.platformLinks?.length ? footer.platformLinks : DEFAULT_FOOTER_SETTINGS.platformLinks! },
+    { title: "Destek", links: footer.supportLinks?.length ? footer.supportLinks : DEFAULT_FOOTER_SETTINGS.supportLinks! },
+  ];
   const footerColumns = legalPages.length
     ? [
-        ...staticFooterColumns,
+        ...baseFooterColumns,
         {
           title: "Yasal",
           links: legalPages.map((page) => ({ label: page.title, href: `/${page.slug}` })),
         },
       ]
-    : staticFooterColumns;
+    : baseFooterColumns;
 
   return (
     <footer className="border-t border-border bg-secondary">
@@ -112,7 +95,7 @@ export function SiteFooter({
         </div>
 
         <div className="mt-12 flex flex-col-reverse items-center gap-6 border-t border-divider pt-8 sm:flex-row sm:justify-between">
-          <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
             <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
             <Link
               href="/site-haritasi"

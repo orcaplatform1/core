@@ -30,7 +30,7 @@ export default function GlobalRootError({
           }}
         >
           <h1 style={{ fontSize: 20, fontWeight: 700 }}>Bir Şeyler Ters Gitti</h1>
-          <p style={{ marginTop: 8, fontSize: 14, color: "#A69B8A" }}>
+          <p style={{ marginTop: 8, fontSize: 14, color: "#A8A6A0" }}>
             Uygulama beklenmedik bir hatayla karşılaştı.
           </p>
           <button

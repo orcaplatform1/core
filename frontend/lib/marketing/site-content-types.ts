@@ -11,35 +11,14 @@ export interface PartnerItemData {
   href?: string;
 }
 
-export interface PlatformShowcaseStatItem {
-  icon?: string;
-  value: string;
-  label: string;
-}
-
 export interface PlatformShowcaseData {
   eyebrow: string;
   title: string;
   description: string;
   ctaLabel: string;
   ctaHref: string;
-
-  greetingName: string;
-  quoteText: string;
-  quoteAuthor: string;
-
-  stats: PlatformShowcaseStatItem[];
-
-  chartOneLabel: string;
-  chartOneValue: string;
-  chartTwoLabel: string;
-  chartTwoValue: string;
-
-  streakDays: number;
-  mentorUsageDays: number;
-  activeProgramName: string;
-  upcomingLessonTitle: string;
-  upcomingLessonTime: string;
+  /** Laptop ekranına yerleştirilen dashboard görüntüsü (admin panelden yüklenen tek PNG). */
+  imageUrl?: string | null;
 }
 
 export type ToolPreviewKey = "scanner" | "backtest" | "simulation" | "calendar" | "live";
@@ -92,6 +71,7 @@ export interface SiteContentSettings {
   toolsSubtitle: string;
   toolsItems: ToolItemData[];
 
+  communityEnabled: boolean;
   communityTitle: string;
   communityStats: CommunityStatItemData[];
   communityExtraCount?: number | null;
@@ -105,6 +85,11 @@ export interface SiteContentSettings {
   faviconUrl?: string | null;
 }
 
+export interface FooterLinkItem {
+  label: string;
+  href: string;
+}
+
 export interface FooterSettingsData {
   id?: string;
   companyName: string;
@@ -113,6 +98,8 @@ export interface FooterSettingsData {
   contactPhone?: string | null;
   socialLinks?: Record<string, string> | null;
   copyrightText?: string | null;
+  platformLinks?: FooterLinkItem[] | null;
+  supportLinks?: FooterLinkItem[] | null;
 }
 
 export interface LegalPageSummary {

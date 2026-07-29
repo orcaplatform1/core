@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       authStorage.clear();
       setUser(null);
-      router.push("/giris");
+      router.push("/login");
     }
   }, [router]);
 

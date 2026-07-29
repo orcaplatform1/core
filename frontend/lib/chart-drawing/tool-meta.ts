@@ -9,7 +9,7 @@ export const TOOL_COLORS: Record<DrawingTool, string> = {
   ellipse: "#8B5CF6",
   fibonacci: "#F5C542",
   arrow: "#EF4444",
-  note: "#A69B8A",
+  note: "#A8A6A0",
   channel: "#5AC8E8",
   "position-long": "#22C55E",
   "position-short": "#EF4444",

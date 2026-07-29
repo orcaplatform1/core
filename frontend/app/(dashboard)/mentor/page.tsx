@@ -47,7 +47,7 @@ export default function MentorPage() {
   const noQuota = quota && quota.freeRemaining <= 0 && quota.mentorCredits <= 0;
 
   return (
-    <div className="flex h-[calc(100vh-72px-4rem)] flex-col gap-4">
+    <div className="mx-auto flex h-[calc(100vh-72px-4rem)] max-w-3xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">

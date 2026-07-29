@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
       </div>
     );
   }
@@ -15,7 +15,7 @@ export default function ManagePage() {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -23,7 +23,7 @@ export default function ManagePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#F5F1EA]">M Dashboard</h1>
-        <p className="text-sm text-[#A69B8A]">Platform yönetim paneli.</p>
+        <p className="text-sm text-[#A8A6A0]">Platform yönetim paneli.</p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Link
@@ -35,7 +35,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Kullanıcılar</p>
-            <p className="text-xs text-[#A69B8A]">Rol, erişim, ban yönetimi</p>
+            <p className="text-xs text-[#A8A6A0]">Rol, erişim, ban yönetimi</p>
           </div>
         </Link>
         <Link
@@ -47,7 +47,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Ödemeler</p>
-            <p className="text-xs text-[#A69B8A]">Dekont/kripto onayları</p>
+            <p className="text-xs text-[#A8A6A0]">Dekont/kripto onayları</p>
           </div>
         </Link>
         <Link
@@ -59,7 +59,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Programlar</p>
-            <p className="text-xs text-[#A69B8A]">Program / Modül / Ders yönetimi</p>
+            <p className="text-xs text-[#A8A6A0]">Program / Modül / Ders yönetimi</p>
           </div>
         </Link>
         <Link
@@ -71,7 +71,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Rozetler</p>
-            <p className="text-xs text-[#A69B8A]">Rozet tanımları ve manuel verme</p>
+            <p className="text-xs text-[#A8A6A0]">Rozet tanımları ve manuel verme</p>
           </div>
         </Link>
         <Link
@@ -83,7 +83,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Canlı Dersler</p>
-            <p className="text-xs text-[#A69B8A]">Discord canlı ders planla</p>
+            <p className="text-xs text-[#A8A6A0]">Discord canlı ders planla</p>
           </div>
         </Link>
         <Link
@@ -95,7 +95,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Duyuru Gönder</p>
-            <p className="text-xs text-[#A69B8A]">Tüm/ücretli/ücretsiz kullanıcılara bildirim</p>
+            <p className="text-xs text-[#A8A6A0]">Tüm/ücretli/ücretsiz kullanıcılara bildirim</p>
           </div>
         </Link>
         <Link
@@ -107,7 +107,19 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Staff Performans</p>
-            <p className="text-xs text-[#A69B8A]">AVM personel test/satış/komisyon</p>
+            <p className="text-xs text-[#A8A6A0]">AVM personel test/satış/komisyon</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/referrals"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8A5CFF22]">
+            <UserPlus size={20} color="#8A5CFF" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Davetiye Sistemi</p>
+            <p className="text-xs text-[#A8A6A0]">Üye referansları, kazanç ve davet edilenler</p>
           </div>
         </Link>
         <Link
@@ -119,7 +131,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">AI Chart Scanner</p>
-            <p className="text-xs text-[#A69B8A]">Kişisel kullanım — canlı sinyal taraması</p>
+            <p className="text-xs text-[#A8A6A0]">Kişisel kullanım — canlı sinyal taraması</p>
           </div>
         </Link>
         <Link
@@ -131,7 +143,7 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Site İçeriği</p>
-            <p className="text-xs text-[#A69B8A]">Landing page, header, footer, logo ve favicon yönetimi</p>
+            <p className="text-xs text-[#A8A6A0]">Landing page, header, footer, logo ve favicon yönetimi</p>
           </div>
         </Link>
         <Link
@@ -143,12 +155,12 @@ export default function ManagePage() {
           </div>
           <div>
             <p className="font-medium text-[#F5F1EA]">Sayfalar</p>
-            <p className="text-xs text-[#A69B8A]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
+            <p className="text-xs text-[#A8A6A0]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
           </div>
         </Link>
       </div>
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Tüm yönetim bölümleri tamamlandı.
         </p>
       </div>

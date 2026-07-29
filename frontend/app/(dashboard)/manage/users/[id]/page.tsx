@@ -59,18 +59,18 @@ export default function AdminUserDetailPage() {
     setFormInit(true);
   }
   if (authLoading || isLoading) {
-    return <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>;
+    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A69B8A]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
   if (!u) {
-    return <p className="text-sm text-[#A69B8A]">Kullanıcı bulunamadı.</p>;
+    return <p className="text-sm text-[#A8A6A0]">Kullanıcı bulunamadı.</p>;
   }
   async function saveIdentity() {
     try {
@@ -165,7 +165,7 @@ export default function AdminUserDetailPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">{u.fullName}</h1>
-          <p className="text-sm text-[#A69B8A]">@{u.username} · {u.role}</p>
+          <p className="text-sm text-[#A8A6A0]">@{u.username} · {u.role}</p>
         </div>
       </div>
 
@@ -201,33 +201,33 @@ export default function AdminUserDetailPage() {
           </div>
           <div className="space-y-1.5">
             <Label>Cinsiyet</Label>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A69B8A] outline-none">
+            <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {GENDER.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label>Eğitim</Label>
-            <select value={education} onChange={(e) => setEducation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A69B8A] outline-none">
+            <select value={education} onChange={(e) => setEducation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {EDUCATION.map((x) => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label>Meslek</Label>
-            <select value={occupation} onChange={(e) => setOccupation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A69B8A] outline-none">
+            <select value={occupation} onChange={(e) => setOccupation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {OCCUPATION.map((x) => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
         </div>
-        <p className="text-xs text-[#A69B8A]">Not: email/telefon burada değiştirilirse doğrulanmış sayılır (verification bypass).</p>
+        <p className="text-xs text-[#A8A6A0]">Not: email/telefon burada değiştirilirse doğrulanmış sayılır (verification bypass).</p>
         <Button size="sm" disabled={updateProfile.isPending} onClick={saveProfile}>Kaydet</Button>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#F5F1EA]">Mentor Kredisi</h2>
-        <p className="text-sm text-[#A69B8A]">Bakiye: <span className="font-semibold">{u.mentorCredits}</span></p>
+        <p className="text-sm text-[#A8A6A0]">Bakiye: <span className="font-semibold">{u.mentorCredits}</span></p>
         <div className="flex items-center gap-2">
           <Input type="number" value={creditDelta} onChange={(e) => setCreditDelta(e.target.value)} className="w-24" />
           <Button size="sm" variant="outline" disabled={adjustCredits.isPending} onClick={() => handleAdjustCredits(1)}>Ekle</Button>
@@ -237,7 +237,7 @@ export default function AdminUserDetailPage() {
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#F5F1EA]">Ban Durumu</h2>
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Durum: {isBanned ? <span className="text-[#EF4444]">Banlı ({new Date(u.bannedUntil).toLocaleDateString("tr-TR")}'e kadar)</span> : <span className="text-[#22C55E]">Banlı değil</span>}
           {" · "}Toplam ban sayısı: {u.banCount}
         </p>
@@ -255,12 +255,12 @@ export default function AdminUserDetailPage() {
           <div className="space-y-2">
             {data.enrollments.map((e: any) => (
               <div key={e.id} className="flex items-center justify-between text-sm">
-                <span className="text-[#A69B8A]">{e.programId}</span>
+                <span className="text-[#A8A6A0]">{e.programId}</span>
                 <Button size="sm" variant="outline" onClick={() => handleRevokeEnrollment(e.programId)}>İptal Et</Button>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A69B8A]">Erişim yok.</p>}
+        ) : <p className="text-sm text-[#A8A6A0]">Erişim yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
@@ -268,13 +268,13 @@ export default function AdminUserDetailPage() {
         {data?.payments?.length ? (
           <div className="space-y-2">
             {data.payments.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between text-sm text-[#A69B8A]">
+              <div key={p.id} className="flex items-center justify-between text-sm text-[#A8A6A0]">
                 <span>{p.amount} {p.currency} · {p.method}</span>
-                <span className="text-xs text-[#A69B8A]">{p.status}</span>
+                <span className="text-xs text-[#A8A6A0]">{p.status}</span>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A69B8A]">Ödeme kaydı yok.</p>}
+        ) : <p className="text-sm text-[#A8A6A0]">Ödeme kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
@@ -282,13 +282,13 @@ export default function AdminUserDetailPage() {
         {data?.quizAttempts?.length ? (
           <div className="space-y-2">
             {data.quizAttempts.map((q: any) => (
-              <div key={q.id} className="flex items-center justify-between text-sm text-[#A69B8A]">
+              <div key={q.id} className="flex items-center justify-between text-sm text-[#A8A6A0]">
                 <span>%{q.percentage} · {q.grade ?? "-"}</span>
-                <span className="text-xs text-[#A69B8A]">{q.passed ? "Geçti" : "Kaldı"}</span>
+                <span className="text-xs text-[#A8A6A0]">{q.passed ? "Geçti" : "Kaldı"}</span>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A69B8A]">Quiz kaydı yok.</p>}
+        ) : <p className="text-sm text-[#A8A6A0]">Quiz kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
@@ -296,10 +296,10 @@ export default function AdminUserDetailPage() {
         {data?.certificates?.length ? (
           <div className="space-y-2">
             {data.certificates.map((c: any) => (
-              <div key={c.id} className="text-sm text-[#A69B8A]">#{c.number} · {c.code}</div>
+              <div key={c.id} className="text-sm text-[#A8A6A0]">#{c.number} · {c.code}</div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A69B8A]">Sertifika yok.</p>}
+        ) : <p className="text-sm text-[#A8A6A0]">Sertifika yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
@@ -307,12 +307,12 @@ export default function AdminUserDetailPage() {
         {data?.loginLogs?.length ? (
           <div className="space-y-2">
             {data.loginLogs.map((l: any) => (
-              <div key={l.id} className="text-xs text-[#A69B8A]">
+              <div key={l.id} className="text-xs text-[#A8A6A0]">
                 {new Date(l.loggedInAt).toLocaleString("tr-TR")} · {l.userAgent ?? "bilinmiyor"}
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A69B8A]">Giriş kaydı yok.</p>}
+        ) : <p className="text-sm text-[#A8A6A0]">Giriş kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-[#EF4444]/40 bg-card p-5 space-y-3">

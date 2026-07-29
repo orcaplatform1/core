@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class UpdateSiteContentDto {
   @IsOptional()
@@ -70,19 +70,7 @@ export class UpdateSiteContentDto {
     description: string;
     ctaLabel: string;
     ctaHref: string;
-    greetingName: string;
-    quoteText: string;
-    quoteAuthor: string;
-    stats: { icon?: string; value: string; label: string }[];
-    chartOneLabel: string;
-    chartOneValue: string;
-    chartTwoLabel: string;
-    chartTwoValue: string;
-    streakDays: number;
-    mentorUsageDays: number;
-    activeProgramName: string;
-    upcomingLessonTitle: string;
-    upcomingLessonTime: string;
+    imageUrl?: string | null;
   };
 
   @IsOptional()
@@ -101,6 +89,10 @@ export class UpdateSiteContentDto {
     href: string;
     previewKey?: string;
   }[];
+
+  @IsOptional()
+  @IsBoolean()
+  communityEnabled?: boolean;
 
   @IsOptional()
   @IsString()

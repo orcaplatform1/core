@@ -21,8 +21,11 @@ export class LiveLessonsService {
     });
     await this.auditLogService.log(actorId, 'LIVE_LESSON_CREATE', 'LiveLesson', created.id);
 
+    // Önceden sadece role: 'STUDENT' hedefleniyordu — bildirim SUPER_ADMIN/STAFF
+    // dahil hiçbir kayıt yapmamış kullanıcıya gitmiyordu. Canlı ders duyurusu
+    // herkesi ilgilendirir (misafirler için de dönüşüm fırsatı), bu yüzden tüm
+    // kullanıcılara gönderiliyor.
     const students = await this.prisma.user.findMany({
-      where: { role: 'STUDENT' },
       select: { id: true },
     });
     if (students.length > 0) {

@@ -541,17 +541,35 @@ model LiveLesson {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  message   String
-  link      String?
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id          String                 @id @default(cuid())
+  userId      String
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  message     String
+  link        String?
+  read        Boolean                @default(false)
+  createdAt   DateTime               @default(now())
+  broadcastId String?
+  broadcast   AnnouncementBroadcast? @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([broadcastId])
+}
+
+// Admin panelden gönderilen bir duyuru, alıcı sayısı kadar Notification satırına
+// "fan-out" olur (bkz. ManageService.broadcastAnnouncement); bu model o gönderimin
+// tekil kaydı — admin panelde "bugüne kadar gönderilen duyurular" listesini ve
+// admin sildiğinde ilişkili tüm Notification'ların da silinmesini (cascade) sağlar.
+model AnnouncementBroadcast {
+  id            String         @id @default(cuid())
+  title         String
+  message       String
+  target        String
+  link          String?
+  createdByName String?
+  createdAt     DateTime       @default(now())
+  notifications Notification[]
 }
 
 model StatsSnapshot {
@@ -778,6 +796,8 @@ model FooterSettings {
   contactPhone  String?
   socialLinks   Json?
   copyrightText String?
+  platformLinks Json?
+  supportLinks  Json?
   updatedAt     DateTime @updatedAt
 }
 
@@ -811,6 +831,7 @@ model SiteContentSettings {
   toolsSubtitle String?
   toolsItems    Json?
 
+  communityEnabled    Boolean @default(true)
   communityTitle      String?
   communityStats      Json?
   communityExtraCount Int?

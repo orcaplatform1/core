@@ -32,3 +32,28 @@ export function useRejectPayment() {
     },
   });
 }
+
+export function useUpdateProgramPrice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (programPriceTRY: number) =>
+      apiClient("/payments/price", { method: "POST", body: { programPriceTRY } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments", "price"] });
+    },
+  });
+}
+
+export type PackageSalesPeriod = { period: string; revenue: number; count: number };
+export type PackageSalesStats = {
+  daily: PackageSalesPeriod[];
+  monthly: PackageSalesPeriod[];
+  yearly: PackageSalesPeriod[];
+};
+
+export function usePackageSalesStats() {
+  return useQuery({
+    queryKey: ["admin", "stats", "package-sales"],
+    queryFn: () => apiClient<PackageSalesStats>("/manage/stats/package-sales"),
+  });
+}

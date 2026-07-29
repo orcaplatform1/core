@@ -9,19 +9,19 @@ export default function SimulationDnaPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-[#F5F1EA]">Simülasyon DNA</h1>
-        <p className="text-sm text-[#A69B8A]">
+        <p className="text-sm text-[#A8A6A0]">
           Her 5 simülasyon işleminden sonra Yapay Zeka Mentor, işlem tarzını analiz ederek burada bir rapor sunar.
         </p>
       </div>
 
       {isLoading ? (
         <div className="rounded-2xl border border-border bg-card p-6">
-          <p className="text-sm text-[#A69B8A]">Yükleniyor...</p>
+          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
         </div>
       ) : !reports || reports.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
-          <Dna size={32} color="#A69B8A" className="mx-auto" />
-          <p className="text-sm text-[#A69B8A]">
+          <Dna size={32} color="#A8A6A0" className="mx-auto" />
+          <p className="text-sm text-[#A8A6A0]">
             Henüz bir DNA raporun yok. Simülasyonda 5 işlem tamamladığında ilk raporun burada görünecek.
           </p>
         </div>
@@ -36,7 +36,7 @@ export default function SimulationDnaPage() {
                     İlk {report.tradesAnalyzedCount} İşlem Raporu
                   </h2>
                 </div>
-                <span className="text-xs text-[#A69B8A]">
+                <span className="text-xs text-[#A8A6A0]">
                   {new Date(report.createdAt).toLocaleDateString("tr-TR")}
                 </span>
               </div>
@@ -44,7 +44,7 @@ export default function SimulationDnaPage() {
               {report.pending ? (
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-card-inner p-4">
                   <Clock size={16} color="#F39C3D" />
-                  <p className="text-sm text-[#A69B8A]">
+                  <p className="text-sm text-[#A8A6A0]">
                     Yapay Zeka Mentor bu raporu hazırlıyor. Analiz yakında burada görünecek.
                   </p>
                 </div>
@@ -52,14 +52,14 @@ export default function SimulationDnaPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="rounded-xl border border-border bg-card-inner p-4">
-                      <div className="mb-1 flex items-center gap-2 text-xs text-[#A69B8A]">
+                      <div className="mb-1 flex items-center gap-2 text-xs text-[#A8A6A0]">
                         <ShieldAlert size={14} />
                         Risk Profili
                       </div>
                       <p className="text-sm font-medium text-[#F5F1EA]">{report.riskProfile}</p>
                     </div>
                     <div className="rounded-xl border border-border bg-card-inner p-4">
-                      <div className="mb-1 flex items-center gap-2 text-xs text-[#A69B8A]">
+                      <div className="mb-1 flex items-center gap-2 text-xs text-[#A8A6A0]">
                         <Brain size={14} />
                         Psikoloji
                       </div>
@@ -69,13 +69,13 @@ export default function SimulationDnaPage() {
 
                   {report.strengths && report.strengths.length > 0 && (
                     <div>
-                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A69B8A]">
+                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A8A6A0]">
                         <ThumbsUp size={14} color="#22C55E" />
                         Güçlü Yönler
                       </div>
                       <ul className="space-y-1">
                         {report.strengths.map((s, i) => (
-                          <li key={i} className="text-sm text-[#A69B8A]">• {s}</li>
+                          <li key={i} className="text-sm text-[#A8A6A0]">• {s}</li>
                         ))}
                       </ul>
                     </div>
@@ -83,13 +83,13 @@ export default function SimulationDnaPage() {
 
                   {report.weaknesses && report.weaknesses.length > 0 && (
                     <div>
-                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A69B8A]">
+                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A8A6A0]">
                         <ThumbsDown size={14} color="#EF4444" />
                         Zayıf Yönler
                       </div>
                       <ul className="space-y-1">
                         {report.weaknesses.map((w, i) => (
-                          <li key={i} className="text-sm text-[#A69B8A]">• {w}</li>
+                          <li key={i} className="text-sm text-[#A8A6A0]">• {w}</li>
                         ))}
                       </ul>
                     </div>
@@ -97,11 +97,11 @@ export default function SimulationDnaPage() {
 
                   {report.developmentPlan && (
                     <div>
-                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A69B8A]">
+                      <div className="mb-2 flex items-center gap-2 text-xs text-[#A8A6A0]">
                         <Target size={14} color="#3B5BFF" />
                         Gelişim Planı
                       </div>
-                      <p className="text-sm text-[#A69B8A]">{report.developmentPlan}</p>
+                      <p className="text-sm text-[#A8A6A0]">{report.developmentPlan}</p>
                     </div>
                   )}
                 </div>

@@ -52,11 +52,11 @@ export function AiMentorPreviewCard({
     <div className={cn("relative", expanded ? "w-full" : "w-full max-w-[420px]", className)}>
       {/* Katmanlı derinlik: kartın arkasında yumuşak mor bir parıltı — düz mavi temadan
           ayrışan "premium" his için, göz yormaması adına düşük opasitede. */}
-      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-purple/20 opacity-70 blur-2xl" />
+      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-purple/10 opacity-40 blur-2xl" />
 
       <Card
         variant="glass"
-        className="relative gap-4 overflow-hidden border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] p-5 shadow-[0_24px_60px_-20px_rgba(139,92,246,0.45)]"
+        className="relative gap-4 overflow-hidden border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] p-5 shadow-[0_24px_60px_-20px_rgba(139,92,246,0.25)]"
       >
         {/* İç üst kenar aydınlatması — cam katmanına ince bir "highlight" çizgisi */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple/50 to-transparent" />
@@ -77,7 +77,7 @@ export function AiMentorPreviewCard({
         <div className="max-h-56 space-y-2 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-muted-foreground">
-              Piyasalarla ilgili bir soru sor, ORCA AI Mentor sana yardımcı olsun.
+              Kişiselleştirilmiş eğitim planın için benimle finans konusunda biraz sohbet et.
             </div>
           ) : (
             messages.map((m, i) =>
@@ -110,7 +110,7 @@ export function AiMentorPreviewCard({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={user ? "Bir soru sor..." : "Sormak için giriş yap..."}
+            placeholder={user ? "Bir soru sor..." : "Mentor kullanmak için giriş yap..."}
             className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
           <button

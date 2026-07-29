@@ -47,8 +47,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN')
   @Get()
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.usersService.findAll(page ? parseInt(page) : 1, limit ? parseInt(limit) : 20);
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string, @Query('search') search?: string) {
+    return this.usersService.findAll(page ? parseInt(page) : 1, limit ? parseInt(limit) : 20, search);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

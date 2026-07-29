@@ -5,13 +5,21 @@ import Image from "next/image";
  * gösterilir; verildiğinde görsel yavaş, sürekli bir zoom-in/zoom-out döngüsüyle
  * (.hero-bg-zoom, bkz. globals.css) "nefes alır" — prefers-reduced-motion'da kapanır.
  */
-export function HeroBackground({ imageSrc }: { imageSrc?: string }) {
+export function HeroBackground({ imageSrc, fill = false }: { imageSrc?: string; fill?: boolean }) {
   return (
     // Mobilde metin/kartlar alt alta dizildiği için section çok uzuyor; görseli
     // o tam yüksekliğe object-cover ile sığdırmaya çalışmak balinayı kadraj dışına
     // itiyordu. Bu yüzden mobilde görsel sabit yükseklikli bir bant, md'de tam kaplama
     // (Hero'nun grid'i de md'de yan yana geçiyor, ikisi aynı breakpoint'te değişmeli).
-    <div className="absolute inset-x-0 top-0 h-[420px] overflow-hidden sm:h-[480px] md:inset-0 md:h-auto">
+    // `fill`: içeriği tek başlıktan ibaret, sabit banda ihtiyaç duymayan daha kısa
+    // section'lar (bkz. PageHero) için — görsel her breakpoint'te parent'ı kaplar.
+    <div
+      className={
+        fill
+          ? "absolute inset-0 overflow-hidden"
+          : "absolute inset-x-0 top-0 h-[420px] overflow-hidden sm:h-[480px] md:inset-0 md:h-auto"
+      }
+    >
       {imageSrc ? (
         // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
         // ile birlikte dahili self-fetch yaparken 400 dönüyor; görsel zaten webp/önceden

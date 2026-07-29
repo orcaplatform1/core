@@ -42,11 +42,13 @@ export default async function Home() {
 
       <ToolsShowcase title={siteContent.toolsTitle} subtitle={siteContent.toolsSubtitle} tools={siteContent.toolsItems} />
 
-      <CommunityStats
-        title={siteContent.communityTitle}
-        stats={communityStats}
-        extraCount={siteContent.communityExtraCount ?? undefined}
-      />
+      {siteContent.communityEnabled && (
+        <CommunityStats
+          title={siteContent.communityTitle}
+          stats={communityStats}
+          extraCount={siteContent.communityExtraCount ?? undefined}
+        />
+      )}
 
       <CtaBanner
         icon={MessageSquare}

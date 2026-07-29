@@ -23,4 +23,10 @@ export class UpdateFooterDto {
   @IsOptional()
   @IsString()
   copyrightText?: string;
+
+  @IsOptional()
+  platformLinks?: { label: string; href: string }[];
+
+  @IsOptional()
+  supportLinks?: { label: string; href: string }[];
 }

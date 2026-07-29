@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -36,9 +36,17 @@ export class NotificationsController {
   }
 
   @Get('me/inbox')
-  findMyAnnouncements(@Req() req: Request) {
+  findMyAnnouncements(
+    @Req() req: Request,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const userId = (req.user as any).id;
-    return this.notificationsService.findMyAnnouncements(userId);
+    return this.notificationsService.findMyAnnouncements(
+      userId,
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 10,
+    );
   }
 
   @Get('me/inbox/unread-count')
