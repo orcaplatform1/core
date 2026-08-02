@@ -28,6 +28,16 @@ interface Setup {
   strength: 'GUCLU' | 'ORTA' | 'RISKLI';
   stillValid: boolean;
   distancePercent: number;
+  patternType?: 'BREAKOUT_CONTINUATION';
+}
+
+// buildDayTradeSetup icin funnel gozlem sayaclari (scanDayTrade loop'u sonunda
+// console.log ile basilir) - hangi asamada kac sembolun elendigini izlemek icin
+interface DayTradeStageCounter {
+  rangeFound: number;
+  breakoutContinuationConfirmed: number;
+  confirmedCountPassed: number;
+  rrPassed: number;
 }
 
 const YAHOO_MAP: Record<string, string> = {
@@ -440,9 +450,12 @@ export class ScannerService {
     };
   }
 
-  // Swing (scanCrypto) icin range + Turtle Soup bazli setup. Trend filtresi (EMA50/200),
-  // HTF bias ve confirmation sayaci buildSetup ile AYNI sekilde calisir - sadece
-  // entry/stop/TP hesabi (range + Turtle Soup teyidi) farkli.
+  // Swing (scanCrypto) icin de Day Trade ile AYNI Breakout Continuation modeli
+  // kullanilir (ayri bir modelleme yok - tek fark zaman dilimi olcegi): range
+  // GUNLUK mumlardan, kirilim/teyit de GUNLUK mumlarla (swing zaten yavas hareket
+  // ettigi icin day trade'deki 4H-range/15dk-teyit ayrimina burada gerek yok, ikisi
+  // de gunluk). Trend filtresi (EMA50/200), HTF bias ve confirmation sayaci
+  // buildDayTradeSetup ile AYNI.
   private buildSwingSetup(
     dailyCandles: Candle[],
     trend4h: 'UP' | 'DOWN' | 'FLAT',
@@ -464,38 +477,36 @@ export class ScannerService {
     if (!range) return null;
     const rangeWidth = range.upper - range.lower;
 
-    // Turtle Soup teyidi: bir onceki gunluk mum range sinirini kirip (yeni dip/zirve
-    // yapip) SON gunluk mumda range icine geri KAPANMIS olmali - sadece fitille dokunma
-    // yetmez. Bu olmazsa sinyal uretilmez (matematiksel fallback yok).
+    // Son iki gunluk muma bakilir: breakoutCandle siniri kirar, confirmCandle onu teyit eder.
     const n = dailyCandles.length;
     const breakoutCandle = dailyCandles[n - 2];
     const confirmCandle = dailyCandles[n - 1];
-    let turtleSoupConfirmed = false;
-    let breakoutExtreme = 0;
+
+    // Breakout Continuation: breakoutCandle KAPANISLA yon tarafindaki siniri kirar
+    // (bullish'te UST sinir), confirmCandle da AYNI yonde range DISINDA kapanir
+    // (geri donmez) - gercek kirilim, kirilim yonunde devam.
+    let breakoutContinuationConfirmed = false;
     if (bullish) {
-      const brokeLower = breakoutCandle.low < range.lower;
-      const closedBackIn = confirmCandle.close > range.lower && confirmCandle.close <= range.upper;
-      if (brokeLower && closedBackIn) {
-        turtleSoupConfirmed = true;
-        breakoutExtreme = breakoutCandle.low;
-      }
+      const brokeUpper = breakoutCandle.close > range.upper;
+      const continuedOutside = confirmCandle.close > range.upper;
+      if (brokeUpper && continuedOutside) breakoutContinuationConfirmed = true;
     } else {
-      const brokeUpper = breakoutCandle.high > range.upper;
-      const closedBackIn = confirmCandle.close < range.upper && confirmCandle.close >= range.lower;
-      if (brokeUpper && closedBackIn) {
-        turtleSoupConfirmed = true;
-        breakoutExtreme = breakoutCandle.high;
-      }
+      const brokeLower = breakoutCandle.close < range.lower;
+      const continuedOutside = confirmCandle.close < range.lower;
+      if (brokeLower && continuedOutside) breakoutContinuationConfirmed = true;
     }
-    if (!turtleSoupConfirmed) return null;
+    if (!breakoutContinuationConfirmed) return null;
 
     const mssConfirmed = this.hasBOS(dailyCandles, direction);
 
-    // confirmedCount buildSetup ile ayni sekilde hesaplanir: range bulunmus ve Turtle
-    // Soup teyit edilmis olmasi zaten zorunlu (yukarida return null), tipki eski
-    // atLevelConfirmed/reversalConfirmed'in her zaman true olmasi gibi
-    const confirmedCount = [htfBiasConfirmed, true, turtleSoupConfirmed, mssConfirmed].filter(Boolean).length;
-    if (confirmedCount < 3) return null;
+    // confirmedCount buildDayTradeSetup ile ayni sekilde hesaplanir: range bulunmus
+    // ve Breakout Continuation teyit edilmis olmasi zaten zorunlu (yukarida return
+    // null), tipki eski atLevelConfirmed/reversalConfirmed'in her zaman true olmasi
+    // gibi. Esik 3'ten 2'ye dusuruldu - Breakout Continuation zaten guclu bir filtre
+    // oldugu icin range+teyidin tek basina (HTF bias veya MSS olmadan da) yeterli
+    // sayilmasi tercih edildi.
+    const confirmedCount = [htfBiasConfirmed, true, breakoutContinuationConfirmed, mssConfirmed].filter(Boolean).length;
+    if (confirmedCount < 2) return null;
 
     const entryZoneTop = Math.max(confirmCandle.open, confirmCandle.close);
     const entryZoneBottom = Math.min(confirmCandle.open, confirmCandle.close);
@@ -505,9 +516,10 @@ export class ScannerService {
     const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
     const distancePercent = 0;
 
-    // Stop: kirilimla olusan yeni dip/zirve noktasinin biraz otesi, kucuk ATR tamponuyla
+    // Stop: kirilan range sinirinin hemen gerisi - fiyat range'e geri donerse
+    // (sinir tekrar icine girerse) trade zaten gecersizdir
     const wickBuffer = atrValue * 0.15;
-    const stop = bullish ? breakoutExtreme - wickBuffer : breakoutExtreme + wickBuffer;
+    const stop = bullish ? range.upper - wickBuffer : range.lower + wickBuffer;
     // R:R risk/reward yon bazli (signed) hesaplanir - abs() kullanmak, stop veya TP
     // yanlis tarafta kalmis bozuk bir setup'ta bile pozitif R:R gosterip gecirebilirdi.
     // LONG'da stop entry'nin ALTINDA (risk=entry-stop), SHORT'ta USTUNDE (risk=stop-entry)
@@ -515,15 +527,42 @@ export class ScannerService {
     const risk = bullish ? entry - stop : stop - entry;
     if (risk <= 0) return null;
 
-    // TP1: range ortasi, TP2: karsi sinir, TP3: range genisligi kadar karsi sinirin otesi
-    const tp1 = (range.upper + range.lower) / 2;
-    // TP1 entry'nin ONUNDE (kar yonunde) olmali - confirm mumu range'in entry'ye
-    // gore "yanlis" yarisinda kapanmissa (mesela SHORT'ta range'in alt yarisinda)
-    // TP1 zaten entry'nin gerisinde kalir, yani sinyal doğar dogmaz "TP1 gecilmis"
-    // olur. Bu durumda TP1 gecerli bir hedef degildir, sinyal reddedilir.
+    // TP1: kirilim yonunde olculu hareket (range genisligi kadar projeksiyon).
+    // TP2/TP3: bu projeksiyonun otesindeki en yakin iki yapisal gunluk swing seviyesi;
+    // yeterli swing yoksa range genisligi katlariyla devam edilir.
+    const tp1 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
     if (bullish ? tp1 <= entry : tp1 >= entry) return null;
-    const tp2 = bullish ? range.upper : range.lower;
-    const tp3 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
+    const swingIdx = bullish ? this.findSwingHighs(dailyCandles, 2) : this.findSwingLows(dailyCandles, 2);
+    const structuralLevels: number[] = [];
+    const sortedLevels = swingIdx
+      .map((i) => (bullish ? dailyCandles[i].high : dailyCandles[i].low))
+      .filter((lvl) => (bullish ? lvl > tp1 : lvl < tp1))
+      .sort((a, b) => (bullish ? a - b : b - a));
+    for (const lvl of sortedLevels) {
+      const last = structuralLevels[structuralLevels.length - 1];
+      if (last !== undefined && Math.abs(lvl - last) < atrValue * 0.3) continue;
+      structuralLevels.push(lvl);
+      if (structuralLevels.length === 2) break;
+    }
+    // Yapisal seviye bulunamayan durumlarda (SHORT sinyallerinin ezici cogunlugunda -
+    // zaten dusus trendindeki bir coin icin tp1 son ~250 gunde hic gorulmemis bir
+    // fiyata denk dusuyor, yapisal arama hep bos donuyor) fallback adimi rangeWidth
+    // ile sinirsiz katlanip gerceklikten kopuk hedefler uretiyordu (bkz. ACEUSDT %204,
+    // HEIUSDT %77). Fallback adimi artik gunluk ATR ile de sinirlaniyor - dar
+    // konsolidasyonlarda ATR*0.75 rangeWidth'i asabildigi icin min() iki yonlu koruma saglar.
+    const fallbackStep = Math.min(rangeWidth, atrValue * 0.75);
+    let tp2 = structuralLevels[0] ?? (bullish ? tp1 + fallbackStep : tp1 - fallbackStep);
+    let tp3 = structuralLevels[1] ?? (bullish ? tp2 + fallbackStep : tp2 - fallbackStep);
+    // Ek guvenlik agi: ATR de asiri oynak coinlerde (ACEUSDT gibi) buyuk kalabiliyor -
+    // fallback'ten gelen (yapisal olmayan) hedefler entry'den %25'in otesine gecemez.
+    const ABS_TP_CAP_PCT = 0.25;
+    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
+    if (structuralLevels[0] === undefined && Math.abs(tp2 - entry) > maxAbsDistance) {
+      tp2 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
+    if (structuralLevels[1] === undefined && Math.abs(tp3 - entry) > maxAbsDistance) {
+      tp3 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
 
     // Reward de ayni sekilde yon bazli: LONG'da TP2 entry'nin USTUNDE, SHORT'ta
     // ALTINDA olmali - degilse (TP2 zaten gecilmis/yanlis yonde) setup reddedilir.
@@ -536,7 +575,7 @@ export class ScannerService {
     reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
     if (htfBiasConfirmed) reasons.push('HTF Bias: Günlük + kısa vadeli trend uyumlu');
     reasons.push(`Range: ${range.lower.toFixed(4)} - ${range.upper.toFixed(4)} (üst sınır ${range.upperTests}x, alt sınır ${range.lowerTests}x test edildi)`);
-    reasons.push(`Turtle Soup teyidi: ${bullish ? 'range altı kırılıp' : 'range üstü kırılıp'} bir sonraki mumda range içine geri kapandı`);
+    reasons.push(`Breakout Continuation teyidi: ${bullish ? 'range üst sınırı kapanışla kırıldı' : 'range alt sınırı kapanışla kırıldı'} ve bir sonraki günlük mum da aynı yönde range dışında kapandı (geri dönmedi)`);
     if (mssConfirmed) reasons.push('Market Structure Shift (BOS) onaylandı');
     const weeklyTrend = this.getTrend(weeklyCandles);
     if (weeklyTrend === trendDaily) reasons.push('Haftalık zaman dilimi de aynı yönü destekliyor');
@@ -552,19 +591,23 @@ export class ScannerService {
     return {
       direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
       rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
-      confirmedCount, strength, stillValid, distancePercent,
+      confirmedCount, strength, stillValid, distancePercent, patternType: 'BREAKOUT_CONTINUATION',
     };
   }
 
-  // Day Trade (scanDayTrade) icin range + Turtle Soup bazli setup. Range 4 saatlik
-  // mumlardan, teyit 15dk mumlarla (day trade daha hizli hareket ettigi icin).
-  // Trend filtresi, HTF bias ve confirmation sayaci buildSetup ile AYNI.
+  // Day Trade (scanDayTrade) icin range bazli Breakout Continuation modeli calisir:
+  // range siniri kapanisla kirilir, bir sonraki mumda da AYNI yonde range DISINDA
+  // kapanirsa (geri donmezse) - kirilim YONUNDE islem. (Eskiden burada ayrica bir
+  // Turtle Soup/fakeout modeli de vardi, kaldirildi - artik bu tek model kullaniliyor.)
+  // Range 4 saatlik mumlardan, teyit 15dk mumlarla (day trade daha hizli hareket
+  // ettigi icin). Trend filtresi, HTF bias ve confirmation sayaci buildSetup ile AYNI.
   private buildDayTradeSetup(
     h1Candles: Candle[],
     trend15m: 'UP' | 'DOWN' | 'FLAT',
     h4Candles: Candle[],
     m15Candles: Candle[],
     fundingRate: number | null,
+    stageCounter?: DayTradeStageCounter,
   ): Setup | null {
     if (h1Candles.length < 60) return null;
     const trendMain = this.getTrend(h1Candles);
@@ -580,36 +623,39 @@ export class ScannerService {
     const range = this.findTestedRange(rangeCandles, atrH4);
     if (!range) return null;
     const rangeWidth = range.upper - range.lower;
+    if (stageCounter) stageCounter.rangeFound++;
 
-    // Turtle Soup teyidi 15dk mumlarla: gunluk yerine 15dk bazli teyit kullanilir
-    // (day trade daha hizli hareket ediyor). Sadece SON 15dk mumda geri kapanis olmali.
+    // Son iki 15dk muma bakilir: breakoutCandle siniri kirar, confirmCandle onu teyit eder.
     if (m15Candles.length < 2) return null;
     const m = m15Candles.length;
     const breakoutCandle = m15Candles[m - 2];
     const confirmCandle = m15Candles[m - 1];
-    let turtleSoupConfirmed = false;
-    let breakoutExtreme = 0;
+
+    // Breakout Continuation: breakoutCandle KAPANISLA yon tarafindaki siniri kirar
+    // (bullish'te UST sinir), confirmCandle da AYNI yonde range DISINDA kapanir
+    // (geri donmez) - gercek kirilim, kirilim yonunde devam.
+    let breakoutContinuationConfirmed = false;
     if (bullish) {
-      const brokeLower = breakoutCandle.low < range.lower;
-      const closedBackIn = confirmCandle.close > range.lower && confirmCandle.close <= range.upper;
-      if (brokeLower && closedBackIn) {
-        turtleSoupConfirmed = true;
-        breakoutExtreme = breakoutCandle.low;
-      }
+      const brokeUpper = breakoutCandle.close > range.upper;
+      const continuedOutside = confirmCandle.close > range.upper;
+      if (brokeUpper && continuedOutside) breakoutContinuationConfirmed = true;
     } else {
-      const brokeUpper = breakoutCandle.high > range.upper;
-      const closedBackIn = confirmCandle.close < range.upper && confirmCandle.close >= range.lower;
-      if (brokeUpper && closedBackIn) {
-        turtleSoupConfirmed = true;
-        breakoutExtreme = breakoutCandle.high;
-      }
+      const brokeLower = breakoutCandle.close < range.lower;
+      const continuedOutside = confirmCandle.close < range.lower;
+      if (brokeLower && continuedOutside) breakoutContinuationConfirmed = true;
     }
-    if (!turtleSoupConfirmed) return null;
+    if (breakoutContinuationConfirmed && stageCounter) stageCounter.breakoutContinuationConfirmed++;
+    if (!breakoutContinuationConfirmed) return null;
+    const patternType: 'BREAKOUT_CONTINUATION' = 'BREAKOUT_CONTINUATION';
 
     const mssConfirmed = this.hasBOS(h1Candles, direction);
 
-    const confirmedCount = [htfBiasConfirmed, true, turtleSoupConfirmed, mssConfirmed].filter(Boolean).length;
-    if (confirmedCount < 3) return null;
+    // Esik 3'ten 2'ye dusuruldu, bkz. buildSetup'taki aciklama. Ikinci ve ucuncu
+    // eleman (range bulundu, breakoutContinuationConfirmed) bu noktada zaten her
+    // zaman true - yukarida return null ile garanti edildi.
+    const confirmedCount = [htfBiasConfirmed, true, breakoutContinuationConfirmed, mssConfirmed].filter(Boolean).length;
+    if (confirmedCount < 2) return null;
+    if (stageCounter) stageCounter.confirmedCountPassed++;
 
     const entryZoneTop = Math.max(confirmCandle.open, confirmCandle.close);
     const entryZoneBottom = Math.min(confirmCandle.open, confirmCandle.close);
@@ -619,31 +665,66 @@ export class ScannerService {
     const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
     const distancePercent = 0;
 
-    // Stop: kirilimla olusan yeni dip/zirve + kucuk ATR tamponu - olcek uyumu icin
-    // 4H ATR degil 15dk ATR kullanilir
-    const atr15m = this.atr(m15Candles);
-    const wickBuffer = atr15m * 0.15;
-    const stop = bullish ? breakoutExtreme - wickBuffer : breakoutExtreme + wickBuffer;
-    // R:R risk/reward yon bazli (signed) hesaplanir - bkz. buildSwingSetup
-    const risk = bullish ? entry - stop : stop - entry;
-    if (risk <= 0) return null;
+    // ATR tamponu: range 4 saatlik mumlardan kuruldugu icin buffer da AYNI
+    // olcekten (4H ATR) hesaplanmali - 15dk ATR kullanmak buffer'i 4H range
+    // sinirina gore anlamsiz derecede kucultuyor, stop mesafesi bazen fiyatin
+    // %0.1'inin bile altina dusuyordu (bkz. WLFIUSDT). atrH4 zaten yukarida
+    // range bulma icin hesaplanmisti (satir 605), burada tekrar kullanilir.
+    const wickBuffer = atrH4 * 0.15;
 
-    const tp1 = (range.upper + range.lower) / 2;
-    // TP1 entry'nin ONUNDE olmali (bkz. buildSwingSetup) - degilse reddedilir.
+    // Stop: kirilan range sinirinin hemen gerisi - fiyat range'e geri donerse
+    // (sinir tekrar icine girerse) trade zaten gecersizdir
+    let stop = bullish ? range.upper - wickBuffer : range.lower + wickBuffer;
+    // R:R risk/reward yon bazli (signed) hesaplanir - bkz. buildSetup
+    let risk = bullish ? entry - stop : stop - entry;
+    if (risk <= 0) return null;
+    // Minimum stop tabani: entry, range sinirini sadece bir tik gectiginde
+    // (breakoutContinuationConfirmed icin bu yeterli) risk mesafesi wickBuffer'a
+    // kadar collapse edebiliyordu - fiyatin %0.5'inden dar bir stop, day trade
+    // icin bile gurultu ile tetiklenecek kadar siki demektir, taban zorlanir.
+    const MIN_STOP_PCT = 0.005;
+    const floorRisk = entry * MIN_STOP_PCT;
+    if (risk < floorRisk) {
+      risk = floorRisk;
+      stop = bullish ? entry - floorRisk : entry + floorRisk;
+    }
+
+    // TP1: kirilim yonunde olculu hareket. Projeksiyon mesafesi min(atrH4*1.5, rangeWidth)
+    // ile sinirlanir - rangeWidth 4H range'in tam genisligi (gunler suren bir yapi),
+    // 15dk teyitli bir day trade'in gerceklesme suresine gore fazla genis bir hedef
+    // olusturuyordu (bkz. WLFIUSDT TP3 ~%21). atrH4*1.5 day-trade olcegine daha
+    // uygun, ama asiri oynak/yeni listelenen coinlerde (UTKUSDT, DUSDT gibi) 4H ATR'nin
+    // kendisi de buyuk olabildigi icin min() ile capleniyor - yeni TP hicbir zaman
+    // eski (rangeWidth) projeksiyonundan genis cikmaz.
+    const tpDistance = Math.min(atrH4 * 1.5, rangeWidth);
+    const tp1 = bullish ? range.upper + tpDistance : range.lower - tpDistance;
     if (bullish ? tp1 <= entry : tp1 >= entry) return null;
-    const tp2 = bullish ? range.upper : range.lower;
-    const tp3 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
+    const swingIdx = bullish ? this.findSwingHighs(h4Candles, 2) : this.findSwingLows(h4Candles, 2);
+    const structuralLevels: number[] = [];
+    const sortedLevels = swingIdx
+      .map((i) => (bullish ? h4Candles[i].high : h4Candles[i].low))
+      .filter((lvl) => (bullish ? lvl > tp1 : lvl < tp1))
+      .sort((a, b) => (bullish ? a - b : b - a));
+    for (const lvl of sortedLevels) {
+      const last = structuralLevels[structuralLevels.length - 1];
+      if (last !== undefined && Math.abs(lvl - last) < atrH4 * 0.3) continue;
+      structuralLevels.push(lvl);
+      if (structuralLevels.length === 2) break;
+    }
+    const tp2 = structuralLevels[0] ?? (bullish ? tp1 + tpDistance : tp1 - tpDistance);
+    const tp3 = structuralLevels[1] ?? (bullish ? tp2 + tpDistance : tp2 - tpDistance);
 
     const mainReward = bullish ? tp2 - entry : entry - tp2;
     if (mainReward <= 0) return null;
     const rr = mainReward / risk;
     if (rr < this.getMinRR()) return null;
+    if (stageCounter) stageCounter.rrPassed++;
 
     const reasons: string[] = [];
     reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
     if (htfBiasConfirmed) reasons.push('HTF Bias: 1H + 15dk trend uyumlu');
     reasons.push(`4H Range: ${range.lower.toFixed(4)} - ${range.upper.toFixed(4)} (üst sınır ${range.upperTests}x, alt sınır ${range.lowerTests}x test edildi)`);
-    reasons.push(`Turtle Soup teyidi (15dk): ${bullish ? 'range altı kırılıp' : 'range üstü kırılıp'} bir sonraki 15dk mumda range içine geri kapandı`);
+    reasons.push(`Breakout Continuation teyidi (15dk): ${bullish ? 'range üst sınırı kapanışla kırıldı' : 'range alt sınırı kapanışla kırıldı'} ve bir sonraki 15dk mum da aynı yönde range dışında kapandı (geri dönmedi)`);
     if (mssConfirmed) reasons.push('Market Structure Shift (BOS) onaylandı');
     const h4Trend = this.getTrend(h4Candles);
     if (h4Trend === trendMain) reasons.push('4 saatlik zaman dilimi de aynı yönü destekliyor');
@@ -659,7 +740,7 @@ export class ScannerService {
     return {
       direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
       rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
-      confirmedCount, strength, stillValid, distancePercent,
+      confirmedCount, strength, stillValid, distancePercent, patternType,
     };
   }
 
@@ -800,7 +881,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
-    let buildSetupAttempts = 0; // GEÇİCİ LOG (24s gözlem için) — kaldırılacak
 
     for (const { symbol } of symbols) {
       try {
@@ -811,7 +891,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const weekly = this.toWeekly(daily);
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
         const trend4h = this.getTrend(h4);
-        buildSetupAttempts++; // GEÇİCİ LOG
         const setup = this.buildSwingSetup(daily, trend4h, weekly, fundingRate);
         if (!setup) continue;
 
@@ -833,12 +912,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       if (!tooCorrelated) selected.push(c);
     }
 
-    // GEÇİCİ LOG (24s gözlem için) — hangi aşamada eleme oluyor: eşik mi, korelasyon mu?
-    // Davranışı değiştirmez, sadece konsola basar. Gözlem bitince kaldırılacak.
-    console.log(
-      `[scanCrypto][GEÇİCİ LOG] denenen=${buildSetupAttempts} eşiğiGeçen(candidates)=${candidates.length} korelasyonSonrası(selected)=${selected.length}`,
-    );
-
     for (const s of selected) {
       s.aiCommentary = await this.interpretWithAI(s.symbol, s);
     }
@@ -852,6 +925,13 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
+    // Funnel gozlemi: Breakout Continuation modeli eklendikten sonra hangi
+    // asamada kac sembolun elendigini izlemek icin (bkz. scanDayTrade sonundaki log)
+    const stageCounter: DayTradeStageCounter = {
+      rangeFound: 0, breakoutContinuationConfirmed: 0,
+      confirmedCountPassed: 0, rrPassed: 0,
+    };
+    let attempted = 0;
 
     for (const { symbol } of symbols) {
       try {
@@ -860,10 +940,11 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const h4 = await this.fetchBinance4h(symbol);
         if (h1.length < 60 || m15.length < 30 || h4.length < 30) continue;
 
+        attempted++;
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
         const trend15m = this.getTrend(m15);
-        // 1h: trend/BOS, 15dk: trend15m + Turtle Soup teyidi, 4h: range kaynagi
-        const setup = this.buildDayTradeSetup(h1, trend15m, h4, m15, fundingRate);
+        // 1h: trend/BOS, 15dk: Breakout Continuation teyidi, 4h: range kaynagi
+        const setup = this.buildDayTradeSetup(h1, trend15m, h4, m15, fundingRate, stageCounter);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
@@ -883,6 +964,13 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
       if (!tooCorrelated) selected.push(c);
     }
+
+    console.log(
+      `[scanDayTrade] denenen=${attempted} rangeBulundu=${stageCounter.rangeFound} ` +
+      `breakoutContinuation=${stageCounter.breakoutContinuationConfirmed} ` +
+      `confirmedCountGecti=${stageCounter.confirmedCountPassed} rrGecti(minRR=${this.getMinRR()})=${stageCounter.rrPassed} ` +
+      `korelasyonSonrasi(selected)=${selected.length}`,
+    );
 
     for (const s of selected) {
       s.aiCommentary = await this.interpretWithAI(s.symbol, s);
