@@ -563,6 +563,18 @@ export class ScannerService {
     if (structuralLevels[1] === undefined && Math.abs(tp3 - entry) > maxAbsDistance) {
       tp3 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
     }
+    // Monotonluk garantisi: TP1->TP2->TP3 LONG'da kesin artan, SHORT'ta kesin azalan
+    // olmali. Yapisal seviye + fallback + %25 tavaninin karisimi bunu bozabiliyordu -
+    // orn. HEIUSDT'de yapisal TP2 entry'den %35 uzaktayken, tavana takilan fallback
+    // TP3 sadece %22 uzakta kaliyordu (TP3, TP2'den entry'ye daha yakin - yanlis sira).
+    // Kaynagi ne olursa olsun (yapisal/fallback/capli) son adimda sira zorlanir.
+    if (bullish) {
+      if (tp2 <= tp1) tp2 = tp1 * 1.001;
+      if (tp3 <= tp2) tp3 = tp2 * 1.001;
+    } else {
+      if (tp2 >= tp1) tp2 = tp1 * 0.999;
+      if (tp3 >= tp2) tp3 = tp2 * 0.999;
+    }
 
     // Reward de ayni sekilde yon bazli: LONG'da TP2 entry'nin USTUNDE, SHORT'ta
     // ALTINDA olmali - degilse (TP2 zaten gecilmis/yanlis yonde) setup reddedilir.
@@ -711,8 +723,19 @@ export class ScannerService {
       structuralLevels.push(lvl);
       if (structuralLevels.length === 2) break;
     }
-    const tp2 = structuralLevels[0] ?? (bullish ? tp1 + tpDistance : tp1 - tpDistance);
-    const tp3 = structuralLevels[1] ?? (bullish ? tp2 + tpDistance : tp2 - tpDistance);
+    let tp2 = structuralLevels[0] ?? (bullish ? tp1 + tpDistance : tp1 - tpDistance);
+    let tp3 = structuralLevels[1] ?? (bullish ? tp2 + tpDistance : tp2 - tpDistance);
+    // Monotonluk guvenlik agi (bkz. buildSwingSetup'taki HEIUSDT aciklamasi) - su an
+    // burada tp2/tp3 zaten zincirleme (bir onceki hedefe eklenerek) hesaplandigi icin
+    // yapisal/fallback karisimi bu ihlali tetiklemiyor, ama ileride TP hesabina bagimsiz
+    // bir cap eklenirse ayni sinif hata burada da olusabilir - savunma amacli tutuluyor.
+    if (bullish) {
+      if (tp2 <= tp1) tp2 = tp1 * 1.001;
+      if (tp3 <= tp2) tp3 = tp2 * 1.001;
+    } else {
+      if (tp2 >= tp1) tp2 = tp1 * 0.999;
+      if (tp3 >= tp2) tp3 = tp2 * 0.999;
+    }
 
     const mainReward = bullish ? tp2 - entry : entry - tp2;
     if (mainReward <= 0) return null;
