@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 export type ScanStyle = "SWING" | "DAY";
+export type ScanMarket = "CRYPTO" | "FOREX";
 export type ScanSignal = {
   symbol: string;
   direction: "LONG" | "SHORT";
@@ -32,24 +33,27 @@ export type ScanResultRow = {
   results: ScanResultData;
   createdAt: string;
 };
-export function useLastScan(style: ScanStyle = "SWING") {
+export function useLastScan(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "last", style],
-    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?style=${style}`),
+    queryKey: ["admin", "scanner", "last", style, market],
+    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?style=${style}&market=${market}`),
   });
 }
-export function useTriggerScan(style: ScanStyle = "SWING") {
+export function useTriggerScan(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
   const qc = useQueryClient();
-  const path = style === "DAY" ? "/scanner/scan/day-trade" : "/scanner/scan";
+  const path =
+    market === "FOREX"
+      ? style === "DAY" ? "/scanner/scan/forex/day-trade" : "/scanner/scan/forex"
+      : style === "DAY" ? "/scanner/scan/day-trade" : "/scanner/scan";
   return useMutation({
     mutationFn: () => apiClient<{ message: string }>(path, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", style] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", style, market] }),
   });
 }
-export function useLivePrice(symbol: string, enabled: boolean) {
+export function useLivePrice(symbol: string, enabled: boolean, market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "price", symbol],
-    queryFn: () => apiClient<{ symbol: string; price: number | null }>(`/scanner/price/${symbol}`),
+    queryKey: ["admin", "scanner", "price", symbol, market],
+    queryFn: () => apiClient<{ symbol: string; price: number | null }>(`/scanner/price/${symbol}?market=${market}`),
     enabled,
     refetchInterval: 3000,
   });
@@ -80,10 +84,10 @@ export type TrackedSignalsData = {
     winRate: number | null;
   };
 };
-export function useTrackedSignals(style: ScanStyle = "SWING") {
+export function useTrackedSignals(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "tracked", style],
-    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?style=${style}`),
+    queryKey: ["admin", "scanner", "tracked", style, market],
+    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?style=${style}&market=${market}`),
     refetchInterval: 30000,
   });
 }

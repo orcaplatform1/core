@@ -585,10 +585,11 @@ model StatsSnapshot {
 }
 
 model ScanResult {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   results   Json
-  style     String   @default("SWING")
-  createdAt DateTime @default(now())
+  style     String    @default("SWING")
+  market    AssetType @default(CRYPTO)
+  createdAt DateTime  @default(now())
 }
 
 model TrackedSignal {
@@ -603,6 +604,7 @@ model TrackedSignal {
   tp3             Float
   rr              Float     @default(0)
   style           String    @default("SWING")
+  market          AssetType @default(CRYPTO)
   strength        String
   status          String    @default("WATCHING")
   createdAt       DateTime  @default(now())

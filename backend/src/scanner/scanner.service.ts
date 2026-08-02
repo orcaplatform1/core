@@ -165,6 +165,24 @@ export class ScannerService {
     return weekly;
   }
 
+  // Yahoo Finance native 4h interval sunmuyor - forex day-trade icin saatlik
+  // mumlar 4'erli gruplar halinde katlanarak sentezlenir (toWeekly ile ayni desen)
+  private toFourHour(hourly: Candle[]): Candle[] {
+    const fourHour: Candle[] = [];
+    for (let i = 0; i < hourly.length; i += 4) {
+      const chunk = hourly.slice(i, i + 4);
+      if (chunk.length === 0) continue;
+      fourHour.push({
+        time: chunk[0].time, open: chunk[0].open,
+        high: Math.max(...chunk.map((c) => c.high)),
+        low: Math.min(...chunk.map((c) => c.low)),
+        close: chunk[chunk.length - 1].close,
+        volume: chunk.reduce((s, c) => s + c.volume, 0),
+      });
+    }
+    return fourHour;
+  }
+
   private ema(values: number[], period: number): number[] {
     const k = 2 / (period + 1);
     const result: number[] = [values[0]];
@@ -239,178 +257,6 @@ export class ScannerService {
     return false;
   }
 
-  private findReversalCandle(
-    candles: Candle[],
-    atrValue: number,
-    levelPrice: number,
-    bullish: boolean,
-  ): { index: number; low: number; high: number; open: number; close: number } | null {
-    const proximityBuffer = atrValue * 1.0;
-    const lookback = Math.min(5, candles.length - 1);
-    for (let i = candles.length - 1; i >= candles.length - lookback; i--) {
-      const c = candles[i];
-      const prev = candles[i - 1];
-      if (!prev) continue;
-      const range = c.high - c.low;
-      if (range <= 0) continue;
-      const body = Math.abs(c.close - c.open);
-      const avgVolume = candles.slice(Math.max(0, i - 20), i).reduce((s, x) => s + x.volume, 0) / Math.min(20, i);
-      const volumeConfirmed = avgVolume > 0 ? c.volume > avgVolume * 1.1 : true;
-
-      if (bullish) {
-        const nearLevel = c.low <= levelPrice + proximityBuffer && c.low >= levelPrice - proximityBuffer;
-        if (!nearLevel) continue;
-        const isBullishClose = c.close > c.open;
-        const lowerWick = Math.min(c.open, c.close) - c.low;
-        const isPinBar = lowerWick >= body * 1.5 && c.close > c.low + range * 0.5;
-        const isEngulfing = c.close > c.open && c.close > prev.open && c.open < prev.close && prev.close < prev.open;
-        if (isBullishClose && (isPinBar || isEngulfing) && volumeConfirmed) {
-          return { index: i, low: c.low, high: c.high, open: c.open, close: c.close };
-        }
-      } else {
-        const nearLevel = c.high <= levelPrice + proximityBuffer && c.high >= levelPrice - proximityBuffer;
-        if (!nearLevel) continue;
-        const isBearishClose = c.close < c.open;
-        const upperWick = c.high - Math.max(c.open, c.close);
-        const isPinBar = upperWick >= body * 1.5 && c.close < c.high - range * 0.5;
-        const isEngulfing = c.close < c.open && c.close < prev.open && c.open > prev.close && prev.close > prev.open;
-        if (isBearishClose && (isPinBar || isEngulfing) && volumeConfirmed) {
-          return { index: i, low: c.low, high: c.high, open: c.open, close: c.close };
-        }
-      }
-    }
-    return null;
-  }
-
-  private buildSetup(
-    dailyCandles: Candle[],
-    trend4h: 'UP' | 'DOWN' | 'FLAT',
-    weeklyCandles: Candle[],
-    fundingRate: number | null,
-  ): Setup | null {
-    if (dailyCandles.length < 60) return null;
-    const trendDaily = this.getTrend(dailyCandles);
-    if (trendDaily === 'FLAT') return null;
-    const direction: 'LONG' | 'SHORT' = trendDaily === 'UP' ? 'LONG' : 'SHORT';
-    const bullish = direction === 'LONG';
-    const atrValue = this.atr(dailyCandles);
-    const swingHighs = this.findSwingHighs(dailyCandles);
-    const swingLows = this.findSwingLows(dailyCandles);
-
-    const htfBiasConfirmed = trendDaily === trend4h;
-
-    const recentSwingIndices = bullish
-      ? swingLows.filter((i) => i >= dailyCandles.length - 40)
-      : swingHighs.filter((i) => i >= dailyCandles.length - 40);
-    if (recentSwingIndices.length === 0) return null;
-    const levelIndex = recentSwingIndices[recentSwingIndices.length - 1];
-    const levelPrice = bullish ? dailyCandles[levelIndex].low : dailyCandles[levelIndex].high;
-    const lastCandle = dailyCandles[dailyCandles.length - 1];
-    const distanceToLevel = Math.abs(lastCandle.close - levelPrice);
-    const atLevelConfirmed = distanceToLevel <= atrValue * 1.5;
-
-    const reversalCandle = this.findReversalCandle(dailyCandles, atrValue, levelPrice, bullish);
-    const reversalConfirmed = reversalCandle !== null;
-
-    const mssConfirmed = this.hasBOS(dailyCandles, direction);
-
-    if (!atLevelConfirmed || !reversalConfirmed || !reversalCandle) return null;
-
-    const confirmedCount = [htfBiasConfirmed, atLevelConfirmed, reversalConfirmed, mssConfirmed].filter(Boolean).length;
-    if (confirmedCount < 3) return null;
-
-    const entryZoneTop = Math.max(reversalCandle.open, reversalCandle.close);
-    const entryZoneBottom = Math.min(reversalCandle.open, reversalCandle.close);
-    const entry = (entryZoneTop + entryZoneBottom) / 2;
-
-    const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
-    let distancePercent = 0;
-    if (lastCandle.close > entryZoneTop) {
-      distancePercent = ((lastCandle.close - entryZoneTop) / entryZoneTop) * 100;
-    } else if (lastCandle.close < entryZoneBottom) {
-      distancePercent = ((entryZoneBottom - lastCandle.close) / entryZoneBottom) * 100;
-    }
-    distancePercent = Math.round(distancePercent * 100) / 100;
-    if (!stillValid && distancePercent > 5) return null;
-
-    // Stop: fitil ucuna degil, ondan ONCE olusmus gercek bir yapisal swing
-    // seviyesine konur - piyasa daha once oraya kadar sarkip geri donmus,
-    // sadece son mumun kendi fitiline gore stop koymak stop-hunt'a acik olurdu.
-    const wickBuffer = atrValue * 0.15;
-    let stop: number;
-    if (bullish) {
-      const structuralStops = swingLows
-        .map((i) => dailyCandles[i].low)
-        .filter((l) => l < entryZoneBottom)
-        .sort((a, b) => b - a);
-      stop = structuralStops.length > 0 ? structuralStops[0] - wickBuffer : reversalCandle.low - wickBuffer;
-    } else {
-      const structuralStops = swingHighs
-        .map((i) => dailyCandles[i].high)
-        .filter((h) => h > entryZoneTop)
-        .sort((a, b) => a - b);
-      stop = structuralStops.length > 0 ? structuralStops[0] + wickBuffer : reversalCandle.high + wickBuffer;
-    }
-    // R:R risk/reward yon bazli (signed) hesaplanir - abs() ile gizlenirse stop veya
-    // TP yanlis tarafta kalmis (yapisal olarak bozuk) bir setup bile pozitif bir R:R
-    // gosterip gecebilir. LONG'da stop entry'nin ALTINDA olmali (risk = entry-stop),
-    // SHORT'ta stop entry'nin USTUNDE olmali (risk = stop-entry); degilse reddedilir.
-    const risk = bullish ? entry - stop : stop - entry;
-    if (risk <= 0) return null;
-
-    // TP1: gercek price action pratiginde kismi kar alma noktasi olarak 1.5R
-    // kullanilir (pozisyonun yarisi burada kapatilir) - yaygin kabul gormus kural.
-    const tp1 = bullish ? entry + risk * 1.5 : entry - risk * 1.5;
-
-    // TP2/TP3: grafikteki yapisal seviyelerden, ama SADECE TP1'in DE otesinde
-    // kalanlar - yoksa yapisal bir seviye TP1'den yakin cikip TP1 < TP2 < TP3
-    // sirasini (kar yonunde artan mesafe) bozabilir, R:R anlamsizlasir.
-    let structuralLevels: number[];
-    if (bullish) {
-      structuralLevels = swingHighs
-        .map((i) => dailyCandles[i].high)
-        .filter((h) => h > tp1)
-        .sort((a, b) => a - b);
-    } else {
-      structuralLevels = swingLows
-        .map((i) => dailyCandles[i].low)
-        .filter((l) => l < tp1)
-        .sort((a, b) => b - a);
-    }
-    if (structuralLevels.length < 2) return null;
-
-    const [tp2, tp3] = structuralLevels;
-    // Reward de ayni sekilde yon bazli: LONG'da TP2 entry'nin USTUNDE, SHORT'ta
-    // ALTINDA olmali - degilse (TP2 zaten gecilmis/yanlis yonde) setup reddedilir.
-    const mainReward = bullish ? tp2 - entry : entry - tp2;
-    if (mainReward <= 0) return null;
-    const rr = mainReward / risk;
-    if (rr < this.getMinRR()) return null;
-
-    const reasons: string[] = [];
-    reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
-    if (htfBiasConfirmed) reasons.push('HTF Bias: Günlük + kısa vadeli trend uyumlu');
-    reasons.push(`Yapısal seviye: ${bullish ? 'Swing Low desteği' : 'Swing High direnci'}`);
-    reasons.push(`Reversal mumu: ${bullish ? 'boğa' : 'ayı'} pin bar/engulfing + hacim teyidi`);
-    if (mssConfirmed) reasons.push('Market Structure Shift (BOS) onaylandı');
-    const weeklyTrend = this.getTrend(weeklyCandles);
-    if (weeklyTrend === trendDaily) reasons.push('Haftalık zaman dilimi de aynı yönü destekliyor');
-    if (fundingRate !== null) {
-      if (bullish && fundingRate < -0.05) reasons.push(`Funding rate aşırı negatif (${fundingRate.toFixed(3)}%)`);
-      else if (!bullish && fundingRate > 0.05) reasons.push(`Funding rate aşırı pozitif (${fundingRate.toFixed(3)}%)`);
-    }
-    if (!stillValid) reasons.push('UYARI: Fiyat bölgeden uzaklaşmış olabilir, teyit et');
-
-    const strength: 'GUCLU' | 'ORTA' | 'RISKLI' =
-      confirmedCount === 4 ? 'GUCLU' : confirmedCount === 3 ? 'ORTA' : 'RISKLI';
-    const confidenceScore = confirmedCount * 25;
-
-    return {
-      direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
-      rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
-      confirmedCount, strength, stillValid, distancePercent,
-    };
-  }
   // Verilen fiyat dizisini tolerans bandina gore kumeler ve en cok test edilen
   // (en kalabalik kume) seviyeyi dondurur - "en az 2 kez test edilmis sinir" icin kullanilir
   private findMostTestedLevel(prices: number[], tolerance: number): { level: number; tests: number } | null {
@@ -617,7 +463,7 @@ export class ScannerService {
   // kapanirsa (geri donmezse) - kirilim YONUNDE islem. (Eskiden burada ayrica bir
   // Turtle Soup/fakeout modeli de vardi, kaldirildi - artik bu tek model kullaniliyor.)
   // Range 4 saatlik mumlardan, teyit 15dk mumlarla (day trade daha hizli hareket
-  // ettigi icin). Trend filtresi, HTF bias ve confirmation sayaci buildSetup ile AYNI.
+  // ettigi icin). Trend filtresi, HTF bias ve confirmation sayaci buildSwingSetup ile AYNI.
   private buildDayTradeSetup(
     h1Candles: Candle[],
     trend15m: 'UP' | 'DOWN' | 'FLAT',
@@ -667,7 +513,7 @@ export class ScannerService {
 
     const mssConfirmed = this.hasBOS(h1Candles, direction);
 
-    // Esik 3'ten 2'ye dusuruldu, bkz. buildSetup'taki aciklama. Ikinci ve ucuncu
+    // Esik 3'ten 2'ye dusuruldu, bkz. buildSwingSetup'taki aciklama. Ikinci ve ucuncu
     // eleman (range bulundu, breakoutContinuationConfirmed) bu noktada zaten her
     // zaman true - yukarida return null ile garanti edildi.
     const confirmedCount = [htfBiasConfirmed, true, breakoutContinuationConfirmed, mssConfirmed].filter(Boolean).length;
@@ -692,7 +538,7 @@ export class ScannerService {
     // Stop: kirilan range sinirinin hemen gerisi - fiyat range'e geri donerse
     // (sinir tekrar icine girerse) trade zaten gecersizdir
     let stop = bullish ? range.upper - wickBuffer : range.lower + wickBuffer;
-    // R:R risk/reward yon bazli (signed) hesaplanir - bkz. buildSetup
+    // R:R risk/reward yon bazli (signed) hesaplanir - bkz. buildSwingSetup
     let risk = bullish ? entry - stop : stop - entry;
     if (risk <= 0) return null;
     // Minimum stop tabani: entry, range sinirini sadece bir tik gectiginde
@@ -809,8 +655,8 @@ export class ScannerService {
       if (trendSlice !== (bullish ? 'UP' : 'DOWN')) continue;
       const weeklySlice = this.toWeekly(slice);
       // 4H geçmiş verisi ayrı saklanmadığı için günlük trend, HTF Bias onayı yerine kullanılıyor.
-      // buildSwingSetup kullanılıyor ki win rate, scanCrypto'nun kullandığı YENİ range +
-      // Turtle Soup yöntemini yansıtsın (eski buildSetup artık sadece scanForex'te kullanılıyor)
+      // buildSwingSetup kullanılıyor ki win rate, scanCrypto/scanForexSwing'in kullandığı
+      // GUNCEL Breakout Continuation modelini yansıtsın (tek strateji, artık başka model yok)
       const setup = this.buildSwingSetup(slice, trendSlice, weeklySlice, null);
       if (!setup || setup.direction !== direction) continue;
       total++;
@@ -1021,26 +867,27 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return selected;
   }
 
-  async scanForex() {
-    const symbols = await this.prisma.historicalCandle.findMany({
-      where: { assetType: 'FOREX' }, distinct: ['symbol'], select: { symbol: true },
-    });
+  // Forex Swing: kripto'daki scanCrypto ile ayni Breakout Continuation modelini
+  // (buildSwingSetup) kullanir, sadece veri kaynagi Binance yerine Yahoo Finance.
+  // Sembol listesi HistoricalCandle'daki manuel-seed'e bagimli degil, dogrudan
+  // YAHOO_MAP'ten alinir (zaten ~20 forex/emtia sembolu tanimli).
+  async scanForexSwing() {
+    const symbols = Object.keys(YAHOO_MAP);
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
 
-    for (const { symbol } of symbols) {
+    for (const symbol of symbols) {
       const yahooSymbol = YAHOO_MAP[symbol];
-      if (!yahooSymbol) continue;
 
       try {
         const daily = await this.fetchYahoo(yahooSymbol, '6mo', '1d');
-        const h4 = await this.fetchYahoo(yahooSymbol, '5d', '1h');
-        if (daily.length < 60 || h4.length < 30) continue;
+        const hourly = await this.fetchYahoo(yahooSymbol, '5d', '1h');
+        if (daily.length < 60 || hourly.length < 30) continue;
 
         const weekly = this.toWeekly(daily);
-        const trend4h = this.getTrend(h4);
-        const setup = this.buildSetup(daily, trend4h, weekly, null);
+        const trend4h = this.getTrend(hourly);
+        const setup = this.buildSwingSetup(daily, trend4h, weekly, null);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
@@ -1069,7 +916,69 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return selected;
   }
 
-  async getLivePrice(symbol: string): Promise<{ symbol: string; price: number | null }> {
+  // Forex Day Trade: scanDayTrade ile ayni Breakout Continuation modeli
+  // (buildDayTradeSetup), Yahoo Finance saatlik+15dk veriyle. Yahoo native 4h
+  // sunmadigi icin 4H, saatlik mumlardan toFourHour() ile sentezlenir.
+  async scanForexDayTrade() {
+    const symbols = Object.keys(YAHOO_MAP);
+
+    const candidates: any[] = [];
+    const returnsMap: Record<string, number[]> = {};
+    const stageCounter: DayTradeStageCounter = {
+      rangeFound: 0, breakoutContinuationConfirmed: 0,
+      confirmedCountPassed: 0, rrPassed: 0,
+    };
+    let attempted = 0;
+
+    for (const symbol of symbols) {
+      const yahooSymbol = YAHOO_MAP[symbol];
+
+      try {
+        const h1 = await this.fetchYahoo(yahooSymbol, '1mo', '1h');
+        const m15 = await this.fetchYahoo(yahooSymbol, '5d', '15m');
+        const h4 = this.toFourHour(h1);
+        if (h1.length < 60 || m15.length < 30 || h4.length < 30) continue;
+
+        attempted++;
+        const trend15m = this.getTrend(m15);
+        const setup = this.buildDayTradeSetup(h1, trend15m, h4, m15, null, stageCounter);
+        if (!setup) continue;
+
+        const winRate = await this.getCachedWinRate(symbol, setup.direction);
+
+        const closes = h1.slice(-60).map((c) => c.close);
+        returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
+
+        candidates.push({ symbol, ...setup, winRatePercent: winRate, fundingRate: null, style: 'DAY' });
+      } catch { continue; }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+
+    candidates.sort((a, b) => b.confidenceScore - a.confidenceScore || (b.winRatePercent ?? 0) - (a.winRatePercent ?? 0));
+
+    const selected: any[] = [];
+    for (const c of candidates) {
+      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
+      if (!tooCorrelated) selected.push(c);
+      if (selected.length === 25) break;
+    }
+
+    console.log(
+      `[scanForexDayTrade] denenen=${attempted} rangeBulundu=${stageCounter.rangeFound} ` +
+      `breakoutContinuation=${stageCounter.breakoutContinuationConfirmed} ` +
+      `confirmedCountGecti=${stageCounter.confirmedCountPassed} rrGecti(minRR=${this.getMinRR()})=${stageCounter.rrPassed} ` +
+      `korelasyonSonrasi(selected)=${selected.length}`,
+    );
+
+    for (const s of selected) {
+      s.aiCommentary = await this.interpretWithAI(s.symbol, s);
+    }
+
+    return selected;
+  }
+
+  async getLivePrice(symbol: string, market: string = 'CRYPTO'): Promise<{ symbol: string; price: number | null }> {
+    if (market === 'FOREX') return this.getLiveForexPrice(symbol);
     try {
       const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
       if (!res.ok) return { symbol, price: null };
@@ -1080,29 +989,62 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
+  // Yahoo Finance'in Binance'inki gibi hafif bir "guncel fiyat" ticker endpoint'i
+  // yok - en son 1 dakikalik mumun kapanisi canli fiyat yerine kullanilir.
+  async getLiveForexPrice(symbol: string): Promise<{ symbol: string; price: number | null }> {
+    const yahooSymbol = YAHOO_MAP[symbol];
+    if (!yahooSymbol) return { symbol, price: null };
+    try {
+      const candles = await this.fetchYahoo(yahooSymbol, '1d', '1m');
+      if (candles.length === 0) return { symbol, price: null };
+      return { symbol, price: candles[candles.length - 1].close };
+    } catch {
+      return { symbol, price: null };
+    }
+  }
+
   async runFullScan() {
     const crypto = await this.scanCrypto();
     const results = { crypto, scannedAt: new Date() };
-    await this.prisma.scanResult.create({ data: { results: results as any, style: 'SWING' } });
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'SWING', market: 'CRYPTO' } });
     return results;
   }
 
   async runDayTradeScan() {
     const crypto = await this.scanDayTrade();
     const results = { crypto, scannedAt: new Date() };
-    await this.prisma.scanResult.create({ data: { results: results as any, style: 'DAY' } });
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'DAY', market: 'CRYPTO' } });
     return results;
   }
 
-  async getLastScan(style: string = 'SWING') {
-    return this.prisma.scanResult.findFirst({ where: { style }, orderBy: { createdAt: 'desc' } });
+  async runForexSwingScan() {
+    const crypto = await this.scanForexSwing();
+    const results = { crypto, scannedAt: new Date() };
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'SWING', market: 'FOREX' } });
+    return results;
+  }
+
+  async runForexDayTradeScan() {
+    const crypto = await this.scanForexDayTrade();
+    const results = { crypto, scannedAt: new Date() };
+    await this.prisma.scanResult.create({ data: { results: results as any, style: 'DAY', market: 'FOREX' } });
+    return results;
+  }
+
+  async getLastScan(style: string = 'SWING', market: string = 'CRYPTO') {
+    return this.prisma.scanResult.findFirst({ where: { style, market: market as any }, orderBy: { createdAt: 'desc' } });
   }
 
   async scheduledScan() {
     // Bir onceki taramadaki AKTIF (stillValid) sembolleri al ki sadece
     // YENI aktif sinyallerde bildirim gonderelim, ayni sinyali her 15
     // dakikada tekrar tekrar bildirim olarak spam etmeyelim
-    const previousScan = await this.prisma.scanResult.findFirst({ orderBy: { createdAt: 'desc' } });
+    // NOT: style+market filtresi olmadan bu sorgu forex/day-trade taramalari
+    // eklendiginde yanlis "onceki tarama" satirini yakalayabilirdi - artik filtreli.
+    const previousScan = await this.prisma.scanResult.findFirst({
+      where: { style: 'SWING', market: 'CRYPTO' },
+      orderBy: { createdAt: 'desc' },
+    });
     const previousActiveSymbols = new Set(
       ((previousScan?.results as any)?.crypto ?? [])
         .filter((c: any) => c.stillValid)
@@ -1115,7 +1057,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // "Yeni" degil, "su an acik takip kaydi olmayan" tum aktif sinyalleri takibe al
     // (onceki taramaya gore yeni degilse de, deploy oncesi zaten aktifse de kacirmasin)
     const openTracked = await this.prisma.trackedSignal.findMany({
-      where: { status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      where: { market: 'CRYPTO', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       select: { symbol: true },
     });
     const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
@@ -1128,7 +1070,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     );
     const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
-      await this.createTrackedSignals(signalsNeedingTracking);
+      await this.createTrackedSignals(signalsNeedingTracking, 'SWING', 'CRYPTO');
     }
     await this.updateTrackedSignals();
 
@@ -1154,7 +1096,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
   async scheduledDayTradeScan() {
     const previousScan = await this.prisma.scanResult.findFirst({
-      where: { style: 'DAY' },
+      where: { style: 'DAY', market: 'CRYPTO' },
       orderBy: { createdAt: 'desc' },
     });
     const previousActiveSymbols = new Set(
@@ -1167,7 +1109,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     const activeSignals = results.crypto.filter((c: any) => c.stillValid);
 
     const openTracked = await this.prisma.trackedSignal.findMany({
-      where: { style: 'DAY', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      where: { style: 'DAY', market: 'CRYPTO', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       select: { symbol: true },
     });
     const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
@@ -1176,10 +1118,10 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     );
     const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
-      await this.createTrackedSignals(signalsNeedingTracking, 'DAY');
+      await this.createTrackedSignals(signalsNeedingTracking, 'DAY', 'CRYPTO');
     }
     // NOT: updateTrackedSignals() burada CAGIRILMIYOR - scheduledScan (swing) zaten
-    // TUM acik kayitlari (stil farketmeksizin) her 15 dakikada guncelliyor
+    // TUM acik kayitlari (stil/market farketmeksizin) her 15 dakikada guncelliyor
 
     if (newActiveSignals.length === 0) return;
 
@@ -1200,7 +1142,105 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       },
     );
   }
-  async createTrackedSignals(newActiveSignals: any[], style: string = 'SWING') {
+
+  async scheduledForexSwingScan() {
+    const previousScan = await this.prisma.scanResult.findFirst({
+      where: { style: 'SWING', market: 'FOREX' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const previousActiveSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? [])
+        .filter((c: any) => c.stillValid)
+        .map((c: any) => c.symbol),
+    );
+
+    const results = await this.runForexSwingScan();
+    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+
+    const openTracked = await this.prisma.trackedSignal.findMany({
+      where: { style: 'SWING', market: 'FOREX', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      select: { symbol: true },
+    });
+    const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
+    const newActiveSignals = activeSignals.filter(
+      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    );
+    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    if (signalsNeedingTracking.length > 0) {
+      await this.createTrackedSignals(signalsNeedingTracking, 'SWING', 'FOREX');
+    }
+    // NOT: updateTrackedSignals() burada CAGIRILMIYOR - scheduledScan (swing kripto)
+    // zaten TUM acik kayitlari (stil/market farketmeksizin) her 15 dakikada guncelliyor
+
+    if (newActiveSignals.length === 0) return;
+
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'SUPER_ADMIN' },
+      select: { id: true },
+    });
+
+    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newActiveSignals.length} yeni aktif Forex sinyali: ${symbolList}`;
+
+    await this.notificationsService.createForManyUsers(
+      admins.map((a) => a.id),
+      {
+        type: 'SYSTEM',
+        title: 'AI Tarayıcı: Yeni Forex Sinyali',
+        message,
+      },
+    );
+  }
+
+  async scheduledForexDayTradeScan() {
+    const previousScan = await this.prisma.scanResult.findFirst({
+      where: { style: 'DAY', market: 'FOREX' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const previousActiveSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? [])
+        .filter((c: any) => c.stillValid)
+        .map((c: any) => c.symbol),
+    );
+
+    const results = await this.runForexDayTradeScan();
+    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+
+    const openTracked = await this.prisma.trackedSignal.findMany({
+      where: { style: 'DAY', market: 'FOREX', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      select: { symbol: true },
+    });
+    const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
+    const newActiveSignals = activeSignals.filter(
+      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    );
+    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    if (signalsNeedingTracking.length > 0) {
+      await this.createTrackedSignals(signalsNeedingTracking, 'DAY', 'FOREX');
+    }
+    // NOT: updateTrackedSignals() burada CAGIRILMIYOR - scheduledScan (swing kripto)
+    // zaten TUM acik kayitlari (stil/market farketmeksizin) her 15 dakikada guncelliyor
+
+    if (newActiveSignals.length === 0) return;
+
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'SUPER_ADMIN' },
+      select: { id: true },
+    });
+
+    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newActiveSignals.length} yeni aktif Forex Day Trade sinyali: ${symbolList}`;
+
+    await this.notificationsService.createForManyUsers(
+      admins.map((a) => a.id),
+      {
+        type: 'SYSTEM',
+        title: 'AI Tarayıcı: Yeni Forex Day Trade Sinyali',
+        message,
+      },
+    );
+  }
+  async createTrackedSignals(newActiveSignals: any[], style: string = 'SWING', market: string = 'CRYPTO') {
     for (const s of newActiveSignals) {
       await this.prisma.trackedSignal.create({
         data: {
@@ -1215,6 +1255,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           rr: s.rr,
           strength: s.strength,
           style,
+          market: market as any,
           status: 'WATCHING',
         },
       });
@@ -1228,7 +1269,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     for (const sig of openSignals) {
       const bullish = sig.direction === 'LONG';
-      const live = await this.getLivePrice(sig.symbol);
+      const live = await this.getLivePrice(sig.symbol, sig.market);
       if (live.price === null) continue;
       const price = live.price;
 
@@ -1322,22 +1363,22 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
-  async getTrackedSignals(style: string = 'SWING') {
+  async getTrackedSignals(style: string = 'SWING', market: string = 'CRYPTO') {
     const signals = await this.prisma.trackedSignal.findMany({
-      where: { style },
+      where: { style, market: market as any },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
     const [activeCount, wins, losses] = await Promise.all([
       this.prisma.trackedSignal.count({
-        where: { style, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+        where: { style, market: market as any, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       }),
       // Kazandi: kapanmis VE en az TP1'e ulasmis (TP1/TP2/TP3 hepsi gercek kar,
       // TP1 sonrasi stop basabasa cekildigi icin bu asamadan sonra kayip riski yok)
       this.prisma.trackedSignal.count({
-        where: { style, closedAt: { not: null }, status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] } },
+        where: { style, market: market as any, closedAt: { not: null }, status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] } },
       }),
-      this.prisma.trackedSignal.count({ where: { style, status: 'HIT_STOP' } }),
+      this.prisma.trackedSignal.count({ where: { style, market: market as any, status: 'HIT_STOP' } }),
     ]);
     const total = activeCount + wins + losses;
     const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;

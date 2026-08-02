@@ -12,6 +12,7 @@ import {
   useTrackedSignals,
   type ScanSignal,
   type TrackedSignal,
+  type ScanMarket,
 } from "@/lib/hooks/use-admin-scanner";
 
 const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: string; color: string }> = {
@@ -59,10 +60,10 @@ function CoinIcon({ symbol, bullish }: { symbol: string; bullish: boolean }) {
     </div>
   );
 }
-function SignalCard({ signal }: { signal: ScanSignal }) {
+function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket }) {
   const strengthStyle = STRENGTH_STYLES[signal.strength];
   const bullish = signal.direction === "LONG";
-  const { data: live } = useLivePrice(signal.symbol, true);
+  const { data: live } = useLivePrice(signal.symbol, true, market);
   const displayPrice = live?.price ?? signal.currentPrice;
   const liveStillValid =
     displayPrice == null
@@ -83,20 +84,22 @@ function SignalCard({ signal }: { signal: ScanSignal }) {
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
-              <a
-                href={`https://www.binance.com/en/futures/${signal.symbol}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#A8A6A0] hover:text-primary"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
-                  <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
-                  <path d="M5.5 8.5 L9 12 L5.5 15.5 L2 12 Z" />
-                  <path d="M18.5 8.5 L22 12 L18.5 15.5 L15 12 Z" />
-                  <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
-                  <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
-                </svg>
-              </a>
+              {market === "CRYPTO" && (
+                <a
+                  href={`https://www.binance.com/en/futures/${signal.symbol}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#A8A6A0] hover:text-primary"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
+                    <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
+                    <path d="M5.5 8.5 L9 12 L5.5 15.5 L2 12 Z" />
+                    <path d="M18.5 8.5 L22 12 L18.5 15.5 L15 12 Z" />
+                    <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
+                    <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
+                  </svg>
+                </a>
+              )}
             </div>
             <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
@@ -204,13 +207,13 @@ const STATUS_STYLES: Record<TrackedSignal["status"], { label: string; bg: string
   EXPIRED: { label: "SURESI DOLDU", bg: "#F39C3D22", color: "#F39C3D" },
 };
 
-function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
+function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: ScanMarket }) {
   const strengthStyle = STRENGTH_STYLES[signal.strength];
   const style = STATUS_STYLES[signal.status];
   const showStatusBadge = signal.status === "WATCHING" || signal.status === "TRIGGERED" || signal.status === "EXPIRED";
   const bullish = signal.direction === "LONG";
   const isOpen = signal.closedAt === null;
-  const { data: live } = useLivePrice(signal.symbol, isOpen);
+  const { data: live } = useLivePrice(signal.symbol, isOpen, market);
   const displayPrice = live?.price ?? null;
   const hitLevel =
     signal.status === "HIT_TP1" ? 1 : signal.status === "HIT_TP2" ? 2 : signal.status === "HIT_TP3" ? 3 : 0;
@@ -230,20 +233,22 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
-              <a
-                href={`https://www.binance.com/en/futures/${signal.symbol}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#A8A6A0] hover:text-primary"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
-                  <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
-                  <path d="M5.5 8.5 L9 12 L5.5 15.5 L2 12 Z" />
-                  <path d="M18.5 8.5 L22 12 L18.5 15.5 L15 12 Z" />
-                  <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
-                  <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
-                </svg>
-              </a>
+              {market === "CRYPTO" && (
+                <a
+                  href={`https://www.binance.com/en/futures/${signal.symbol}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#A8A6A0] hover:text-primary"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
+                    <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
+                    <path d="M5.5 8.5 L9 12 L5.5 15.5 L2 12 Z" />
+                    <path d="M18.5 8.5 L22 12 L18.5 15.5 L15 12 Z" />
+                    <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
+                    <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
+                  </svg>
+                </a>
+              )}
             </div>
             <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
@@ -322,9 +327,10 @@ function TrackedSignalCard({ signal }: { signal: TrackedSignal }) {
 export default function AdminScannerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [style, setStyle] = useState<"SWING" | "DAY">("SWING");
-  const { data: lastScan, isLoading } = useLastScan(style);
-  const { data: tracked } = useTrackedSignals(style);
-  const triggerScan = useTriggerScan(style);
+  const [market, setMarket] = useState<ScanMarket>("CRYPTO");
+  const { data: lastScan, isLoading } = useLastScan(style, market);
+  const { data: tracked } = useTrackedSignals(style, market);
+  const triggerScan = useTriggerScan(style, market);
 
   if (authLoading) {
     return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
@@ -357,7 +363,10 @@ export default function AdminScannerPage() {
         <div>
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">AI Chart Scanner</h1>
           <p className="text-sm text-[#A8A6A0]">
-            Sadece kişisel kullanım — öğrencilere kapalı. Binance top 200 kripto, 15 dakikada bir otomatik tarama.
+            Sadece kişisel kullanım — öğrencilere kapalı.{" "}
+            {market === "CRYPTO"
+              ? "Binance top 200 kripto, 15 dakikada bir otomatik tarama."
+              : "Yahoo Finance forex majörleri + emtia (XAUUSD, XAGUSD, BRENT, WTI...), 15 dakikada bir otomatik tarama."}
           </p>
         </div>
         <Link href="/manage" className="text-sm text-primary hover:underline">
@@ -365,25 +374,48 @@ export default function AdminScannerPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1 max-w-xs">
-        <button
-          type="button"
-          onClick={() => setStyle("SWING")}
-          className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-            style === "SWING" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Swing Trade
-        </button>
-        <button
-          type="button"
-          onClick={() => setStyle("DAY")}
-          className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-            style === "DAY" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Day Trade
-        </button>
+      <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1 max-w-xs">
+          <button
+            type="button"
+            onClick={() => setStyle("SWING")}
+            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
+              style === "SWING" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Swing Trade
+          </button>
+          <button
+            type="button"
+            onClick={() => setStyle("DAY")}
+            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
+              style === "DAY" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Day Trade
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1 max-w-xs">
+          <button
+            type="button"
+            onClick={() => setMarket("CRYPTO")}
+            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
+              market === "CRYPTO" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Kripto
+          </button>
+          <button
+            type="button"
+            onClick={() => setMarket("FOREX")}
+            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
+              market === "FOREX" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Forex
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -415,7 +447,7 @@ export default function AdminScannerPage() {
               <h2 className="text-sm font-semibold text-[#F5F1EA]">Aktif Sinyaller ({activeSignals.length})</h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {activeSignals.map((s) => (
-                  <SignalCard key={s.symbol} signal={s} />
+                  <SignalCard key={s.symbol} signal={s} market={market} />
                 ))}
               </div>
             </div>
@@ -439,7 +471,7 @@ export default function AdminScannerPage() {
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {tracked.signals.map((s) => (
-                  <TrackedSignalCard key={s.id} signal={s} />
+                  <TrackedSignalCard key={s.id} signal={s} market={market} />
                 ))}
               </div>
             </div>
