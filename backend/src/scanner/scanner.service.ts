@@ -530,7 +530,16 @@ export class ScannerService {
     // TP1: kirilim yonunde olculu hareket (range genisligi kadar projeksiyon).
     // TP2/TP3: bu projeksiyonun otesindeki en yakin iki yapisal gunluk swing seviyesi;
     // yeterli swing yoksa range genisligi katlariyla devam edilir.
-    const tp1 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
+    let tp1 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
+    // Mutlak tavan: rangeWidth (30 gunluk range'in tam genisligi) bazen entry'den
+    // %60-70 uzakta bile olabiliyordu (bkz. ACEUSDT). tp1'in kendisi caplenmezse,
+    // asagidaki monotonluk kontrolu capli TP2/TP3'u yine bu capsiz tp1'in otesine
+    // itiyor, tavan hukumsuz kaliyordu - once tp1 caplenir (ABS_TP_CAP_PCT asagida tanimli).
+    const ABS_TP_CAP_PCT = 0.25;
+    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
+    if (Math.abs(tp1 - entry) > maxAbsDistance) {
+      tp1 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
     if (bullish ? tp1 <= entry : tp1 >= entry) return null;
     const swingIdx = bullish ? this.findSwingHighs(dailyCandles, 2) : this.findSwingLows(dailyCandles, 2);
     const structuralLevels: number[] = [];
@@ -553,10 +562,6 @@ export class ScannerService {
     const fallbackStep = Math.min(rangeWidth, atrValue * 0.75);
     let tp2 = structuralLevels[0] ?? (bullish ? tp1 + fallbackStep : tp1 - fallbackStep);
     let tp3 = structuralLevels[1] ?? (bullish ? tp2 + fallbackStep : tp2 - fallbackStep);
-    // Ek guvenlik agi: ATR de asiri oynak coinlerde (ACEUSDT gibi) buyuk kalabiliyor -
-    // fallback'ten gelen (yapisal olmayan) hedefler entry'den %25'in otesine gecemez.
-    const ABS_TP_CAP_PCT = 0.25;
-    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
     if (structuralLevels[0] === undefined && Math.abs(tp2 - entry) > maxAbsDistance) {
       tp2 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
     }
