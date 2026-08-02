@@ -709,7 +709,18 @@ export class ScannerService {
     // kendisi de buyuk olabildigi icin min() ile capleniyor - yeni TP hicbir zaman
     // eski (rangeWidth) projeksiyonundan genis cikmaz.
     const tpDistance = Math.min(atrH4 * 1.5, rangeWidth);
-    const tp1 = bullish ? range.upper + tpDistance : range.lower - tpDistance;
+    let tp1 = bullish ? range.upper + tpDistance : range.lower - tpDistance;
+    // Mutlak ikinci tavan: asiri oynak/yeni listelenen coinlerde (DUSDT, ERAUSDT gibi)
+    // atrH4*1.5 kendisi de entry'den %20-50 uzakta kalabiliyordu - bir day trade icin
+    // gerceklesme suresine gore hala fazla genis. tp1 entry'den %6'nin otesine gecemez;
+    // tp2/tp3 fallback'i tp1'e eklenerek hesaplandigi icin tp1'in caplenmesi zincirin
+    // tamamini sinirlar (sadece tp2/tp3'u ayri caplemek yetersizdi - capsiz tp1, asagidaki
+    // monotonluk kontrolu uzerinden tp2/tp3'u yine tavanin otesine itebiliyordu).
+    const ABS_TP_CAP_PCT = 0.06;
+    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
+    if (Math.abs(tp1 - entry) > maxAbsDistance) {
+      tp1 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
     if (bullish ? tp1 <= entry : tp1 >= entry) return null;
     const swingIdx = bullish ? this.findSwingHighs(h4Candles, 2) : this.findSwingLows(h4Candles, 2);
     const structuralLevels: number[] = [];
@@ -725,10 +736,13 @@ export class ScannerService {
     }
     let tp2 = structuralLevels[0] ?? (bullish ? tp1 + tpDistance : tp1 - tpDistance);
     let tp3 = structuralLevels[1] ?? (bullish ? tp2 + tpDistance : tp2 - tpDistance);
-    // Monotonluk guvenlik agi (bkz. buildSwingSetup'taki HEIUSDT aciklamasi) - su an
-    // burada tp2/tp3 zaten zincirleme (bir onceki hedefe eklenerek) hesaplandigi icin
-    // yapisal/fallback karisimi bu ihlali tetiklemiyor, ama ileride TP hesabina bagimsiz
-    // bir cap eklenirse ayni sinif hata burada da olusabilir - savunma amacli tutuluyor.
+    if (structuralLevels[0] === undefined && Math.abs(tp2 - entry) > maxAbsDistance) {
+      tp2 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
+    if (structuralLevels[1] === undefined && Math.abs(tp3 - entry) > maxAbsDistance) {
+      tp3 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
+    }
+    // Monotonluk guvenlik agi (bkz. buildSwingSetup'taki HEIUSDT aciklamasi).
     if (bullish) {
       if (tp2 <= tp1) tp2 = tp1 * 1.001;
       if (tp3 <= tp2) tp3 = tp2 * 1.001;
