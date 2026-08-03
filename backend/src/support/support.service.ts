@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 const TICKET_SELECT = {
   id: true,
@@ -142,6 +143,7 @@ export class SupportService {
   async listAll(page = 1, limit = 20, status?: string, category?: string) {
     const skip = (page - 1) * limit;
     const where = {
+      user: NOT_DELETED_USER_WHERE,
       ...(status ? { status: status as any } : {}),
       ...(category ? { category: category as any } : {}),
     };

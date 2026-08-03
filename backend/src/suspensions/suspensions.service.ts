@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 export const SUSPENSION_DURATIONS_DAYS = [1, 3, 7] as const;
 export type SuspensionDurationDays = (typeof SUSPENSION_DURATIONS_DAYS)[number];
@@ -62,7 +63,7 @@ export class SuspensionsService {
 
   async listAll(page = 1, limit = 20, type?: 'COMMENT' | 'DM') {
     const skip = (page - 1) * limit;
-    const where = type ? { type } : undefined;
+    const where = { user: NOT_DELETED_USER_WHERE, ...(type ? { type } : {}) };
     const [data, total] = await Promise.all([
       this.prisma.userSuspension.findMany({
         where,

@@ -17,8 +17,10 @@ export interface PlatformShowcaseData {
   description: string;
   ctaLabel: string;
   ctaHref: string;
-  /** Laptop ekranına yerleştirilen dashboard görüntüsü (admin panelden yüklenen tek PNG). */
+  /** MacBook+iPhone mockup'ının laptop ekranına yerleştirilen dashboard görüntüsü. */
   imageUrl?: string | null;
+  /** Aynı mockup'ın telefon ekranına yerleştirilen görüntü (admin panelden yüklenir). */
+  phoneImageUrl?: string | null;
 }
 
 export type ToolPreviewKey = "scanner" | "backtest" | "simulation" | "calendar" | "live";

@@ -6,6 +6,7 @@ import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { SuspensionsService } from '../suspensions/suspensions.service';
 import { PresenceService } from '../notifications/presence.service';
 import { containsProfanity } from './profanity-filter';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 const RATE_LIMIT_SECONDS = 30;
 
@@ -240,7 +241,11 @@ export class DmService {
     // BLOCKED_RATE_LIMIT loglari spam gurultusu yaratiyor (30sn siniri normal
     // kullanimda bile sik tetiklenebiliyor) - admin logunda gosterilmiyor,
     // sadece kufur filtresine takilanlar "basarisiz mesaj" olarak gorunur.
-    const where = { status: { not: 'BLOCKED_RATE_LIMIT' as const } };
+    const where = {
+      status: { not: 'BLOCKED_RATE_LIMIT' as const },
+      sender: NOT_DELETED_USER_WHERE,
+      recipient: NOT_DELETED_USER_WHERE,
+    };
     const [data, total] = await Promise.all([
       this.prisma.dmMessage.findMany({
         where,
@@ -260,8 +265,10 @@ export class DmService {
 
   async adminListBlockActions(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
+    const where = { blocker: NOT_DELETED_USER_WHERE, blocked: NOT_DELETED_USER_WHERE };
     const [data, total] = await Promise.all([
       this.prisma.block.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -271,15 +278,20 @@ export class DmService {
           blocked: { select: { id: true, fullName: true, username: true } },
         },
       }),
-      this.prisma.block.count(),
+      this.prisma.block.count({ where }),
     ]);
     return { data, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } };
   }
 
   async adminListReports(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
+    const where = {
+      reporter: NOT_DELETED_USER_WHERE,
+      message: { sender: NOT_DELETED_USER_WHERE, recipient: NOT_DELETED_USER_WHERE },
+    };
     const [data, total] = await Promise.all([
       this.prisma.dmMessageReport.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -295,7 +307,7 @@ export class DmService {
           },
         },
       }),
-      this.prisma.dmMessageReport.count(),
+      this.prisma.dmMessageReport.count({ where }),
     ]);
     return { data, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } };
   }

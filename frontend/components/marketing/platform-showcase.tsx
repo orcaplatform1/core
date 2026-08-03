@@ -1,13 +1,26 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PlatformShowcaseData } from "@/lib/marketing/site-content-types";
 
-// Gerçekçi MacBook çerçevesi: admin panelden yüklenen tek bir dashboard PNG'i
-// ekrana object-cover ile yerleştirilir (bkz. manage/site-content "Platform Vitrini"
-// sekmesi) — tek tek düzenlenebilir sahte kutular yerine.
+// Gerçek MacBook Pro + iPhone mockup PNG'leri (public/marketing) kullanılır.
+// Her iki PNG'de de ekran alanı SEFFAF bir "delik" - admin panelden yüklenen
+// görsel bu deliğin arkasına, çerçeve PNG'i ONUN ÜSTÜNE bindirilir. Delik
+// koordinatları kaynak PNG'ler üzerinde piksel bazlı alfa-kanalı taramasıyla
+// bulundu (bkz. commit notu) - yüzdeye çevrilip aşağıda sabitlendi.
+// next/image basePath'i ("/core") bu projede otomatik eklemiyor (bkz.
+// default-site-content.ts heroImageUrl) - yol elle "/core/" ile başlıyor.
+const MACBOOK_FRAME = "/core/marketing/macbook-frame.png";
+const IPHONE_FRAME = "/core/marketing/iphone-frame.png";
+
+// macbook-frame.png (3460x2200) ekran deliği: left 450 top 300 right 3010 bottom 1900
+const LAPTOP_SCREEN = { left: 13.0, top: 13.6, width: 74.0, height: 72.7 };
+// iphone-frame.png (365x750) ekran deliği: left 15 top 13 right 349 bottom 738
+const PHONE_SCREEN = { left: 4.1, top: 1.7, width: 91.5, height: 96.7 };
+
 export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
-  const { eyebrow, title, description, ctaLabel, ctaHref, imageUrl } = data;
+  const { eyebrow, title, description, ctaLabel, ctaHref, imageUrl, phoneImageUrl } = data;
 
   return (
     <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
@@ -28,20 +41,18 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
           />
         </div>
 
-        {/* Gerçekçi MacBook çerçevesi */}
-        <div className="mx-auto w-full max-w-[640px]">
-          <div
-            className="rounded-t-[10px] p-[3px] shadow-[0_40px_90px_-25px_rgba(0,0,0,0.65)] sm:rounded-t-[14px] sm:p-[5px]"
-            style={{ background: "linear-gradient(180deg, #3a3d44 0%, #1c1e22 100%)" }}
-          >
-            <div className="relative aspect-[16/10.2] overflow-hidden rounded-[6px] bg-black sm:rounded-[9px]">
-              {/* Kamera notch */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center">
-                <div className="mt-1 flex h-[6px] w-[6px] items-center justify-center rounded-full bg-black ring-[3px] ring-black sm:mt-1.5">
-                  <span className="size-[2.5px] rounded-full bg-[#141820]" />
-                </div>
-              </div>
-
+        <div className="relative mx-auto flex w-full max-w-[640px] items-end justify-center pr-8 pb-8 sm:pr-12 sm:pb-12">
+          {/* MacBook Pro */}
+          <div className="relative w-full" style={{ aspectRatio: "3460 / 2200" }}>
+            <div
+              className="absolute overflow-hidden bg-black"
+              style={{
+                left: `${LAPTOP_SCREEN.left}%`,
+                top: `${LAPTOP_SCREEN.top}%`,
+                width: `${LAPTOP_SCREEN.width}%`,
+                height: `${LAPTOP_SCREEN.height}%`,
+              }}
+            >
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="ORCA Dashboard" className="h-full w-full object-cover object-top" />
@@ -51,19 +62,59 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
                 </div>
               )}
             </div>
+            <Image
+              src={MACBOOK_FRAME}
+              alt=""
+              aria-hidden
+              fill
+              unoptimized
+              className="pointer-events-none z-10 select-none object-contain"
+            />
           </div>
 
-          {/* Alt gövde (klavye tablası) — ekrandan biraz daha geniş, menteşe gölgesiyle */}
-          <div className="relative">
-            <div
-              className="h-[7px] rounded-b-[3px] sm:h-[10px] sm:rounded-b-[4px]"
-              style={{ background: "linear-gradient(180deg, #2c2e33 0%, #16171a 100%)" }}
-            />
-            <div
-              className="mx-auto -mt-px h-[3px] w-[106%] rounded-b-2xl sm:h-[5px]"
-              style={{ background: "linear-gradient(180deg, #1c1d20 0%, #0a0a0c 100%)" }}
-            />
-            <div className="mx-auto -mt-px h-[2px] w-[70%] rounded-b-xl bg-black/40 blur-[2px]" />
+          {/* iPhone — laptop'ın sağ altına, biraz daha aşağıda oturacak şekilde bindirilmiş */}
+          <div
+            className="absolute bottom-[-9%] right-[2%] z-20 w-[24%] min-w-[92px] max-w-[150px]"
+            style={{ aspectRatio: "365 / 750" }}
+          >
+            <div className="relative h-full w-full">
+              <div
+                className="absolute overflow-hidden bg-black"
+                style={{
+                  left: `${PHONE_SCREEN.left}%`,
+                  top: `${PHONE_SCREEN.top}%`,
+                  width: `${PHONE_SCREEN.width}%`,
+                  height: `${PHONE_SCREEN.height}%`,
+                }}
+              >
+                {/* iphone-frame.png'nin kamera çentiği ekran deliğinin üst kısmına taşıyor -
+                    icerik tam ustten baslarsa (orn. "Merhaba, Sena" basligi) centigin
+                    altinda kalip kirpiliyordu. Kucuk bir ust bosluk centigin altina
+                    guvenli sekilde iniyor. */}
+                <div className="absolute inset-0 pt-[9%]">
+                  {phoneImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={phoneImageUrl}
+                      alt="ORCA Mobil"
+                      className="h-full w-full bg-[#05070f] object-contain object-top"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] p-1 text-center text-[9px] text-muted-foreground">
+                      Mobil görsel eklenmedi
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Image
+                src={IPHONE_FRAME}
+                alt=""
+                aria-hidden
+                fill
+                unoptimized
+                className="pointer-events-none z-10 select-none object-contain"
+              />
+            </div>
           </div>
         </div>
       </div>

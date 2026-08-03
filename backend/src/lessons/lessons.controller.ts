@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { AddResourceDto } from './dto/add-resource.dto';
+import { SaveNoteDto } from './dto/save-note.dto';
 
 @Controller('lessons')
 export class LessonsController {
@@ -79,5 +81,19 @@ export class LessonsController {
   removeResource(@Req() req: Request, @Param('resourceId') resourceId: string) {
     const actorId = (req.user as any).id;
     return this.lessonsService.removeResource(resourceId, actorId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/notes/me')
+  getMyNote(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as any).id;
+    return this.lessonsService.getMyNote(userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/notes/me')
+  saveMyNote(@Req() req: Request, @Param('id') id: string, @Body() dto: SaveNoteDto) {
+    const userId = (req.user as any).id;
+    return this.lessonsService.saveMyNote(userId, id, dto.content);
   }
 }

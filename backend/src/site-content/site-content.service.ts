@@ -58,6 +58,7 @@ export class SiteContentService {
             ctaLabel: 'Platformu Keşfet',
             ctaHref: '/register',
             imageUrl: null,
+            phoneImageUrl: null,
           },
           toolsTitle: 'Neden ORCA ?',
           toolsSubtitle:

@@ -52,6 +52,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
     ctaLabel: "Platformu Keşfet",
     ctaHref: "/register",
     imageUrl: null,
+    phoneImageUrl: null,
   },
 
   toolsTitle: "Neden ORCA ?",

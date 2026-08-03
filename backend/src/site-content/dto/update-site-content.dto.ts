@@ -71,6 +71,7 @@ export class UpdateSiteContentDto {
     ctaLabel: string;
     ctaHref: string;
     imageUrl?: string | null;
+    phoneImageUrl?: string | null;
   };
 
   @IsOptional()

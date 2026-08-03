@@ -398,8 +398,9 @@ export default function SiteContentPage() {
           <TabsContent value="showcase" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
               <p className="text-xs text-[#A8A6A0]">
-                Partnerler ile Uzmanlık Programları arasındaki, laptop görselli &quot;Gerçek Platform Deneyimi&quot;
-                bölümü. Soldaki metinler ve laptop ekranındaki dashboard içeriği buradan düzenlenir.
+                Partnerler ile Uzmanlık Programları arasındaki, MacBook + iPhone mockup&apos;lı &quot;Gerçek Platform
+                Deneyimi&quot; bölümü. Soldaki metinler ile laptop ve telefon ekranındaki içerikler buradan
+                düzenlenir.
               </p>
 
               <Field label="Üst etiket (eyebrow)">
@@ -451,7 +452,16 @@ export default function SiteContentPage() {
                   placeholder="https://.../dashboard-preview.png"
                   value={form.platformShowcase.imageUrl ?? ""}
                   onChange={(v) => set("platformShowcase", { ...form.platformShowcase, imageUrl: v || null })}
-                  hint="Laptop ekranına tam kaplayacak şekilde yerleşir (16:10.2 oranında bir görsel önerilir)."
+                  hint="Laptop ekranına tam kaplayacak şekilde yerleşir (yaklaşık 16:11 oranında bir görsel önerilir)."
+                />
+              </Field>
+
+              <Field label="Telefon ekranındaki mobil görsel (PNG/JPG URL)">
+                <ImagePreviewInput
+                  placeholder="https://.../mobile-preview.png"
+                  value={form.platformShowcase.phoneImageUrl ?? ""}
+                  onChange={(v) => set("platformShowcase", { ...form.platformShowcase, phoneImageUrl: v || null })}
+                  hint="Telefon ekranına tam kaplayacak şekilde yerleşir (dikey, yaklaşık 9:18 oranında bir görsel önerilir)."
                 />
               </Field>
 

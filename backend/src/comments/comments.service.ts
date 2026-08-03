@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SuspensionsService } from '../suspensions/suspensions.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 const COMMENT_SELECT = {
   id: true,
@@ -174,8 +175,13 @@ export class CommentsService {
 
   async listReports(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
+    const where = {
+      reporter: NOT_DELETED_USER_WHERE,
+      comment: { user: NOT_DELETED_USER_WHERE },
+    };
     const [data, total] = await Promise.all([
       this.prisma.commentReport.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
@@ -191,7 +197,7 @@ export class CommentsService {
           },
         },
       }),
-      this.prisma.commentReport.count(),
+      this.prisma.commentReport.count({ where }),
     ]);
     return { data, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } };
   }
@@ -254,7 +260,7 @@ export class CommentsService {
 
   async listForModeration(status: 'PENDING' | 'APPROVED' | 'REJECTED') {
     return this.prisma.comment.findMany({
-      where: { status },
+      where: { status, user: NOT_DELETED_USER_WHERE },
       select: {
         ...COMMENT_SELECT,
         lesson: { select: { id: true, title: true, module: { select: { title: true, program: { select: { title: true } } } } } },

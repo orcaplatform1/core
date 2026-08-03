@@ -8,6 +8,7 @@ import { AdjustMentorCreditsDto } from './dto/adjust-mentor-credits.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { PresenceService } from '../notifications/presence.service';
 import { StatsService } from '../stats/stats.service';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 // Staff/Super Admin avatarı cinsiyetten bağımsız her zaman ORCA amblemi olmalı
 // (bkz. manage.service.ts makeStaff() ile aynı görsel).
@@ -24,15 +25,18 @@ export class UsersService {
 
   async findAll(page = 1, limit = 20, search?: string) {
     const skip = (page - 1) * limit;
-    const where = search
-      ? {
-          OR: [
-            { fullName: { contains: search, mode: 'insensitive' as const } },
-            { username: { contains: search, mode: 'insensitive' as const } },
-            { email: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : undefined;
+    const where = {
+      ...NOT_DELETED_USER_WHERE,
+      ...(search
+        ? {
+            OR: [
+              { fullName: { contains: search, mode: 'insensitive' as const } },
+              { username: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
 
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({

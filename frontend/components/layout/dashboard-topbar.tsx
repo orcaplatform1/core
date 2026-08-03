@@ -97,6 +97,7 @@ export function DashboardTopbar({
   const { mutate: markRead } = useMarkNotificationRead();
   const userName = user?.fullName ?? "Kullanici";
   const userAvatarUrl = user?.avatarUrl ?? undefined;
+  const isPremium = user?.role === "STUDENT" && user?.toolsSubscription === "ACTIVE";
 
   const totalUnread = (unread?.count ?? 0) + (announcementUnread?.count ?? 0);
   const prevUnreadRef = useRef<number | null>(null);
@@ -260,8 +261,11 @@ export function DashboardTopbar({
                   <AvatarImage src={userAvatarUrl} alt={userName} />
                   <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span className="hidden sm:block text-sm font-medium text-foreground">
-                  {userName}
+                <span className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
+                  <span className="text-sm font-medium text-foreground">{userName}</span>
+                  {isPremium && (
+                    <span className="text-[10px] font-semibold text-primary">Premium Üye</span>
+                  )}
                 </span>
               </button>
             }

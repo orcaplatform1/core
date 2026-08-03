@@ -103,4 +103,22 @@ export class LessonsService {
     await this.auditLogService.log(actorId, 'LESSON_RESOURCE_DELETE', 'LessonResource', resourceId);
     return { message: 'Silindi.' };
   }
+
+  async getMyNote(userId: string, lessonId: string) {
+    return this.prisma.lessonNote.findUnique({
+      where: { userId_lessonId: { userId, lessonId } },
+    });
+  }
+
+  async saveMyNote(userId: string, lessonId: string, content: string) {
+    if (!content.trim()) {
+      await this.prisma.lessonNote.deleteMany({ where: { userId, lessonId } });
+      return null;
+    }
+    return this.prisma.lessonNote.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      create: { userId, lessonId, content },
+      update: { content },
+    });
+  }
 }

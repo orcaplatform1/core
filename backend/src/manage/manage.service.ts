@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 
 @Injectable()
 export class ManageService {
@@ -60,6 +61,7 @@ export class ManageService {
 
   async getRecentUsers() {
     return this.prisma.user.findMany({
+      where: NOT_DELETED_USER_WHERE,
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: {

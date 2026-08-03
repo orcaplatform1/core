@@ -56,6 +56,30 @@ export type ProgressRow = {
   progress: number;
   watchedSeconds: number;
 };
+export type LessonNote = {
+  id: string;
+  lessonId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
+export type LessonTask = {
+  id: string;
+  lessonId: string;
+  title: string;
+  description: string;
+  targetCount: number;
+};
+export type LessonTaskProgress = {
+  id: string;
+  taskId: string;
+  completedCount: number;
+  completed: boolean;
+};
+export type LessonTaskWithProgress = {
+  task: LessonTask | null;
+  myProgress: LessonTaskProgress | null;
+};
 export type Certificate = {
   id: string;
   number: number;

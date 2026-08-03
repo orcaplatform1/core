@@ -7,6 +7,7 @@ export type StoredUser = {
   role: "SUPER_ADMIN" | "STAFF" | "STUDENT" | "GUEST";
   gender: "ERKEK" | "KADIN";
   avatarUrl?: string | null;
+  toolsSubscription?: "NONE" | "ACTIVE" | "EXPIRED";
   emailVerified?: boolean;
   phoneVerified?: boolean;
   sessionId?: string;

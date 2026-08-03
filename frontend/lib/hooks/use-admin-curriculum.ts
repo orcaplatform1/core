@@ -114,3 +114,21 @@ export function useDeleteLesson() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lessons"] }),
   });
 }
+
+// ---- Lesson Tasks ("Aktif Görev") ----
+type LessonTaskPayload = { title: string; description: string; targetCount: number };
+export function useUpsertLessonTask(lessonId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: LessonTaskPayload) =>
+      apiClient(`/lessons/${lessonId}/task`, { method: "PUT", body: payload }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lesson-task", lessonId] }),
+  });
+}
+export function useDeleteLessonTask(lessonId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient(`/lessons/${lessonId}/task`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lesson-task", lessonId] }),
+  });
+}

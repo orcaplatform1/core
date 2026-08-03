@@ -91,6 +91,8 @@ model User {
   suspensionsIssued       UserSuspension[]   @relation("SuspensionIssuer")
   supportTickets          SupportTicket[]
   supportMessagesSent     SupportTicketMessage[]
+  lessonNotes             LessonNote[]
+  lessonTaskProgress      LessonTaskProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -282,6 +284,8 @@ model Lesson {
   resources LessonResource[]
   quizzes   Quiz[]
   comments  Comment[]
+  notes     LessonNote[]
+  task      LessonTask?
   moduleId  String
   module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
@@ -350,6 +354,48 @@ model LessonResource {
   url      String
 
   createdAt DateTime @default(now())
+}
+
+// Ogrencinin bir derse ozel kisisel notu - kullanici basina ders basina tek not (upsert).
+model LessonNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
+}
+
+// SUPER_ADMIN tarafindan derse eklenen uygulama gorevi ("Aktif Gorev" karti).
+// Quiz'den ayri - ders tamamlanmasini ETKILEMEZ, sadece bilgilendirme/takip amaclidir.
+model LessonTask {
+  id          String   @id @default(cuid())
+  lessonId    String   @unique
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  targetCount Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress LessonTaskProgress[]
+}
+
+model LessonTaskProgress {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId         String
+  task           LessonTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  completedCount Int        @default(0)
+  completed      Boolean    @default(false)
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([userId, taskId])
 }
 
 model Quiz {

@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { ProgramsModule } from './programs/programs.module';
 import { ModulesModule } from './modules/modules.module';
 import { LessonsModule } from './lessons/lessons.module';
+import { LessonTasksModule } from './lesson-tasks/lesson-tasks.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AnswersModule } from './answers/answers.module';
@@ -82,6 +83,7 @@ import { SupportModule } from './support/support.module';
     ProgramsModule,
     ModulesModule,
     LessonsModule,
+    LessonTasksModule,
     QuizzesModule,
     QuestionsModule,
     AnswersModule,

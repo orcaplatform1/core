@@ -21,6 +21,8 @@ import {
   useDeleteLesson,
 } from "@/lib/hooks/use-admin-curriculum";
 import type { Program, CourseModule, LessonSummary } from "@/lib/types/curriculum";
+import { LessonResourcesEditor } from "@/components/admin/lesson-resources-editor";
+import { LessonTaskEditor } from "@/components/admin/lesson-task-editor";
 
 const LEVELS = ["BASLANGIC", "ORTA", "ILERI"] as const;
 
@@ -555,6 +557,8 @@ export default function AdminProgramsPage() {
                                             İptal
                                           </Button>
                                         </div>
+                                        <LessonResourcesEditor lessonId={l.id} />
+                                        <LessonTaskEditor lessonId={l.id} />
                                       </div>
                                     ) : (
                                       <div className="flex items-center justify-between gap-2">
