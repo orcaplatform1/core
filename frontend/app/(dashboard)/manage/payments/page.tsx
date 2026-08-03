@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Lock, FileText, Check, X, Tag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ExternalLink } from "@/components/ui/external-link";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -236,7 +238,9 @@ export default function AdminPaymentsPage() {
               <div key={p.id} className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium text-[#F5F1EA]">{p.user.fullName}</p>
+                    <Link href={`/manage/users/${p.user.id}`} className="font-medium text-[#F5F1EA] hover:text-primary hover:underline">
+                      {p.user.fullName}
+                    </Link>
                     <p className="text-xs text-[#A8A6A0]">
                       @{p.user.username} · {p.user.email ?? "email yok"}
                     </p>
@@ -251,15 +255,13 @@ export default function AdminPaymentsPage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   {p.receiptUrl && (
-                    <a
+                    <ExternalLink
                       href={p.receiptUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-primary hover:underline"
                     >
                       <FileText size={14} />
                       Dekont/Kanıt
-                    </a>
+                    </ExternalLink>
                   )}
                   {status === "PENDING" && (
                     <div className="ml-auto flex gap-2">

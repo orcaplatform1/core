@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { X } from "lucide-react";
+import { ExternalLink } from "@/components/ui/external-link";
 import { DEFAULT_FOOTER_SETTINGS } from "@/lib/marketing/default-site-content";
 import type { FooterSettingsData, LegalPageSummary } from "@/lib/marketing/site-content-types";
 
@@ -106,16 +107,14 @@ export function SiteFooter({
           </div>
           <div className="flex items-center gap-3">
             {socialLinks.map((s) => (
-              <a
+              <ExternalLink
                 key={s.label}
                 href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
                 aria-label={s.label}
                 className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
                 <s.icon className="size-4" />
-              </a>
+              </ExternalLink>
             ))}
           </div>
         </div>

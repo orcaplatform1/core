@@ -2,6 +2,7 @@
 
 import { Rocket, ExternalLink, Star, Calendar } from "lucide-react";
 import { useIcoProjects, type IcoProject, type IcoStatus } from "@/lib/hooks/use-ico-tracker";
+import { ExternalLink as ExternalLinkConfirm } from "@/components/ui/external-link";
 import { ToolCard } from "./tool-card";
 
 function fmtRaised(amount: number | null): string | null {
@@ -78,14 +79,12 @@ function IcoCard({ project }: { project: IcoProject }) {
       )}
 
       {project.websiteUrl && (
-        <a
+        <ExternalLinkConfirm
           href={project.websiteUrl}
-          target="_blank"
-          rel="noopener noreferrer"
           className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
         >
           Web sitesi <ExternalLink className="size-3" />
-        </a>
+        </ExternalLinkConfirm>
       )}
     </div>
   );

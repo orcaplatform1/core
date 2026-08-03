@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -156,6 +156,54 @@ export default function ManagePage() {
           <div>
             <p className="font-medium text-[#F5F1EA]">Sayfalar</p>
             <p className="text-xs text-[#A8A6A0]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/comments"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B5BFF22]">
+            <MessageSquare size={20} color="#3B5BFF" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Yorumlar</p>
+            <p className="text-xs text-[#A8A6A0]">Ders yorumlarını onayla, reddet veya sil</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/messages"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EF444422]">
+            <Mail size={20} color="#EF4444" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Mesajlaşma Denetimi</p>
+            <p className="text-xs text-[#A8A6A0]">DM logu, engelleme hareketleri, şikayetler</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/support"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B5CF622]">
+            <LifeBuoy size={20} color="#8B5CF6" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Destek Merkezi</p>
+            <p className="text-xs text-[#A8A6A0]">Gelen destek taleplerini yanıtla, durumunu yönet</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/analytics"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#22C55E22]">
+            <Activity size={20} color="#22C55E" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Trafik &amp; Aktif Kullanıcılar</p>
+            <p className="text-xs text-[#A8A6A0]">Ziyaretçi istatistikleri, rol dağılımı, şu an aktif olanlar</p>
           </div>
         </Link>
       </div>

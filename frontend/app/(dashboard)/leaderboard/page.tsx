@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Trophy, Medal } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useLeaderboard } from "@/lib/hooks/use-points";
@@ -55,9 +56,12 @@ export default function LeaderboardPage() {
                     <AvatarFallback>{entry.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
+                    <Link
+                      href={`/profile/${entry.id}`}
+                      className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+                    >
                       {entry.fullName} {isMe && <span className="text-xs text-primary">(sen)</span>}
-                    </p>
+                    </Link>
                     <p className="truncate text-xs text-muted-foreground">@{entry.username}</p>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm font-bold text-primary">

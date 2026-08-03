@@ -35,20 +35,24 @@ export function useRefreshSymbol() {
   });
 }
 
-export function useChartDrawing(context: string, symbol: string) {
+// T varsayılanı eski ChartDrawingData (Simulation hâlâ bunu kullanıyor).
+// Backtest (klinecharts) context'i KlineChartDrawingData ile çağırır -
+// backend zaten drawings: Json/any olduğu için tip değişikliği geriye
+// dönük uyumlu, ek (additive) bir değişiklik.
+export function useChartDrawing<T = ChartDrawingData>(context: string, symbol: string) {
   return useQuery({
     queryKey: ["chart-drawings", context, symbol],
     queryFn: () =>
-      apiClient<{ drawings: ChartDrawingData } | null>(
+      apiClient<{ drawings: T } | null>(
         `/chart-drawings?context=${encodeURIComponent(context)}&symbol=${encodeURIComponent(symbol)}`
       ),
     enabled: !!symbol,
   });
 }
 
-export function useSaveChartDrawing() {
+export function useSaveChartDrawing<T = ChartDrawingData>() {
   return useMutation({
-    mutationFn: (payload: { context: string; symbol: string; drawings: ChartDrawingData }) =>
+    mutationFn: (payload: { context: string; symbol: string; drawings: T }) =>
       apiClient("/chart-drawings", {
         method: "POST",
         body: payload,

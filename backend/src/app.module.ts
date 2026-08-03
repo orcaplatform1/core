@@ -52,6 +52,11 @@ import { CryptoCalendarModule } from './crypto-calendar/crypto-calendar.module';
 import { NewsSentimentModule } from './news-sentiment/news-sentiment.module';
 import { PointsModule } from './points/points.module';
 import { RetentionModule } from './retention/retention.module';
+import { CommentsModule } from './comments/comments.module';
+import { DmModule } from './dm/dm.module';
+import { SuspensionsModule } from './suspensions/suspensions.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -118,6 +123,11 @@ import { RetentionModule } from './retention/retention.module';
     NewsSentimentModule,
     PointsModule,
     RetentionModule,
+    CommentsModule,
+    DmModule,
+    SuspensionsModule,
+    AnalyticsModule,
+    SupportModule,
   ],
   providers: [
     {

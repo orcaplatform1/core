@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Lock, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,10 +164,16 @@ export default function AdminUserDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => router.push("/manage/users")}>
           <ArrowLeft size={16} />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold text-[#F5F1EA]">{u.fullName}</h1>
           <p className="text-sm text-[#A8A6A0]">@{u.username} · {u.role}</p>
         </div>
+        <Link
+          href={`/profile/${u.id}`}
+          className="flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          Genel profili görüntüle <ExternalLink size={12} />
+        </Link>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">

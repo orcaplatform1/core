@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExternalLink } from "@/components/ui/external-link";
 import { resolveIcon } from "@/lib/marketing/icon-registry";
 import { resolvePartnerBrand } from "@/lib/marketing/partner-brands";
 import type { PartnerItemData } from "@/lib/marketing/site-content-types";
@@ -55,9 +56,9 @@ export function PartnersBar({
               </span>
             );
             return partner.href ? (
-              <Link key={partner.name} href={partner.href} target="_blank" rel="noopener noreferrer">
+              <ExternalLink key={partner.name} href={partner.href}>
                 {content}
-              </Link>
+              </ExternalLink>
             ) : (
               <span key={partner.name}>{content}</span>
             );

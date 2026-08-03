@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -6,6 +6,8 @@ import { randomUUID } from 'crypto';
 import { AdminUpdateProfileDto } from './dto/admin-update-profile.dto';
 import { AdjustMentorCreditsDto } from './dto/adjust-mentor-credits.dto';
 import { BanUserDto } from './dto/ban-user.dto';
+import { PresenceService } from '../notifications/presence.service';
+import { StatsService } from '../stats/stats.service';
 
 // Staff/Super Admin avatarı cinsiyetten bağımsız her zaman ORCA amblemi olmalı
 // (bkz. manage.service.ts makeStaff() ile aynı görsel).
@@ -16,6 +18,8 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly presence: PresenceService,
+    private readonly stats: StatsService,
   ) {}
 
   async findAll(page = 1, limit = 20, search?: string) {
@@ -483,5 +487,94 @@ export class UsersService {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
     return { user, payments, quizAttempts, progress, certificates, loginLogs, enrollments };
+  }
+
+  // Baska bir kullanicinin profilini goruntulerken kullanilir - findById/findFullDetail'in
+  // aksine PII (email/phone) SADECE STAFF/SUPER_ADMIN goruntuluyorsa donuluyor.
+  async getPublicProfile(id: string, viewerId: string, viewerRole: string) {
+    // Profil sahibi goruntuleyeni engellemisse hicbir bilgi donulmez - engellenen
+    // kisi karsi tarafin profiline (istatistik, rozet, hicbir sey) erisemez.
+    if (id !== viewerId) {
+      const blockedByOwner = await this.prisma.block.findUnique({
+        where: { blockerId_blockedId: { blockerId: id, blockedId: viewerId } },
+      });
+      if (blockedByOwner) {
+        throw new ForbiddenException('Bu kullanıcı sizi engellediği için profiline erişemezsiniz.');
+      }
+    }
+
+    const canSeePII = viewerRole === 'STAFF' || viewerRole === 'SUPER_ADMIN';
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, fullName: true, username: true, avatarUrl: true, gender: true, role: true, occupation: true,
+        currentStreak: true, longestStreak: true, createdAt: true,
+        email: canSeePII, phone: canSeePII,
+        userBadges: { select: { earnedAt: true, badge: { select: { name: true, iconUrl: true } } } },
+      },
+    });
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+
+    const [isBlockedByMe, hasBlockedMe] = await Promise.all([
+      this.prisma.block.findUnique({ where: { blockerId_blockedId: { blockerId: viewerId, blockedId: id } } }),
+      this.prisma.block.findUnique({ where: { blockerId_blockedId: { blockerId: id, blockedId: viewerId } } }),
+    ]);
+
+    // Basari oranlari (quiz/backtest/simulasyon/egitim tamamlama) sadece
+    // ogrenci/guest profillerinde gosterilir - staff/superadmin icin anlamsiz
+    // ve gizli tutulmasi istendi.
+    const isStaffOrAdmin = user.role === 'STAFF' || user.role === 'SUPER_ADMIN';
+    const performance = !isStaffOrAdmin ? await this.stats.getMyStats(id) : null;
+
+    return {
+      ...user,
+      // Yetkili/kurucu profillerinde seri, rozet gibi ogrenci-odakli istatistikler
+      // gosterilmez - sadece temel profil karti (isim/rol/uyelik tarihi) goruntulenir.
+      currentStreak: isStaffOrAdmin ? null : user.currentStreak,
+      longestStreak: isStaffOrAdmin ? null : user.longestStreak,
+      userBadges: isStaffOrAdmin ? [] : user.userBadges,
+      online: this.presence.isOnline(user.id),
+      isBlockedByMe: !!isBlockedByMe,
+      hasBlockedMe: !!hasBlockedMe,
+      performance,
+    };
+  }
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) throw new BadRequestException('Kendinizi engelleyemezsiniz.');
+    const target = await this.prisma.user.findUnique({ where: { id: blockedId } });
+    if (!target) throw new NotFoundException('Kullanıcı bulunamadı.');
+    if (target.role === 'STAFF' || target.role === 'SUPER_ADMIN') {
+      throw new ForbiddenException('Yetkili/Kurucu hesapları engelleyemezsiniz.');
+    }
+    await this.prisma.block.upsert({
+      where: { blockerId_blockedId: { blockerId, blockedId } },
+      update: {},
+      create: { blockerId, blockedId },
+    });
+    return { success: true };
+  }
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    await this.prisma.block.deleteMany({ where: { blockerId, blockedId } });
+    return { success: true };
+  }
+
+  async getMyBlockedList(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.block.findMany({
+        where: { blockerId: userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true, createdAt: true,
+          blocked: { select: { id: true, fullName: true, username: true, avatarUrl: true } },
+        },
+      }),
+      this.prisma.block.count({ where: { blockerId: userId } }),
+    ]);
+    return { data, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } };
   }
 }

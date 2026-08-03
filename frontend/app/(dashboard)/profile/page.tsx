@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Lock, Download, Trash2, ShieldAlert, ShieldCheck, ShieldX, Copy, Gift } from "lucide-react";
+import Link from "next/link";
+import { Lock, Download, Trash2, ShieldAlert, ShieldCheck, ShieldX, Copy, Gift, UserX } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { profileSchema, type ProfileFormValues } from "@/lib/schemas/auth";
 import {
   useUpdateProfile,
   useExportMyData,
   useRequestAccountDeletion,
+  useMyBlockedList,
+  useUnblockUser,
 } from "@/lib/hooks/use-profile";
 import { useReferralStats } from "@/lib/hooks/use-referral";
 import {
@@ -56,6 +59,77 @@ function VerifyBadge({ verified }: { verified: boolean }) {
     <span className="flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-medium text-danger">
       <ShieldX className="size-3" /> Doğrulanmamış
     </span>
+  );
+}
+
+function BlockedUsersSection() {
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useMyBlockedList(page);
+  const unblock = useUnblockUser();
+
+  async function handleUnblock(userId: string, name: string) {
+    try {
+      await unblock.mutateAsync(userId);
+      toast.success(`${name} için engel kaldırıldı`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Engel kaldırılamadı");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <UserX className="size-4" /> Engellenenler
+      </h3>
+      <p className="mt-1 text-xs text-muted-foreground">Engellediğiniz kullanıcılar sizinle mesajlaşamaz, yorumlarınızı göremez.</p>
+
+      <div className="mt-4 space-y-2">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+        ) : !data || data.data.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Henüz kimseyi engellemediniz.</p>
+        ) : (
+          data.data.map((row) => (
+            <div
+              key={row.id}
+              className="flex items-center justify-between rounded-xl border border-border bg-card-inner p-3"
+            >
+              <Link href={`/profile/${row.blocked.id}`} className="text-sm font-medium text-foreground hover:underline">
+                {row.blocked.fullName}
+                {row.blocked.username && (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">@{row.blocked.username}</span>
+                )}
+              </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={unblock.isPending}
+                onClick={() => handleUnblock(row.blocked.id, row.blocked.fullName)}
+              >
+                Engeli Kaldır
+              </Button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {data && data.pagination.totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+          {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPage(p)}
+              className={`size-8 rounded-lg text-xs font-medium transition-colors duration-200 ${
+                p === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -223,7 +297,7 @@ export default function ProfilePage() {
       <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent p-6">
         <div className="flex items-center gap-2">
           <Gift className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Referans Programın</h3>
+          <h3 className="text-sm font-semibold text-foreground">Sadakat Programı</h3>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Referans kodun kullanıcı adın — arkadaşların kayıt olurken bu kodu girerse %15 indirim
@@ -434,6 +508,8 @@ export default function ProfilePage() {
           </p>
         )}
       </div>
+
+      <BlockedUsersSection />
     </div>
   );
 }

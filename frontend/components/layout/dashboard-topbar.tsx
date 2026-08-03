@@ -2,9 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, Bell, LogOut, User, ShieldAlert } from "lucide-react";
+import { Menu, Bell, LogOut, User, ShieldAlert, Info, MessageCircle } from "lucide-react";
 import { getNotificationSocket, disconnectNotificationSocket } from "@/lib/socket";
-import { useMyNotifications, useUnreadCount, useAnnouncementUnreadCount } from "@/lib/hooks/use-notifications";
+import {
+  useMyNotifications,
+  useUnreadCount,
+  useAnnouncementUnreadCount,
+  useMarkNotificationRead,
+} from "@/lib/hooks/use-notifications";
+import { useUnreadDmCount } from "@/lib/hooks/use-dm";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -58,6 +65,7 @@ export function DashboardTopbar({
 }) {
   const sections = studentNav;
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
 
@@ -66,11 +74,18 @@ export function DashboardTopbar({
     const socket = getNotificationSocket();
     if (!socket) return;
     const onNotification = () => queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    const onDm = () => {
+      queryClient.invalidateQueries({ queryKey: ["dm"] });
+    };
     socket.on("notification", onNotification);
     socket.on("announcement", onNotification);
+    socket.on("dm:message", onDm);
+    socket.on("dm:message-edited", onDm);
     return () => {
       socket.off("notification", onNotification);
       socket.off("announcement", onNotification);
+      socket.off("dm:message", onDm);
+      socket.off("dm:message-edited", onDm);
       disconnectNotificationSocket();
     };
   }, [user, queryClient]);
@@ -78,6 +93,8 @@ export function DashboardTopbar({
   const { data: notifications } = useMyNotifications();
   const { data: unread } = useUnreadCount();
   const { data: announcementUnread } = useAnnouncementUnreadCount();
+  const { data: unreadDm } = useUnreadDmCount();
+  const { mutate: markRead } = useMarkNotificationRead();
   const userName = user?.fullName ?? "Kullanici";
   const userAvatarUrl = user?.avatarUrl ?? undefined;
 
@@ -163,16 +180,78 @@ export function DashboardTopbar({
           variant="ghost"
           size="icon"
           className="relative"
-          aria-label="Bildirimler"
-          render={
-            <Link href="/notifications">
-              <Bell className="size-5" />
-              {!!totalUnread && (
-                <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
+          aria-label="Mesajlar"
+          render={<Link href="/messages" />}
+        >
+          <MessageCircle className="size-5" />
+          {!!unreadDm?.count && (
+            <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+              {unreadDm.count > 9 ? "9+" : unreadDm.count}
+            </span>
+          )}
+        </Button>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+          <PopoverTrigger
+            render={
+              <Button variant="ghost" size="icon" className="relative" aria-label="Bildirimler">
+                <Bell className="size-5" />
+                {!!totalUnread && (
+                  <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
+                )}
+              </Button>
+            }
+          />
+          <PopoverContent align="end" className="p-0">
+            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+              <span className="text-sm font-semibold text-foreground">Bildirimler</span>
+              <Link
+                href="/notifications"
+                onClick={() => setNotifOpen(false)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Tümünü gör
+              </Link>
+            </div>
+            <div className="flex max-h-80 flex-col overflow-y-auto">
+              {!notifications || notifications.length === 0 ? (
+                <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                  <Bell className="mx-auto mb-2 size-6 text-muted-foreground" />
+                  Henüz bildirimin yok.
+                </div>
+              ) : (
+                notifications.slice(0, 6).map((n) => {
+                  const handleClick = () => {
+                    if (!n.read) markRead(n.id);
+                    setNotifOpen(false);
+                  };
+                  const row = (
+                    <div
+                      className={`flex items-start gap-2.5 px-3 py-2.5 text-left transition-colors duration-150 hover:bg-accent ${
+                        n.read ? "" : "bg-primary/5"
+                      }`}
+                    >
+                      <Info className="mt-0.5 size-4 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{n.title}</p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">{n.message}</p>
+                      </div>
+                      {!n.read && <span className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />}
+                    </div>
+                  );
+                  return n.link ? (
+                    <Link key={n.id} href={n.link} onClick={handleClick}>
+                      {row}
+                    </Link>
+                  ) : (
+                    <button key={n.id} onClick={handleClick} className="w-full">
+                      {row}
+                    </button>
+                  );
+                })
               )}
-            </Link>
-          }
-        />
+            </div>
+          </PopoverContent>
+        </Popover>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={

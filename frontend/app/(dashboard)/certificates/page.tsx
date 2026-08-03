@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Award, Download, ShieldCheck, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -85,9 +86,9 @@ export default function CertificatesPage() {
             <Button
               className="h-11 flex-1"
               render={
-                <a href={`/verify/${status.certificate.code}`} target="_blank" rel="noopener noreferrer">
+                <Link href={`/verify/${status.certificate.code}`}>
                   <ShieldCheck className="size-4" /> Doğrula
-                </a>
+                </Link>
               }
             />
           </div>

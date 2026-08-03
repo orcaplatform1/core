@@ -165,6 +165,34 @@ export type ChartDrawingData = {
   note: string;
 };
 
+// --- Chart Drawing Tools (Backtest only, klinecharts-based) ---
+// Backtest'in çizim motoru klinecharts'a geçti (bkz. kline-trading-chart.tsx);
+// bu tipler ChartShape/ChartDrawingData'nın yerini SADECE context="backtest"
+// için alır - Simulation hâlâ yukarıdaki eski formatı kullanıyor.
+export type KlineOverlayRecord = {
+  id: string;
+  name: string;
+  points: { timestamp?: number; value?: number }[];
+  styles?: unknown;
+  extendData?: unknown;
+  lock?: boolean;
+  visible?: boolean;
+};
+
+export type KlineAnnotationRecord = {
+  id: string;
+  text: string;
+  price: number;
+  timestamp: number;
+  color?: string;
+};
+
+export type KlineChartDrawingData = {
+  overlays: KlineOverlayRecord[];
+  annotations: KlineAnnotationRecord[];
+  note: string;
+};
+
 // --- Simulation (paper trading) ---
 export type SimulationAccount = {
   id: string;
@@ -262,6 +290,7 @@ export type AdminPaymentRow = {
   createdAt: string;
   approvedAt: string | null;
   user: {
+    id: string;
     fullName: string;
     username: string;
     email: string | null;

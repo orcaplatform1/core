@@ -105,7 +105,9 @@ function ReferrerInvitees({ userId }: { userId: string }) {
         {invitees.map((inv) => (
           <div key={inv.id} className="flex items-center justify-between rounded-lg bg-card-inner px-3 py-2 text-sm">
             <div>
-              <p className="text-[#F5F1EA]">{inv.fullName}</p>
+              <Link href={`/manage/users/${inv.id}`} className="text-[#F5F1EA] hover:text-primary hover:underline">
+                {inv.fullName}
+              </Link>
               <p className="text-xs text-[#A8A6A0]">@{inv.username ?? "—"} · {inv.email ?? "email yok"}</p>
             </div>
             <p className="text-xs text-[#A8A6A0]">{new Date(inv.createdAt).toLocaleDateString("tr-TR")}</p>
@@ -160,12 +162,23 @@ export default function AdminReferralsPage() {
             const expanded = expandedId === r.id;
             return (
               <div key={r.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setExpandedId(expanded ? null : r.id)}
-                  className="flex w-full items-center justify-between gap-3 p-4 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setExpandedId(expanded ? null : r.id);
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left"
                 >
                   <div>
-                    <p className="font-medium text-[#F5F1EA]">{r.fullName}</p>
+                    <Link
+                      href={`/manage/users/${r.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-medium text-[#F5F1EA] hover:text-primary hover:underline"
+                    >
+                      {r.fullName}
+                    </Link>
                     <p className="text-xs text-[#A8A6A0]">Referans kodu: @{r.username ?? "—"}</p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -183,7 +196,7 @@ export default function AdminReferralsPage() {
                       <ChevronDown size={18} className="text-[#A8A6A0]" />
                     )}
                   </div>
-                </button>
+                </div>
                 {expanded && <ReferrerInvitees userId={r.id} />}
               </div>
             );

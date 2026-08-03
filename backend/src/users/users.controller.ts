@@ -38,6 +38,34 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/blocked')
+  getMyBlockedList(@Req() req: Request, @Query('page') page?: string) {
+    const userId = (req.user as any).id;
+    return this.usersService.getMyBlockedList(userId, page ? parseInt(page) : 1);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/public-profile')
+  getPublicProfile(@Req() req: Request, @Param('id') id: string) {
+    const viewer = req.user as any;
+    return this.usersService.getPublicProfile(id, viewer.id, viewer.role);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/block')
+  blockUser(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as any).id;
+    return this.usersService.blockUser(userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/block')
+  unblockUser(@Req() req: Request, @Param('id') id: string) {
+    const userId = (req.user as any).id;
+    return this.usersService.unblockUser(userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('me/delete')
   requestAccountDeletion(@Req() req: Request) {
     const userId = (req.user as any).id;

@@ -81,7 +81,9 @@ export default function AdminStaffPage() {
               <div key={s.staffId} className="rounded-2xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium text-[#F5F1EA]">{s.fullName}</p>
+                    <Link href={`/manage/users/${s.staffId}`} className="font-medium text-[#F5F1EA] hover:text-primary hover:underline">
+                      {s.fullName}
+                    </Link>
                     <p className="text-xs text-[#A8A6A0]">
                       Promo kod: {s.promoCode ?? "—"}
                     </p>

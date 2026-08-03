@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "DmMessageStatus" ADD VALUE 'BLOCKED_SUSPENDED';

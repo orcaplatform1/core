@@ -288,7 +288,7 @@ export class PaymentsService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { fullName: true, username: true, email: true } },
+          user: { select: { id: true, fullName: true, username: true, email: true } },
         },
       }),
       this.prisma.payment.count({ where }),

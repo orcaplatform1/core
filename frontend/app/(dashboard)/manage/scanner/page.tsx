@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, TrendingUp, TrendingDown, Zap, AlertTriangle } from "lucide-react";
+import { ShieldAlert, TrendingUp, TrendingDown, Zap, AlertTriangle, LineChart, Clock, Coins, Globe2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ExternalLink } from "@/components/ui/external-link";
 import { useAuth } from "@/context/auth-context";
 import {
   useLastScan,
@@ -85,10 +86,8 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
               {market === "CRYPTO" && (
-                <a
+                <ExternalLink
                   href={`https://www.binance.com/en/futures/${signal.symbol}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-[#A8A6A0] hover:text-primary"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
@@ -98,7 +97,7 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
                     <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
                     <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
                   </svg>
-                </a>
+                </ExternalLink>
               )}
             </div>
             <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
@@ -234,10 +233,8 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-[#F5F1EA]">{signal.symbol}</p>
               {market === "CRYPTO" && (
-                <a
+                <ExternalLink
                   href={`https://www.binance.com/en/futures/${signal.symbol}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-[#A8A6A0] hover:text-primary"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
@@ -247,7 +244,7 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
                     <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
                     <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
                   </svg>
-                </a>
+                </ExternalLink>
               )}
             </div>
             <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
@@ -374,47 +371,65 @@ export default function AdminScannerPage() {
         </Link>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <div className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1 max-w-xs">
-          <button
-            type="button"
-            onClick={() => setStyle("SWING")}
-            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-              style === "SWING" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Swing Trade
-          </button>
-          <button
-            type="button"
-            onClick={() => setStyle("DAY")}
-            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-              style === "DAY" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Day Trade
-          </button>
+      <div className="space-y-4">
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#A8A6A0]">Strateji</p>
+          <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-md">
+            <button
+              type="button"
+              onClick={() => setStyle("SWING")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 ${
+                style === "SWING"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              }`}
+            >
+              <LineChart size={16} />
+              Swing Trade
+            </button>
+            <button
+              type="button"
+              onClick={() => setStyle("DAY")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 ${
+                style === "DAY"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              }`}
+            >
+              <Clock size={16} />
+              Day Trade
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1 max-w-xs">
-          <button
-            type="button"
-            onClick={() => setMarket("CRYPTO")}
-            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-              market === "CRYPTO" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Kripto
-          </button>
-          <button
-            type="button"
-            onClick={() => setMarket("FOREX")}
-            className={`rounded-lg py-2 text-xs font-medium transition-colors duration-200 sm:text-sm ${
-              market === "FOREX" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Forex
-          </button>
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#A8A6A0]">Piyasa</p>
+          <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-md">
+            <button
+              type="button"
+              onClick={() => setMarket("CRYPTO")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 ${
+                market === "CRYPTO"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              }`}
+            >
+              <Coins size={16} />
+              Kripto
+            </button>
+            <button
+              type="button"
+              onClick={() => setMarket("FOREX")}
+              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 ${
+                market === "FOREX"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              }`}
+            >
+              <Globe2 size={16} />
+              Forex
+            </button>
+          </div>
         </div>
       </div>
 

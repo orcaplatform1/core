@@ -15,6 +15,7 @@ import {
   User,
   Wrench,
   Trophy,
+  LifeBuoy,
 } from "lucide-react";
 
 export type NavItem = {
@@ -66,6 +67,7 @@ export const studentNav: NavSection[] = [
     items: [
       { label: "Bildirimler", href: "/notifications", icon: Bell },
       { label: "Abonelik", href: "/subscription", icon: CreditCard },
+      { label: "Destek Merkezi", href: "/support", icon: LifeBuoy },
       { label: "Profil", href: "/profile", icon: User },
     ],
   },

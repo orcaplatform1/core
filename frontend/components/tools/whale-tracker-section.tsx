@@ -7,6 +7,7 @@ import {
   type WhaleMovementActivity,
   type WhaleCategory,
 } from "@/lib/hooks/use-whale-tracker";
+import { ExternalLink as ExternalLinkConfirm } from "@/components/ui/external-link";
 import { ToolCard } from "./tool-card";
 
 const CATEGORY_LABEL: Record<WhaleCategory, string> = {
@@ -76,14 +77,12 @@ function MovementCard({ movement }: { movement: WhaleMovementActivity }) {
           {isIn ? "+" : "-"}
           {fmtBtc(movement.amountSat)} BTC
         </span>
-        <a
+        <ExternalLinkConfirm
           href={`https://mempool.space/tx/${movement.txid}`}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
         >
           İşlem <ExternalLink className="size-3" />
-        </a>
+        </ExternalLinkConfirm>
       </div>
     </div>
   );

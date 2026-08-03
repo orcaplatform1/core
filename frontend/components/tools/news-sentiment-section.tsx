@@ -3,6 +3,7 @@
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { Newspaper } from "lucide-react";
 import { useNewsSentiment, type SentimentLabel } from "@/lib/hooks/use-news-sentiment";
+import { ExternalLink } from "@/components/ui/external-link";
 import { ToolCard } from "./tool-card";
 
 const LABEL_STYLES: Record<SentimentLabel, string> = {
@@ -78,11 +79,9 @@ export function NewsSentimentSection() {
             <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
           )}
           {data?.articles.map((article) => (
-            <a
+            <ExternalLink
               key={article.id}
               href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="flex items-start justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
             >
               <div className="min-w-0">
@@ -96,7 +95,7 @@ export function NewsSentimentSection() {
               >
                 {LABEL_TEXT[article.sentimentLabel]}
               </span>
-            </a>
+            </ExternalLink>
           ))}
         </div>
       </ToolCard>

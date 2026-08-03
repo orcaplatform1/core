@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "sonner";
+import { VisitorPing } from "@/components/layout/visitor-ping";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {children}
+        <VisitorPing />
         <Toaster theme="dark" position="top-right" richColors />
       </AuthProvider>
     </QueryClientProvider>

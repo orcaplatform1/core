@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useBacktestSymbols } from "@/lib/hooks/use-backtest";
-import { TradingChart } from "@/components/trading-chart/trading-chart";
+import { KlineTradingChart } from "@/components/trading-chart/kline-trading-chart";
 
 type Category = "crypto" | "forex";
 type Timeframe = "1d" | "1h";
@@ -83,7 +83,7 @@ export default function BacktestPage() {
             </Button>
           </div>
 
-          <TradingChart
+          <KlineTradingChart
             symbol={symbol}
             timeframe={timeframe}
             timeframeLabel={timeframe === "1d" ? "Günlük" : "1 Saatlik"}
