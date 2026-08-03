@@ -61,9 +61,9 @@ model User {
   periodPoints          Int     @default(0)
   totalPoints           Int     @default(0)
 
-  payments                Payment[]             @relation("PaymentBuyer")
-  referredPayments        Payment[]             @relation("PaymentReferrer")
-  studentReferredPayments Payment[]             @relation("PaymentStudentReferrer")
+  payments                Payment[]              @relation("PaymentBuyer")
+  referredPayments        Payment[]              @relation("PaymentReferrer")
+  studentReferredPayments Payment[]              @relation("PaymentStudentReferrer")
   quizAttempts            QuizAttempt[]
   progress                Progress[]
   certificates            Certificate[]
@@ -81,18 +81,22 @@ model User {
   simulationDnaReports    SimulationDnaReport[]
   comments                Comment[]
   commentReactions        CommentReaction[]
-  blocksMade              Block[]            @relation("Blocker")
-  blocksReceived          Block[]            @relation("Blocked")
-  dmSent                  DmMessage[]        @relation("DmSent")
-  dmReceived              DmMessage[]        @relation("DmReceived")
+  blocksMade              Block[]                @relation("Blocker")
+  blocksReceived          Block[]                @relation("Blocked")
+  dmSent                  DmMessage[]            @relation("DmSent")
+  dmReceived              DmMessage[]            @relation("DmReceived")
   dmReports               DmMessageReport[]
   commentReports          CommentReport[]
-  suspensionsReceived     UserSuspension[]   @relation("SuspendedUser")
-  suspensionsIssued       UserSuspension[]   @relation("SuspensionIssuer")
+  suspensionsReceived     UserSuspension[]       @relation("SuspendedUser")
+  suspensionsIssued       UserSuspension[]       @relation("SuspensionIssuer")
   supportTickets          SupportTicket[]
   supportMessagesSent     SupportTicketMessage[]
   lessonNotes             LessonNote[]
   lessonTaskProgress      LessonTaskProgress[]
+  communityPosts          CommunityPost[]
+  postLikes               PostLike[]
+  postComments            PostComment[]
+  postReports             PostReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,19 +123,19 @@ enum DmMessageStatus {
 }
 
 model DmMessage {
-  id            String          @id @default(cuid())
+  id            String            @id @default(cuid())
   senderId      String
-  sender        User            @relation("DmSent", fields: [senderId], references: [id], onDelete: Cascade)
+  sender        User              @relation("DmSent", fields: [senderId], references: [id], onDelete: Cascade)
   recipientId   String
-  recipient     User            @relation("DmReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient     User              @relation("DmReceived", fields: [recipientId], references: [id], onDelete: Cascade)
   content       String
-  status        DmMessageStatus @default(SENT)
+  status        DmMessageStatus   @default(SENT)
   blockedReason String?
   readAt        DateTime?
   editedAt      DateTime?
   deletedAt     DateTime?
   deletedBy     String?
-  createdAt     DateTime        @default(now())
+  createdAt     DateTime          @default(now())
   edits         DmMessageEdit[]
   reports       DmMessageReport[]
 
@@ -149,13 +153,13 @@ model DmMessageEdit {
 }
 
 model DmMessageReport {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   messageId  String
   message    DmMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   reporterId String
-  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
   reason     String
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 model CommentReport {
@@ -191,15 +195,15 @@ model UserSuspension {
 }
 
 model SupportTicket {
-  id        String                @id @default(cuid())
+  id        String                 @id @default(cuid())
   userId    String
-  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject   String
   category  SupportTicketCategory
-  status    SupportTicketStatus   @default(OPEN)
+  status    SupportTicketStatus    @default(OPEN)
   messages  SupportTicketMessage[]
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
   closedAt  DateTime?
 
   @@index([userId, status])
@@ -305,19 +309,19 @@ enum ReactionType {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   lessonId  String
-  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Comment[] @relation("CommentReplies")
+  parent    Comment?          @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]         @relation("CommentReplies")
   content   String
-  status    CommentStatus @default(APPROVED)
+  status    CommentStatus     @default(APPROVED)
   editedAt  DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
   reactions CommentReaction[]
   reports   CommentReport[]
   edits     CommentEdit[]
@@ -1271,4 +1275,87 @@ model VisitorLog {
 
   @@unique([visitorId, date])
   @@index([date])
+}
+
+// ---------- Community (Topluluk) — öğrenci grafik analizi paylaşımları ----------
+
+enum PostDirection {
+  LONG
+  SHORT
+  NEUTRAL
+}
+
+enum PostReportStatus {
+  PENDING
+  RESOLVED
+}
+
+// Bir onceki egitim amacli ibare kabul kutusu isaretlenmeden paylasim
+// gonderilemez (bkz. CreatePostDto.disclaimerAccepted) - kabul edildigi
+// bilgisi ayrica saklanmaz, cunku her paylasimin altinda ayni sabit metin
+// zaten degismeden gosteriliyor.
+model CommunityPost {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl    String
+  title       String
+  description String?
+  symbol      String
+  timeframe   String
+  direction   PostDirection
+  ictTags     String[]
+
+  // Esik sayida (bkz. community.service.ts REPORT_THRESHOLD) sikayet alinca
+  // otomatik doldurulur - null ise akiste gorunur, doluysa moderasyon
+  // kuyruguna dusmus ve herkesten gizlenmis demektir.
+  hiddenAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  likes    PostLike[]
+  comments PostComment[]
+  reports  PostReport[]
+
+  @@index([symbol])
+  @@index([createdAt])
+  @@index([hiddenAt])
+}
+
+model PostLike {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostComment {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime      @default(now())
+
+  @@index([postId])
+}
+
+model PostReport {
+  id         String           @id @default(cuid())
+  postId     String
+  post       CommunityPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  status     PostReportStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+
+  @@unique([postId, reporterId])
 }

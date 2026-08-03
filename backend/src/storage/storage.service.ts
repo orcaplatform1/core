@@ -3,7 +3,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
-type Folder = 'videos' | 'pdfs' | 'resources' | 'receipts' | 'chart-snapshots';
+type Folder = 'videos' | 'pdfs' | 'resources' | 'receipts' | 'chart-snapshots' | 'community-posts';
 
 const FOLDER_RULES: Record<
   Folder,
@@ -36,6 +36,10 @@ const FOLDER_RULES: Record<
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ],
+  },
+  'community-posts': {
+    maxBytes: 10 * 1024 * 1024, // 10MB
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
   },
 };
 
@@ -104,7 +108,16 @@ export class StorageService {
       ContentLength: fileSizeBytes,
     });
     const uploadUrl = await getSignedUrl(client, command, { expiresIn: 600 });
-    return { uploadUrl, key };
+
+    // Topluluk gonderisi gorselleri gibi anonim ziyaretcilere de gosterilmesi
+    // gereken dosyalar icin kalici genel URL - R2 bucket'ina bagli public
+    // custom domain (R2_PUBLIC_URL) tanimliysa dondurulur, tanimli degilse
+    // cagiran taraf "key" alanina geri duser (bkz. storage/play/:key, imzali
+    // ama suresi dolan ve anonim erisime kapali bir alternatif).
+    const publicBase = process.env.R2_PUBLIC_URL;
+    const publicUrl = publicBase ? `${publicBase.replace(/\/$/, '')}/${key}` : null;
+
+    return { uploadUrl, key, publicUrl };
   }
 
   async getPlayUrl(key: string) {

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -168,6 +168,18 @@ export default function ManagePage() {
           <div>
             <p className="font-medium text-[#F5F1EA]">Yorumlar</p>
             <p className="text-xs text-[#A8A6A0]">Ders yorumlarını onayla, reddet veya sil</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/community"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EF444422]">
+            <Flag size={20} color="#EF4444" />
+          </div>
+          <div>
+            <p className="font-medium text-[#F5F1EA]">Topluluk Moderasyonu</p>
+            <p className="text-xs text-[#A8A6A0]">Şikayet eşiğini aşan paylaşımları incele, sil veya yayına al</p>
           </div>
         </Link>
         <Link

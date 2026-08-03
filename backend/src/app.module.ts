@@ -58,6 +58,7 @@ import { DmModule } from './dm/dm.module';
 import { SuspensionsModule } from './suspensions/suspensions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SupportModule } from './support/support.module';
+import { CommunityModule } from './community/community.module';
 
 @Module({
   imports: [
@@ -130,6 +131,7 @@ import { SupportModule } from './support/support.module';
     SuspensionsModule,
     AnalyticsModule,
     SupportModule,
+    CommunityModule,
   ],
   providers: [
     {
