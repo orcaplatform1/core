@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Home, GraduationCap, Wrench, FileText } from "lucide-react";
+import { Home, GraduationCap, Wrench, LifeBuoy, FileText } from "lucide-react";
 import { getFooterPages, getSiteContent } from "@/lib/marketing/get-site-content";
+import { getPrograms } from "@/lib/marketing/get-programs";
 import { PageHero } from "@/components/marketing/page-hero";
+
+export const metadata: Metadata = {
+  title: "Site Haritası | ORCA",
+  description: "ORCA platformundaki tüm sayfalara ve bölümlere tek yerden ulaşın.",
+};
 
 const SECTIONS: {
   title: string;
@@ -15,12 +22,20 @@ const SECTIONS: {
       { label: "Anasayfa", href: "/" },
       { label: "Giriş Yap", href: "/login" },
       { label: "Kayıt Ol", href: "/register" },
+      { label: "Topluluk", href: "/community" },
     ],
   },
   {
     title: "Eğitim",
     icon: GraduationCap,
-    links: [{ label: "Programlar", href: "/programs" }],
+    links: [
+      { label: "Tüm Programlar", href: "/programs" },
+      { label: "AI Mentor", href: "/mentor" },
+      { label: "Canlı Dersler", href: "/live-lessons" },
+      { label: "Sertifikalarım", href: "/certificates" },
+      { label: "Liderlik Tablosu", href: "/leaderboard" },
+      { label: "Rozetler", href: "/badges" },
+    ],
   },
   {
     title: "Araçlar",
@@ -30,12 +45,27 @@ const SECTIONS: {
       { label: "Forex Araçları", href: "/tools/forex" },
       { label: "BIST 100", href: "/tools/bist100" },
       { label: "Ekonomik Takvim", href: "/tools/economic-calendar" },
+      { label: "Simülasyon", href: "/simulation" },
+      { label: "Backtest", href: "/backtest" },
+      { label: "Güçlendiriciler", href: "/enhancers" },
+    ],
+  },
+  {
+    title: "Destek",
+    icon: LifeBuoy,
+    links: [
+      { label: "Sıkça Sorulan Sorular", href: "/faq" },
+      { label: "Destek Merkezi", href: "/support" },
     ],
   },
 ];
 
-export default async function SiteHaritasiPage() {
-  const [legalPages, siteContent] = await Promise.all([getFooterPages(), getSiteContent()]);
+export default async function SitemapPage() {
+  const [legalPages, siteContent, programs] = await Promise.all([
+    getFooterPages(),
+    getSiteContent(),
+    getPrograms(),
+  ]);
 
   return (
     <>
@@ -66,6 +96,27 @@ export default async function SiteHaritasiPage() {
               </ul>
             </div>
           ))}
+
+          {programs.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <GraduationCap className="size-4 text-primary" />
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Programlarımız</h2>
+              </div>
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {programs.map((program) => (
+                  <li key={program.id}>
+                    <Link
+                      href={`/programs/${program.id}`}
+                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                    >
+                      {program.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {legalPages.length > 0 && (
             <div>

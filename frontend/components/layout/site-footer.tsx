@@ -95,11 +95,18 @@ export function SiteFooter({
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col-reverse items-center gap-6 border-t border-divider pt-8 sm:flex-row sm:justify-between">
+        <p className="mt-12 border-t border-divider pt-8 text-[11px] leading-relaxed text-muted-foreground/70">
+          Yasal Uyarı: Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir.
+          Bu görüşler mali durumunuz ile risk ve getiri tercihlerinize uygun olmayabilir. Sadece burada yer alan
+          bilgilere dayanılarak yatırım kararı verilmesi beklentilerinize uygun sonuçlar doğurmayabilir. Sitedeki
+          verilerin doğruluğu ve kullanımından doğabilecek zararlardan sitemiz sorumlu değildir.
+        </p>
+
+        <div className="mt-6 flex flex-col-reverse items-center gap-6 pt-2 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
             <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
             <Link
-              href="/site-haritasi"
+              href="/sitemap"
               className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               Site Haritası
