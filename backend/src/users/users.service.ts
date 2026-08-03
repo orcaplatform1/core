@@ -503,13 +503,14 @@ export class UsersService {
       }
     }
 
-    const canSeePII = viewerRole === 'STAFF' || viewerRole === 'SUPER_ADMIN';
+    // Profil karti kimsenin email/telefonunu gostermez (STAFF/SUPER_ADMIN
+    // goruntuluyor olsa bile) - bu bilgiler sadece /manage/users/:id gibi
+    // dahili yonetim araclarinda, ayri bir yetki kontroluyle gosterilir.
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
         id: true, fullName: true, username: true, avatarUrl: true, gender: true, role: true, occupation: true,
         currentStreak: true, longestStreak: true, createdAt: true,
-        email: canSeePII, phone: canSeePII,
         userBadges: { select: { earnedAt: true, badge: { select: { name: true, iconUrl: true } } } },
       },
     });

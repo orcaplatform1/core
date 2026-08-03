@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { UserX, UserCheck, MessageCircle, Flame, Award, Briefcase, Phone, ShieldAlert, GraduationCap, LineChart, TrendingUp } from "lucide-react";
+import { UserX, UserCheck, MessageCircle, Flame, Award, Briefcase, ShieldAlert, GraduationCap, LineChart, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { usePublicProfile, useBlockUser, useUnblockUser } from "@/lib/hooks/use-profile";
@@ -109,18 +109,11 @@ export default function PublicProfilePage({
               {new Date(profile.createdAt).toLocaleDateString("tr-TR", { year: "numeric", month: "long" })}
               'den beri üye
             </p>
-            {(profile.occupation || profile.phone) && (
+            {profile.occupation && (
               <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                {profile.occupation && (
-                  <span className="flex items-center gap-1">
-                    <Briefcase className="size-3" /> {OCCUPATION_LABELS[profile.occupation] ?? profile.occupation}
-                  </span>
-                )}
-                {profile.phone && (
-                  <span className="flex items-center gap-1">
-                    <Phone className="size-3" /> {profile.phone}
-                  </span>
-                )}
+                <span className="flex items-center gap-1">
+                  <Briefcase className="size-3" /> {OCCUPATION_LABELS[profile.occupation] ?? profile.occupation}
+                </span>
               </div>
             )}
           </div>

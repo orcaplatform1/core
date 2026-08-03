@@ -18,8 +18,6 @@ export type PublicProfile = {
   createdAt: string;
   online: boolean;
   performance: MyStats | null;
-  email?: string;
-  phone?: string;
   userBadges: { earnedAt: string; badge: { name: string; iconUrl: string | null } }[];
   isBlockedByMe: boolean;
   hasBlockedMe: boolean;

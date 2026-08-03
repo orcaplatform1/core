@@ -137,7 +137,7 @@ export const DEFAULT_FOOTER_SETTINGS: FooterSettingsData = {
   ],
   supportLinks: [
     { label: "Sıkça Sorulan Sorular", href: "/faq" },
-    { label: "Destek Merkezi", href: "/contact" },
+    { label: "Destek Merkezi", href: "/support" },
     { label: "İletişim", href: "/contact" },
   ],
 };
