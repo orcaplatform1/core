@@ -849,11 +849,17 @@ model TrackedSignal {
   market          AssetType @default(CRYPTO)
   strength        String
   status          String    @default("WATCHING")
+  // Sinyalin HTF (1G+4S EMA50/200) trendiyle ayni yonde mi (PRO_TREND) yoksa
+  // ters yonde mi (COUNTER_TREND) oldugu - filtrelemek icin degil, istatistikleri
+  // ikiye ayirip hangisinin daha iyi performans verdigini olcmek icin (bkz.
+  // scanner.service.ts getTrackedSignals()).
+  trendLabel      String    @default("PRO_TREND")
   createdAt       DateTime  @default(now())
   triggeredAt     DateTime?
   closedAt        DateTime?
 
   @@index([status])
+  @@index([trendLabel])
 }
 
 model WinRateCache {
@@ -1200,12 +1206,15 @@ model TokenUnlockEvent {
   @@index([unlockDate])
 }
 
-// ---------- Bitcoin Balina Cüzdan Takibi (mempool.space, keyless) ----------
+// ---------- Bitcoin Balina Cüzdan Takibi (bitinfocharts rich-list + mempool.space, keyless) ----------
 
 enum WhaleCategory {
   EXCHANGE
   INSTITUTION
   WHALE
+  // bitinfocharts rich-list'te bulunan ama ne elle guncellenebilir KNOWN_WHALE_LABELS
+  // config'inde ne de bitinfocharts'in kendi "wallet" ipucunda eslesen adresler.
+  UNKNOWN
 }
 
 enum MovementDirection {
@@ -1219,10 +1228,20 @@ model WhaleAddress {
   label     String
   category  WhaleCategory
   network   String        @default("BTC")
+  // bitinfocharts rich-list'teki guncel siralama (1 = en yuksek bakiye). Elle
+  // eklenmis veya rich-list disina dusmus adreslerde null olabilir.
+  rank      Int?
+  // Gunluk rich-list taramasinda (bkz. WhaleTrackerService.syncTopAddresses)
+  // o an ilk 30 icinde bulunan adresler true, listeden dusenler false olur -
+  // gecmis bakiye/hareket kayitlari SILINMEZ, sadece izlemeden (refreshAll) cikar.
+  isActive  Boolean       @default(true)
   createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   balanceSnapshots WhaleBalanceSnapshot[]
   movements        WhaleMovement[]
+
+  @@index([isActive, rank])
 }
 
 model WhaleBalanceSnapshot {

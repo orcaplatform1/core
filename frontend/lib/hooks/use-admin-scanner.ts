@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 export type ScanStyle = "SWING" | "DAY";
 export type ScanMarket = "CRYPTO" | "FOREX";
+export type TrendLabel = "PRO_TREND" | "COUNTER_TREND";
 export type ScanSignal = {
   symbol: string;
   direction: "LONG" | "SHORT";
@@ -17,10 +18,12 @@ export type ScanSignal = {
   rr: number;
   reasons: string[];
   confidenceScore: number;
-  confirmedCount: number;
   strength: "GUCLU" | "ORTA" | "RISKLI";
   stillValid: boolean;
   distancePercent: number;
+  trendLabel: TrendLabel;
+  htfTrend1d: "UP" | "DOWN" | "FLAT";
+  htfTrend4h: "UP" | "DOWN" | "FLAT";
   fundingRate: number | null;
   aiCommentary: string | null;
 };
@@ -70,18 +73,23 @@ export type TrackedSignal = {
   tp3: number;
   rr: number;
   strength: "GUCLU" | "ORTA" | "RISKLI";
+  trendLabel: TrendLabel;
   status: "WATCHING" | "TRIGGERED" | "HIT_TP1" | "HIT_TP2" | "HIT_TP3" | "HIT_STOP" | "EXPIRED";
   createdAt: string;
   triggeredAt: string | null;
   closedAt: string | null;
 };
+export type SignalStatsBlock = {
+  total: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+};
 export type TrackedSignalsData = {
   signals: TrackedSignal[];
-  stats: {
-    total: number;
-    wins: number;
-    losses: number;
-    winRate: number | null;
+  stats: SignalStatsBlock & {
+    proTrend: SignalStatsBlock;
+    counterTrend: SignalStatsBlock;
   };
 };
 export function useTrackedSignals(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {

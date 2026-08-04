@@ -24,20 +24,33 @@ interface Setup {
   rr: number;
   reasons: string[];
   confidenceScore: number;
-  confirmedCount: number;
   strength: 'GUCLU' | 'ORTA' | 'RISKLI';
   stillValid: boolean;
   distancePercent: number;
-  patternType?: 'BREAKOUT_CONTINUATION';
+  trendLabel: 'PRO_TREND' | 'COUNTER_TREND';
+  htfTrend1d: 'UP' | 'DOWN' | 'FLAT';
+  htfTrend4h: 'UP' | 'DOWN' | 'FLAT';
+  patternType: 'SUPPLY_DEMAND_ZONE';
 }
 
-// buildDayTradeSetup icin funnel gozlem sayaclari (scanDayTrade loop'u sonunda
-// console.log ile basilir) - hangi asamada kac sembolun elendigini izlemek icin
-interface DayTradeStageCounter {
-  rangeFound: number;
-  breakoutContinuationConfirmed: number;
-  confirmedCountPassed: number;
-  rrPassed: number;
+// Base mum + sonrasindaki impulsif hareketten tespit edilen arz/talep bolgesi.
+// baseIndex, zone'un kaynaklandigi mum dizisindeki (daily veya 4H) indeks -
+// hem mitigasyon kontrolu hem de stop icin "supurulmemis fitil" aramasinda kullanilir.
+interface Zone {
+  type: 'SUPPLY' | 'DEMAND';
+  top: number;
+  bottom: number;
+  baseIndex: number;
+  formedAt: number;
+}
+
+// buildZoneSetup icin funnel gozlem sayaclari (scanDayTrade/scanCrypto loop'u
+// sonunda console.log ile basilir) - hangi asamada kac sembolun elendigini izlemek icin
+interface ZoneStageCounter {
+  attempted: number;
+  freshZoneFound: number;
+  tpZonesSufficient: number;
+  stopValid: number;
 }
 
 const YAHOO_MAP: Record<string, string> = {
@@ -47,6 +60,16 @@ const YAHOO_MAP: Record<string, string> = {
   CADJPY: 'CADJPY=X', XAUUSD: 'GC=F', XAGUSD: 'SI=F', BRENT: 'BZ=F', WTI: 'CL=F',
   USDCNH: 'USDCNH=X', USDZAR: 'USDZAR=X', USDMXN: 'USDMXN=X',
 };
+
+// Base mumdan sonraki en fazla 3 mumluk pencerede kapanis bazli net yer
+// degistirme ATR'nin kac kati olursa "impulsif" sayilir.
+const ZONE_IMPULSE_ATR_MULT = 1.8;
+// Stop icin "supurulmemis fitil" aranirken base mumdan geriye kac mum bakilir.
+const ZONE_WICK_LOOKBACK = 10;
+// Bulunan fitilin hemen otesine eklenen kucuk tampon (ATR DEGIL, sabit yuzde).
+const ZONE_WICK_TICK_BUFFER_PCT = 0.001;
+// Fitil bulunamazsa stop, zone sinirinin bu yuzde disina sabitlenir.
+const ZONE_STOP_FALLBACK_PCT = 0.005;
 
 @Injectable()
 export class ScannerService {
@@ -84,32 +107,8 @@ export class ScannerService {
     }));
   }
 
-  private async fetchBinance4h(symbol: string, limit = 120): Promise<Candle[]> {
+  private async fetchBinance4h(symbol: string, limit = 200): Promise<Candle[]> {
     const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=4h&limit=${limit}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const closed = data.slice(0, -1);
-    return closed.map((c: any) => ({
-      time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
-      low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
-    }));
-  }
-
-  private async fetchBinance1h(symbol: string, limit = 120): Promise<Candle[]> {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const closed = data.slice(0, -1);
-    return closed.map((c: any) => ({
-      time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
-      low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
-    }));
-  }
-
-  private async fetchBinance15m(symbol: string, limit = 120): Promise<Candle[]> {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=${limit}`;
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
@@ -165,8 +164,8 @@ export class ScannerService {
     return weekly;
   }
 
-  // Yahoo Finance native 4h interval sunmuyor - forex day-trade icin saatlik
-  // mumlar 4'erli gruplar halinde katlanarak sentezlenir (toWeekly ile ayni desen)
+  // Yahoo Finance native 4h interval sunmuyor - saatlik mumlar 4'erli gruplar
+  // halinde katlanarak sentezlenir (toWeekly ile ayni desen)
   private toFourHour(hourly: Candle[]): Candle[] {
     const fourHour: Candle[] = [];
     for (let i = 0; i < hourly.length; i += 4) {
@@ -192,17 +191,6 @@ export class ScannerService {
     return result;
   }
 
-  // Sinyal DB'ye yazilmadan/gosterilmeden hemen once uygulanan son guvenlik katmani.
-  // "stop, TP3'u gecmesin" gibi tek bir gecersiz durumu yakalayan noktasal kontroller
-  // yeterli degil (ESPUSDT SHORT vakasinda oldugu gibi stop TP3'ten uzakta olmasa
-  // bile Turtle Soup kirilim mumunun asiri buyuk fitili yuzunden gercek R:R degeri
-  // anlamsiz kalabiliyordu) - bunun yerine risk/reward oranina dogrudan taban konur.
-  // SCANNER_MIN_RR ortam degiskeniyle ayarlanabilir, tanimli/gecersizse 1.5 kullanilir.
-  private getMinRR(): number {
-    const configured = Number(process.env.SCANNER_MIN_RR);
-    return Number.isFinite(configured) && configured > 0 ? configured : 1.5;
-  }
-
   private atr(candles: Candle[], period = 14): number {
     const trs: number[] = [];
     for (let i = 1; i < candles.length; i++) {
@@ -214,6 +202,8 @@ export class ScannerService {
     return recent.reduce((a, b) => a + b, 0) / recent.length;
   }
 
+  // HTF Bias icin: EMA50 vs EMA200. Ayni fonksiyon hem 1G hem 4S serisine
+  // uygulanir (bkz. buildZoneSetup - trend1d/trend4h).
   private getTrend(candles: Candle[]): 'UP' | 'DOWN' | 'FLAT' {
     if (candles.length < 10) return 'FLAT';
     const closes = candles.map((c) => c.close);
@@ -226,409 +216,227 @@ export class ScannerService {
     return 'FLAT';
   }
 
-  private findSwingHighs(candles: Candle[], lookback = 3): number[] {
-    const indices: number[] = [];
-    for (let i = lookback; i < candles.length - lookback; i++) {
-      const window = candles.slice(i - lookback, i + lookback + 1);
-      if (window.every((c) => c.high <= candles[i].high)) indices.push(i);
+  // Arz/Talep bolgesi tespiti: base mum + hemen sonrasinda (en fazla 3 mumluk
+  // pencerede) ATR'nin ZONE_IMPULSE_ATR_MULT katindan buyuk, coğunlukla ayni
+  // yonlu kapanislarla olusan net bir yer degistirme varsa, base mum bir zone'dur.
+  // Asagi impulsten once = supply (short icin), yukari impulsten once = demand
+  // (long icin). Onceki gunluk/4S range ust-alt sinir mantigi YOK - sadece bu.
+  private detectZones(candles: Candle[]): Zone[] {
+    if (candles.length < 10) return [];
+    const atrValue = this.atr(candles);
+    if (!(atrValue > 0)) return [];
+
+    const zones: Zone[] = [];
+    let i = 1;
+    while (i < candles.length - 1) {
+      const base = candles[i];
+      const window = candles.slice(i + 1, Math.min(i + 4, candles.length));
+      if (window.length === 0) {
+        i++;
+        continue;
+      }
+      const displacement = window[window.length - 1].close - base.close;
+      if (Math.abs(displacement) < atrValue * ZONE_IMPULSE_ATR_MULT) {
+        i++;
+        continue;
+      }
+      const bullishImpulse = displacement > 0;
+      const sameDirCount = window.filter((c) => (bullishImpulse ? c.close > c.open : c.close < c.open)).length;
+      if (sameDirCount < Math.ceil(window.length / 2)) {
+        i++;
+        continue;
+      }
+
+      zones.push({
+        type: bullishImpulse ? 'DEMAND' : 'SUPPLY',
+        top: base.high,
+        bottom: base.low,
+        baseIndex: i,
+        formedAt: base.time,
+      });
+      // Bu impulsif hareketin icindeki sonraki mumlari tekrar base adayi olarak
+      // degerlendirmeye almadan atla - "son GUCLU hareketin BASLADIGI mum" tekil
+      // bir baslangic noktasidir, ayni hareketin ortasindaki her mum degil.
+      i += window.length + 1;
     }
-    return indices;
+    return zones;
   }
 
-  private findSwingLows(candles: Candle[], lookback = 3): number[] {
-    const indices: number[] = [];
-    for (let i = lookback; i < candles.length - lookback; i++) {
-      const window = candles.slice(i - lookback, i + lookback + 1);
-      if (window.every((c) => c.low >= candles[i].low)) indices.push(i);
-    }
-    return indices;
-  }
-
-  private hasBOS(candles: Candle[], direction: 'LONG' | 'SHORT'): boolean {
-    const highs = this.findSwingHighs(candles);
-    const lows = this.findSwingLows(candles);
-    const lastClose = candles[candles.length - 1].close;
-    if (direction === 'LONG' && highs.length >= 1) {
-      return lastClose > candles[highs[highs.length - 1]].high;
-    }
-    if (direction === 'SHORT' && lows.length >= 1) {
-      return lastClose < candles[lows[lows.length - 1]].low;
+  // Zone olustuktan SONRAKI herhangi bir mum, zone'un UZAK sinirini KAPANISLA
+  // gecmisse (demand'da bottom altinda, supply'da top ustunde) zone tuketilmis
+  // (mitigated) sayilir - artik gecerli bir giris bolgesi degildir. Sadece
+  // dokunup icinde/ustunde kapanmak (henuz kirmadan) zone'u gecersiz kilmaz.
+  private isZoneMitigated(zone: Zone, candles: Candle[]): boolean {
+    for (let j = zone.baseIndex + 1; j < candles.length; j++) {
+      const c = candles[j];
+      if (zone.type === 'DEMAND' && c.close < zone.bottom) return true;
+      if (zone.type === 'SUPPLY' && c.close > zone.top) return true;
     }
     return false;
   }
 
-  // Verilen fiyat dizisini tolerans bandina gore kumeler ve en cok test edilen
-  // (en kalabalik kume) seviyeyi dondurur - "en az 2 kez test edilmis sinir" icin kullanilir
-  private findMostTestedLevel(prices: number[], tolerance: number): { level: number; tests: number } | null {
-    if (prices.length === 0) return null;
-    let best: { level: number; tests: number } | null = null;
-    for (const price of prices) {
-      const cluster = prices.filter((p) => Math.abs(p - price) <= tolerance);
-      const level = cluster.reduce((a, b) => a + b, 0) / cluster.length;
-      if (!best || cluster.length > best.tests) best = { level, tests: cluster.length };
+  // Stop: base mumun karsi tarafinda (LONG/demand'da ASAGIDA, SHORT/supply'da
+  // YUKARIDA), zone olusmadan hemen once (ZONE_WICK_LOOKBACK mumluk pencerede)
+  // zone sinirini asan ama o tarihten BUGUNE kadar hicbir mum tarafindan
+  // "supurulmemis" (asilmamis) bir fitil varsa, stop o fitilin hemen otesine
+  // konur. Boyle bir fitil yoksa stop zone sinirinin %0.5 disina sabitlenir.
+  // ATR bazli tampon KULLANILMAZ - sadece sabit yuzdelik tampon.
+  private computeZoneStop(zone: Zone, candles: Candle[], bullish: boolean): number {
+    const lookbackStart = Math.max(0, zone.baseIndex - ZONE_WICK_LOOKBACK);
+    let bestWick: number | null = null;
+
+    for (let idx = lookbackStart; idx <= zone.baseIndex; idx++) {
+      const c = candles[idx];
+      if (bullish) {
+        if (c.low >= zone.bottom) continue;
+        const sweptLater = candles.slice(idx + 1).some((later) => later.low <= c.low);
+        if (sweptLater) continue;
+        if (bestWick === null || c.low < bestWick) bestWick = c.low;
+      } else {
+        if (c.high <= zone.top) continue;
+        const sweptLater = candles.slice(idx + 1).some((later) => later.high >= c.high);
+        if (sweptLater) continue;
+        if (bestWick === null || c.high > bestWick) bestWick = c.high;
+      }
     }
-    return best;
+
+    if (bestWick !== null) {
+      return bullish ? bestWick * (1 - ZONE_WICK_TICK_BUFFER_PCT) : bestWick * (1 + ZONE_WICK_TICK_BUFFER_PCT);
+    }
+    return bullish ? zone.bottom * (1 - ZONE_STOP_FALLBACK_PCT) : zone.top * (1 + ZONE_STOP_FALLBACK_PCT);
   }
 
-  // Verilen mum dizisinden ust/alt sinirlari en az 2'ser kez test edilmis bir
-  // range bulur (mevcut swing-high/low mantigi kumelemeye uyarlanmis hali)
-  private findTestedRange(
-    candles: Candle[],
-    atrValue: number,
-  ): { upper: number; lower: number; upperTests: number; lowerTests: number } | null {
-    const swingHighIdx = this.findSwingHighs(candles, 2);
-    const swingLowIdx = this.findSwingLows(candles, 2);
-    if (swingHighIdx.length < 2 || swingLowIdx.length < 2) return null;
-
-    const highPrices = swingHighIdx.map((i) => candles[i].high);
-    const lowPrices = swingLowIdx.map((i) => candles[i].low);
-    const tolerance = atrValue * 0.5;
-
-    const upperLevel = this.findMostTestedLevel(highPrices, tolerance);
-    const lowerLevel = this.findMostTestedLevel(lowPrices, tolerance);
-    if (!upperLevel || !lowerLevel) return null;
-    if (upperLevel.tests < 2 || lowerLevel.tests < 2) return null;
-    if (upperLevel.level <= lowerLevel.level) return null;
-
-    return {
-      upper: upperLevel.level, lower: lowerLevel.level,
-      upperTests: upperLevel.tests, lowerTests: lowerLevel.tests,
-    };
-  }
-
-  // Swing (scanCrypto) icin de Day Trade ile AYNI Breakout Continuation modeli
-  // kullanilir (ayri bir modelleme yok - tek fark zaman dilimi olcegi): range
-  // GUNLUK mumlardan, kirilim/teyit de GUNLUK mumlarla (swing zaten yavas hareket
-  // ettigi icin day trade'deki 4H-range/15dk-teyit ayrimina burada gerek yok, ikisi
-  // de gunluk). Trend filtresi (EMA50/200), HTF bias ve confirmation sayaci
-  // buildDayTradeSetup ile AYNI.
-  private buildSwingSetup(
-    dailyCandles: Candle[],
+  private computeTrendLabel(
+    direction: 'LONG' | 'SHORT',
+    trend1d: 'UP' | 'DOWN' | 'FLAT',
     trend4h: 'UP' | 'DOWN' | 'FLAT',
-    weeklyCandles: Candle[],
+  ): 'PRO_TREND' | 'COUNTER_TREND' {
+    // HTF bias: daha yuksek zaman dilimi (1G) esas alinir; 1G FLAT ise 4S'e
+    // dusulur. Ikisi de FLAT ise net bir yon yok demektir - temkinli
+    // varsayimla Counter-Trend etiketlenir (Pro-Trend iddia edilemez).
+    const htfBias = trend1d !== 'FLAT' ? trend1d : trend4h;
+    if (htfBias === 'FLAT') return 'COUNTER_TREND';
+    const signalBias = direction === 'LONG' ? 'UP' : 'DOWN';
+    return htfBias === signalBias ? 'PRO_TREND' : 'COUNTER_TREND';
+  }
+
+  // Supply/Demand Zone modeli - swing (gunluk mumlar) ve day-trade (4 saatlik
+  // mumlar) icin AYNI fonksiyon kullanilir, tek fark disaridan verilen mum
+  // serisinin zaman dilimi. Kripto ve Forex icin de aynen calisir.
+  //
+  // Akis: zone'lar tespit edilir (detectZones) -> tuketilmemis (fresh) olanlar
+  // filtrelenir -> fiyata en yakin fresh zone sinyal adayi secilir (yon o
+  // zone'un tipine gore belirlenir) -> stop supurulmemis fitil ya da %0.5
+  // tampon ile hesaplanir -> TP1/2/3 karsit yondeki en yakin 3 fresh zone'un
+  // yakin kenarindan alinir (yeterli karsit zone yoksa sinyal uretilmez, cunku
+  // TrackedSignal semasi 3 TP'yi de zorunlu kilar) -> min R:R filtresi YOK,
+  // hesaplanan R:R sadece bilgi amacli saklanir.
+  private buildZoneSetup(
+    candles: Candle[],
+    trend1d: 'UP' | 'DOWN' | 'FLAT',
+    trend4h: 'UP' | 'DOWN' | 'FLAT',
     fundingRate: number | null,
+    stageCounter?: ZoneStageCounter,
   ): Setup | null {
-    if (dailyCandles.length < 60) return null;
-    const trendDaily = this.getTrend(dailyCandles);
-    if (trendDaily === 'FLAT') return null;
-    const direction: 'LONG' | 'SHORT' = trendDaily === 'UP' ? 'LONG' : 'SHORT';
-    const bullish = direction === 'LONG';
-    const atrValue = this.atr(dailyCandles);
+    if (candles.length < 30) return null;
+    if (stageCounter) stageCounter.attempted++;
 
-    const htfBiasConfirmed = trendDaily === trend4h;
+    const lastCandle = candles[candles.length - 1];
+    const currentPrice = lastCandle.close;
 
-    // Range: son 20-30 gunluk mumdan, ust/alt sinir en az 2'ser kez test edilmis olmali
-    const rangeCandles = dailyCandles.slice(-30);
-    const range = this.findTestedRange(rangeCandles, atrValue);
-    if (!range) return null;
-    const rangeWidth = range.upper - range.lower;
+    const allZones = this.detectZones(candles);
+    const freshZones = allZones.filter((z) => !this.isZoneMitigated(z, candles));
+    if (freshZones.length === 0) return null;
+    if (stageCounter) stageCounter.freshZoneFound++;
 
-    // Son iki gunluk muma bakilir: breakoutCandle siniri kirar, confirmCandle onu teyit eder.
-    const n = dailyCandles.length;
-    const breakoutCandle = dailyCandles[n - 2];
-    const confirmCandle = dailyCandles[n - 1];
-
-    // Breakout Continuation: breakoutCandle KAPANISLA yon tarafindaki siniri kirar
-    // (bullish'te UST sinir), confirmCandle da AYNI yonde range DISINDA kapanir
-    // (geri donmez) - gercek kirilim, kirilim yonunde devam.
-    let breakoutContinuationConfirmed = false;
-    if (bullish) {
-      const brokeUpper = breakoutCandle.close > range.upper;
-      const continuedOutside = confirmCandle.close > range.upper;
-      if (brokeUpper && continuedOutside) breakoutContinuationConfirmed = true;
-    } else {
-      const brokeLower = breakoutCandle.close < range.lower;
-      const continuedOutside = confirmCandle.close < range.lower;
-      if (brokeLower && continuedOutside) breakoutContinuationConfirmed = true;
+    // Fiyata (bolge orta noktasina gore) en yakin fresh zone, tur farketmeksizin,
+    // sinyal adayi olarak secilir - yon o zone'un tipine gore belirlenir.
+    let chosen: Zone | null = null;
+    let bestDistance = Infinity;
+    for (const z of freshZones) {
+      const mid = (z.top + z.bottom) / 2;
+      const distance = Math.abs(currentPrice - mid);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        chosen = z;
+      }
     }
-    if (!breakoutContinuationConfirmed) return null;
+    if (!chosen) return null;
 
-    const mssConfirmed = this.hasBOS(dailyCandles, direction);
+    const direction: 'LONG' | 'SHORT' = chosen.type === 'DEMAND' ? 'LONG' : 'SHORT';
+    const bullish = direction === 'LONG';
 
-    // confirmedCount buildDayTradeSetup ile ayni sekilde hesaplanir: range bulunmus
-    // ve Breakout Continuation teyit edilmis olmasi zaten zorunlu (yukarida return
-    // null), tipki eski atLevelConfirmed/reversalConfirmed'in her zaman true olmasi
-    // gibi. Esik 3'ten 2'ye dusuruldu - Breakout Continuation zaten guclu bir filtre
-    // oldugu icin range+teyidin tek basina (HTF bias veya MSS olmadan da) yeterli
-    // sayilmasi tercih edildi.
-    const confirmedCount = [htfBiasConfirmed, true, breakoutContinuationConfirmed, mssConfirmed].filter(Boolean).length;
-    if (confirmedCount < 2) return null;
+    const entryZoneTop = chosen.top;
+    const entryZoneBottom = chosen.bottom;
+    const entry = (entryZoneTop + entryZoneBottom) / 2;
 
-    const entryZoneTop = Math.max(confirmCandle.open, confirmCandle.close);
-    const entryZoneBottom = Math.min(confirmCandle.open, confirmCandle.close);
-    const entry = confirmCandle.close;
+    const stillValid = currentPrice <= entryZoneTop && currentPrice >= entryZoneBottom;
+    const distancePercent = stillValid
+      ? 0
+      : Math.round((Math.abs(currentPrice - entry) / entry) * 10000) / 100;
 
-    const lastCandle = confirmCandle;
-    const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
-    const distancePercent = 0;
-
-    // Stop: kirilan range sinirinin hemen gerisi - fiyat range'e geri donerse
-    // (sinir tekrar icine girerse) trade zaten gecersizdir
-    const wickBuffer = atrValue * 0.15;
-    const stop = bullish ? range.upper - wickBuffer : range.lower + wickBuffer;
-    // R:R risk/reward yon bazli (signed) hesaplanir - abs() kullanmak, stop veya TP
-    // yanlis tarafta kalmis bozuk bir setup'ta bile pozitif R:R gosterip gecirebilirdi.
-    // LONG'da stop entry'nin ALTINDA (risk=entry-stop), SHORT'ta USTUNDE (risk=stop-entry)
-    // olmali; degilse yapisal olarak tutarsiz demektir, sinyal reddedilir.
+    const stop = this.computeZoneStop(chosen, candles, bullish);
     const risk = bullish ? entry - stop : stop - entry;
     if (risk <= 0) return null;
+    const wickBasedStop = bullish
+      ? Math.abs(stop - entryZoneBottom) / entryZoneBottom > ZONE_WICK_TICK_BUFFER_PCT * 1.5
+      : Math.abs(stop - entryZoneTop) / entryZoneTop > ZONE_WICK_TICK_BUFFER_PCT * 1.5;
+    if (stageCounter) stageCounter.stopValid++;
 
-    // TP1: kirilim yonunde olculu hareket (range genisligi kadar projeksiyon).
-    // TP2/TP3: bu projeksiyonun otesindeki en yakin iki yapisal gunluk swing seviyesi;
-    // yeterli swing yoksa range genisligi katlariyla devam edilir.
-    let tp1 = bullish ? range.upper + rangeWidth : range.lower - rangeWidth;
-    // Mutlak tavan: rangeWidth (30 gunluk range'in tam genisligi) bazen entry'den
-    // %60-70 uzakta bile olabiliyordu (bkz. ACEUSDT). tp1'in kendisi caplenmezse,
-    // asagidaki monotonluk kontrolu capli TP2/TP3'u yine bu capsiz tp1'in otesine
-    // itiyor, tavan hukumsuz kaliyordu - once tp1 caplenir (ABS_TP_CAP_PCT asagida tanimli).
-    const ABS_TP_CAP_PCT = 0.25;
-    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
-    if (Math.abs(tp1 - entry) > maxAbsDistance) {
-      tp1 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    if (bullish ? tp1 <= entry : tp1 >= entry) return null;
-    const swingIdx = bullish ? this.findSwingHighs(dailyCandles, 2) : this.findSwingLows(dailyCandles, 2);
-    const structuralLevels: number[] = [];
-    const sortedLevels = swingIdx
-      .map((i) => (bullish ? dailyCandles[i].high : dailyCandles[i].low))
-      .filter((lvl) => (bullish ? lvl > tp1 : lvl < tp1))
-      .sort((a, b) => (bullish ? a - b : b - a));
-    for (const lvl of sortedLevels) {
-      const last = structuralLevels[structuralLevels.length - 1];
-      if (last !== undefined && Math.abs(lvl - last) < atrValue * 0.3) continue;
-      structuralLevels.push(lvl);
-      if (structuralLevels.length === 2) break;
-    }
-    // Yapisal seviye bulunamayan durumlarda (SHORT sinyallerinin ezici cogunlugunda -
-    // zaten dusus trendindeki bir coin icin tp1 son ~250 gunde hic gorulmemis bir
-    // fiyata denk dusuyor, yapisal arama hep bos donuyor) fallback adimi rangeWidth
-    // ile sinirsiz katlanip gerceklikten kopuk hedefler uretiyordu (bkz. ACEUSDT %204,
-    // HEIUSDT %77). Fallback adimi artik gunluk ATR ile de sinirlaniyor - dar
-    // konsolidasyonlarda ATR*0.75 rangeWidth'i asabildigi icin min() iki yonlu koruma saglar.
-    const fallbackStep = Math.min(rangeWidth, atrValue * 0.75);
-    let tp2 = structuralLevels[0] ?? (bullish ? tp1 + fallbackStep : tp1 - fallbackStep);
-    let tp3 = structuralLevels[1] ?? (bullish ? tp2 + fallbackStep : tp2 - fallbackStep);
-    if (structuralLevels[0] === undefined && Math.abs(tp2 - entry) > maxAbsDistance) {
-      tp2 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    if (structuralLevels[1] === undefined && Math.abs(tp3 - entry) > maxAbsDistance) {
-      tp3 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    // Monotonluk garantisi: TP1->TP2->TP3 LONG'da kesin artan, SHORT'ta kesin azalan
-    // olmali. Yapisal seviye + fallback + %25 tavaninin karisimi bunu bozabiliyordu -
-    // orn. HEIUSDT'de yapisal TP2 entry'den %35 uzaktayken, tavana takilan fallback
-    // TP3 sadece %22 uzakta kaliyordu (TP3, TP2'den entry'ye daha yakin - yanlis sira).
-    // Kaynagi ne olursa olsun (yapisal/fallback/capli) son adimda sira zorlanir.
-    if (bullish) {
-      if (tp2 <= tp1) tp2 = tp1 * 1.001;
-      if (tp3 <= tp2) tp3 = tp2 * 1.001;
-    } else {
-      if (tp2 >= tp1) tp2 = tp1 * 0.999;
-      if (tp3 >= tp2) tp3 = tp2 * 0.999;
-    }
+    // TP1/2/3: karsit yondeki en yakin 3 FRESH zone, entry'nin islem
+    // yonunde otesinde olanlar, yakinlik sirasiyla. Near-edge (LONG'da supply
+    // zone'un ALT sinirini, SHORT'ta demand zone'un UST sinirini) TP fiyati olur.
+    const oppositeType: 'SUPPLY' | 'DEMAND' = bullish ? 'SUPPLY' : 'DEMAND';
+    const targetZones = freshZones
+      .filter((z) => z.type === oppositeType)
+      .filter((z) => (bullish ? z.bottom > entry : z.top < entry))
+      .sort((a, b) => (bullish ? a.bottom - b.bottom : b.top - a.top));
+    if (targetZones.length < 3) return null;
+    if (stageCounter) stageCounter.tpZonesSufficient++;
 
-    // Reward de ayni sekilde yon bazli: LONG'da TP2 entry'nin USTUNDE, SHORT'ta
-    // ALTINDA olmali - degilse (TP2 zaten gecilmis/yanlis yonde) setup reddedilir.
-    const mainReward = bullish ? tp2 - entry : entry - tp2;
-    if (mainReward <= 0) return null;
-    const rr = mainReward / risk;
-    if (rr < this.getMinRR()) return null;
+    const tp1 = bullish ? targetZones[0].bottom : targetZones[0].top;
+    const tp2 = bullish ? targetZones[1].bottom : targetZones[1].top;
+    const tp3 = bullish ? targetZones[2].bottom : targetZones[2].top;
+
+    const reward = bullish ? tp1 - entry : entry - tp1;
+    if (reward <= 0) return null;
+    // Min R:R filtresi kaldirildi (eski esik 1.5) - R:R sadece bilgi amacli
+    // hesaplanip gosterilir, sinyal bundan bagimsiz kaydedilir.
+    const rr = Math.round((reward / risk) * 100) / 100;
+
+    const trendLabel = this.computeTrendLabel(direction, trend1d, trend4h);
 
     const reasons: string[] = [];
     reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
-    if (htfBiasConfirmed) reasons.push('HTF Bias: Günlük + kısa vadeli trend uyumlu');
-    reasons.push(`Range: ${range.lower.toFixed(4)} - ${range.upper.toFixed(4)} (üst sınır ${range.upperTests}x, alt sınır ${range.lowerTests}x test edildi)`);
-    reasons.push(`Breakout Continuation teyidi: ${bullish ? 'range üst sınırı kapanışla kırıldı' : 'range alt sınırı kapanışla kırıldı'} ve bir sonraki günlük mum da aynı yönde range dışında kapandı (geri dönmedi)`);
-    if (mssConfirmed) reasons.push('Market Structure Shift (BOS) onaylandı');
-    const weeklyTrend = this.getTrend(weeklyCandles);
-    if (weeklyTrend === trendDaily) reasons.push('Haftalık zaman dilimi de aynı yönü destekliyor');
+    reasons.push(
+      `${bullish ? 'Talep (Demand)' : 'Arz (Supply)'} bölgesi: ${entryZoneBottom.toFixed(4)} - ${entryZoneTop.toFixed(4)} (son ${bullish ? 'yükseliş' : 'düşüş'} hareketinin başladığı base mumdan)`,
+    );
+    reasons.push(
+      wickBasedStop
+        ? 'Stop: base mumun karşı tarafındaki süpürülmemiş fitilin hemen ötesine yerleştirildi'
+        : 'Stop: süpürülmemiş fitil bulunamadı, bölge sınırının %0.5 dışına sabitlendi',
+    );
+    reasons.push(
+      `TP1/TP2/TP3, işlem yönündeki en yakın 3 karşıt bölgeden alındı (${targetZones.length >= 3 ? '3 karşıt bölge bulundu' : 'yetersiz karşıt bölge'})`,
+    );
+    reasons.push(
+      trendLabel === 'PRO_TREND'
+        ? `Pro-Trend: HTF (1G${trend1d !== 'FLAT' ? '' : '+4S'}) trend ile aynı yönde`
+        : 'Counter-Trend: HTF trendin tersi yönde (filtrelenmedi, sadece etiketlendi)',
+    );
     if (fundingRate !== null) {
       if (bullish && fundingRate < -0.05) reasons.push(`Funding rate aşırı negatif (${fundingRate.toFixed(3)}%)`);
       else if (!bullish && fundingRate > 0.05) reasons.push(`Funding rate aşırı pozitif (${fundingRate.toFixed(3)}%)`);
     }
 
     const strength: 'GUCLU' | 'ORTA' | 'RISKLI' =
-      confirmedCount === 4 ? 'GUCLU' : confirmedCount === 3 ? 'ORTA' : 'RISKLI';
-    const confidenceScore = confirmedCount * 25;
+      trendLabel === 'PRO_TREND' && wickBasedStop ? 'GUCLU' : trendLabel === 'PRO_TREND' || wickBasedStop ? 'ORTA' : 'RISKLI';
+    const confidenceScore = strength === 'GUCLU' ? 100 : strength === 'ORTA' ? 60 : 30;
 
     return {
-      direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
-      rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
-      confirmedCount, strength, stillValid, distancePercent, patternType: 'BREAKOUT_CONTINUATION',
-    };
-  }
-
-  // Day Trade (scanDayTrade) icin range bazli Breakout Continuation modeli calisir:
-  // range siniri kapanisla kirilir, bir sonraki mumda da AYNI yonde range DISINDA
-  // kapanirsa (geri donmezse) - kirilim YONUNDE islem. (Eskiden burada ayrica bir
-  // Turtle Soup/fakeout modeli de vardi, kaldirildi - artik bu tek model kullaniliyor.)
-  // Range 4 saatlik mumlardan, teyit 15dk mumlarla (day trade daha hizli hareket
-  // ettigi icin). Trend filtresi, HTF bias ve confirmation sayaci buildSwingSetup ile AYNI.
-  private buildDayTradeSetup(
-    h1Candles: Candle[],
-    trend15m: 'UP' | 'DOWN' | 'FLAT',
-    h4Candles: Candle[],
-    m15Candles: Candle[],
-    fundingRate: number | null,
-    stageCounter?: DayTradeStageCounter,
-  ): Setup | null {
-    if (h1Candles.length < 60) return null;
-    const trendMain = this.getTrend(h1Candles);
-    if (trendMain === 'FLAT') return null;
-    const direction: 'LONG' | 'SHORT' = trendMain === 'UP' ? 'LONG' : 'SHORT';
-    const bullish = direction === 'LONG';
-
-    const htfBiasConfirmed = trendMain === trend15m;
-
-    // Range: son 15-20 adet 4 saatlik mumdan, en az 2'ser kez test edilmis bant
-    const rangeCandles = h4Candles.slice(-20);
-    const atrH4 = this.atr(rangeCandles);
-    const range = this.findTestedRange(rangeCandles, atrH4);
-    if (!range) return null;
-    const rangeWidth = range.upper - range.lower;
-    if (stageCounter) stageCounter.rangeFound++;
-
-    // Son iki 15dk muma bakilir: breakoutCandle siniri kirar, confirmCandle onu teyit eder.
-    if (m15Candles.length < 2) return null;
-    const m = m15Candles.length;
-    const breakoutCandle = m15Candles[m - 2];
-    const confirmCandle = m15Candles[m - 1];
-
-    // Breakout Continuation: breakoutCandle KAPANISLA yon tarafindaki siniri kirar
-    // (bullish'te UST sinir), confirmCandle da AYNI yonde range DISINDA kapanir
-    // (geri donmez) - gercek kirilim, kirilim yonunde devam.
-    let breakoutContinuationConfirmed = false;
-    if (bullish) {
-      const brokeUpper = breakoutCandle.close > range.upper;
-      const continuedOutside = confirmCandle.close > range.upper;
-      if (brokeUpper && continuedOutside) breakoutContinuationConfirmed = true;
-    } else {
-      const brokeLower = breakoutCandle.close < range.lower;
-      const continuedOutside = confirmCandle.close < range.lower;
-      if (brokeLower && continuedOutside) breakoutContinuationConfirmed = true;
-    }
-    if (breakoutContinuationConfirmed && stageCounter) stageCounter.breakoutContinuationConfirmed++;
-    if (!breakoutContinuationConfirmed) return null;
-    const patternType: 'BREAKOUT_CONTINUATION' = 'BREAKOUT_CONTINUATION';
-
-    const mssConfirmed = this.hasBOS(h1Candles, direction);
-
-    // Esik 3'ten 2'ye dusuruldu, bkz. buildSwingSetup'taki aciklama. Ikinci ve ucuncu
-    // eleman (range bulundu, breakoutContinuationConfirmed) bu noktada zaten her
-    // zaman true - yukarida return null ile garanti edildi.
-    const confirmedCount = [htfBiasConfirmed, true, breakoutContinuationConfirmed, mssConfirmed].filter(Boolean).length;
-    if (confirmedCount < 2) return null;
-    if (stageCounter) stageCounter.confirmedCountPassed++;
-
-    const entryZoneTop = Math.max(confirmCandle.open, confirmCandle.close);
-    const entryZoneBottom = Math.min(confirmCandle.open, confirmCandle.close);
-    const entry = confirmCandle.close;
-
-    const lastCandle = confirmCandle;
-    const stillValid = lastCandle.close <= entryZoneTop && lastCandle.close >= entryZoneBottom;
-    const distancePercent = 0;
-
-    // ATR tamponu: range 4 saatlik mumlardan kuruldugu icin buffer da AYNI
-    // olcekten (4H ATR) hesaplanmali - 15dk ATR kullanmak buffer'i 4H range
-    // sinirina gore anlamsiz derecede kucultuyor, stop mesafesi bazen fiyatin
-    // %0.1'inin bile altina dusuyordu (bkz. WLFIUSDT). atrH4 zaten yukarida
-    // range bulma icin hesaplanmisti (satir 605), burada tekrar kullanilir.
-    const wickBuffer = atrH4 * 0.15;
-
-    // Stop: kirilan range sinirinin hemen gerisi - fiyat range'e geri donerse
-    // (sinir tekrar icine girerse) trade zaten gecersizdir
-    let stop = bullish ? range.upper - wickBuffer : range.lower + wickBuffer;
-    // R:R risk/reward yon bazli (signed) hesaplanir - bkz. buildSwingSetup
-    let risk = bullish ? entry - stop : stop - entry;
-    if (risk <= 0) return null;
-    // Minimum stop tabani: entry, range sinirini sadece bir tik gectiginde
-    // (breakoutContinuationConfirmed icin bu yeterli) risk mesafesi wickBuffer'a
-    // kadar collapse edebiliyordu - fiyatin %0.5'inden dar bir stop, day trade
-    // icin bile gurultu ile tetiklenecek kadar siki demektir, taban zorlanir.
-    const MIN_STOP_PCT = 0.005;
-    const floorRisk = entry * MIN_STOP_PCT;
-    if (risk < floorRisk) {
-      risk = floorRisk;
-      stop = bullish ? entry - floorRisk : entry + floorRisk;
-    }
-
-    // TP1: kirilim yonunde olculu hareket. Projeksiyon mesafesi min(atrH4*1.5, rangeWidth)
-    // ile sinirlanir - rangeWidth 4H range'in tam genisligi (gunler suren bir yapi),
-    // 15dk teyitli bir day trade'in gerceklesme suresine gore fazla genis bir hedef
-    // olusturuyordu (bkz. WLFIUSDT TP3 ~%21). atrH4*1.5 day-trade olcegine daha
-    // uygun, ama asiri oynak/yeni listelenen coinlerde (UTKUSDT, DUSDT gibi) 4H ATR'nin
-    // kendisi de buyuk olabildigi icin min() ile capleniyor - yeni TP hicbir zaman
-    // eski (rangeWidth) projeksiyonundan genis cikmaz.
-    const tpDistance = Math.min(atrH4 * 1.5, rangeWidth);
-    let tp1 = bullish ? range.upper + tpDistance : range.lower - tpDistance;
-    // Mutlak ikinci tavan: asiri oynak/yeni listelenen coinlerde (DUSDT, ERAUSDT gibi)
-    // atrH4*1.5 kendisi de entry'den %20-50 uzakta kalabiliyordu - bir day trade icin
-    // gerceklesme suresine gore hala fazla genis. tp1 entry'den %6'nin otesine gecemez;
-    // tp2/tp3 fallback'i tp1'e eklenerek hesaplandigi icin tp1'in caplenmesi zincirin
-    // tamamini sinirlar (sadece tp2/tp3'u ayri caplemek yetersizdi - capsiz tp1, asagidaki
-    // monotonluk kontrolu uzerinden tp2/tp3'u yine tavanin otesine itebiliyordu).
-    const ABS_TP_CAP_PCT = 0.06;
-    const maxAbsDistance = entry * ABS_TP_CAP_PCT;
-    if (Math.abs(tp1 - entry) > maxAbsDistance) {
-      tp1 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    if (bullish ? tp1 <= entry : tp1 >= entry) return null;
-    const swingIdx = bullish ? this.findSwingHighs(h4Candles, 2) : this.findSwingLows(h4Candles, 2);
-    const structuralLevels: number[] = [];
-    const sortedLevels = swingIdx
-      .map((i) => (bullish ? h4Candles[i].high : h4Candles[i].low))
-      .filter((lvl) => (bullish ? lvl > tp1 : lvl < tp1))
-      .sort((a, b) => (bullish ? a - b : b - a));
-    for (const lvl of sortedLevels) {
-      const last = structuralLevels[structuralLevels.length - 1];
-      if (last !== undefined && Math.abs(lvl - last) < atrH4 * 0.3) continue;
-      structuralLevels.push(lvl);
-      if (structuralLevels.length === 2) break;
-    }
-    let tp2 = structuralLevels[0] ?? (bullish ? tp1 + tpDistance : tp1 - tpDistance);
-    let tp3 = structuralLevels[1] ?? (bullish ? tp2 + tpDistance : tp2 - tpDistance);
-    if (structuralLevels[0] === undefined && Math.abs(tp2 - entry) > maxAbsDistance) {
-      tp2 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    if (structuralLevels[1] === undefined && Math.abs(tp3 - entry) > maxAbsDistance) {
-      tp3 = bullish ? entry + maxAbsDistance : entry - maxAbsDistance;
-    }
-    // Monotonluk guvenlik agi (bkz. buildSwingSetup'taki HEIUSDT aciklamasi).
-    if (bullish) {
-      if (tp2 <= tp1) tp2 = tp1 * 1.001;
-      if (tp3 <= tp2) tp3 = tp2 * 1.001;
-    } else {
-      if (tp2 >= tp1) tp2 = tp1 * 0.999;
-      if (tp3 >= tp2) tp3 = tp2 * 0.999;
-    }
-
-    const mainReward = bullish ? tp2 - entry : entry - tp2;
-    if (mainReward <= 0) return null;
-    const rr = mainReward / risk;
-    if (rr < this.getMinRR()) return null;
-    if (stageCounter) stageCounter.rrPassed++;
-
-    const reasons: string[] = [];
-    reasons.push(`Yön: ${bullish ? 'Yükseliş (LONG)' : 'Düşüş (SHORT)'}`);
-    if (htfBiasConfirmed) reasons.push('HTF Bias: 1H + 15dk trend uyumlu');
-    reasons.push(`4H Range: ${range.lower.toFixed(4)} - ${range.upper.toFixed(4)} (üst sınır ${range.upperTests}x, alt sınır ${range.lowerTests}x test edildi)`);
-    reasons.push(`Breakout Continuation teyidi (15dk): ${bullish ? 'range üst sınırı kapanışla kırıldı' : 'range alt sınırı kapanışla kırıldı'} ve bir sonraki 15dk mum da aynı yönde range dışında kapandı (geri dönmedi)`);
-    if (mssConfirmed) reasons.push('Market Structure Shift (BOS) onaylandı');
-    const h4Trend = this.getTrend(h4Candles);
-    if (h4Trend === trendMain) reasons.push('4 saatlik zaman dilimi de aynı yönü destekliyor');
-    if (fundingRate !== null) {
-      if (bullish && fundingRate < -0.05) reasons.push(`Funding rate aşırı negatif (${fundingRate.toFixed(3)}%)`);
-      else if (!bullish && fundingRate > 0.05) reasons.push(`Funding rate aşırı pozitif (${fundingRate.toFixed(3)}%)`);
-    }
-
-    const strength: 'GUCLU' | 'ORTA' | 'RISKLI' =
-      confirmedCount === 4 ? 'GUCLU' : confirmedCount === 3 ? 'ORTA' : 'RISKLI';
-    const confidenceScore = confirmedCount * 25;
-
-    return {
-      direction, currentPrice: lastCandle.close, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
-      rr: Math.round(rr * 100) / 100, reasons, confidenceScore,
-      confirmedCount, strength, stillValid, distancePercent, patternType,
+      direction, currentPrice, entry, entryZoneTop, entryZoneBottom, stop, tp1, tp2, tp3,
+      rr, reasons, confidenceScore, strength, stillValid, distancePercent,
+      trendLabel, htfTrend1d: trend1d, htfTrend4h: trend4h, patternType: 'SUPPLY_DEMAND_ZONE',
     };
   }
 
@@ -651,13 +459,10 @@ export class ScannerService {
         await new Promise((resolve) => setImmediate(resolve));
       }
       const slice = candles.slice(0, i + 1);
+      // 4H gecmis verisi ayri saklanmadigi icin gunluk trend, hem 1G hem 4S
+      // HTF referansi yerine kullanilir - win rate GUNCEL zone modelini yansitir.
       const trendSlice = this.getTrend(slice);
-      if (trendSlice !== (bullish ? 'UP' : 'DOWN')) continue;
-      const weeklySlice = this.toWeekly(slice);
-      // 4H geçmiş verisi ayrı saklanmadığı için günlük trend, HTF Bias onayı yerine kullanılıyor.
-      // buildSwingSetup kullanılıyor ki win rate, scanCrypto/scanForexSwing'in kullandığı
-      // GUNCEL Breakout Continuation modelini yansıtsın (tek strateji, artık başka model yok)
-      const setup = this.buildSwingSetup(slice, trendSlice, weeklySlice, null);
+      const setup = this.buildZoneSetup(slice, trendSlice, trendSlice, null);
       if (!setup || setup.direction !== direction) continue;
       total++;
       const { entry, stop } = setup;
@@ -732,8 +537,8 @@ export class ScannerService {
     const prompt = `Sen deneyimli bir teknik analiz uzmanısın. Aşağıdaki kural bazlı tarama sonucu için kısa, profesyonel bir senaryo yorumu yap. Yatırım tavsiyesi verme, sadece teknik durumu ve olası senaryoları özetle.
 
 Enstrüman: ${symbol}
-Yön: ${setup.direction}
-Giriş: ${setup.entry}
+Yön: ${setup.direction} (${setup.trendLabel === 'PRO_TREND' ? 'Pro-Trend' : 'Counter-Trend'})
+Giriş Bölgesi: ${setup.entryZoneBottom} - ${setup.entryZoneTop}
 Stop: ${setup.stop}
 TP1: ${setup.tp1}, TP2: ${setup.tp2}, TP3: ${setup.tp3}
 R:R: ${setup.rr}
@@ -776,10 +581,10 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const h4 = await this.fetchBinance4h(symbol);
         if (daily.length < 60 || h4.length < 30) continue;
 
-        const weekly = this.toWeekly(daily);
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
+        const trend1d = this.getTrend(daily);
         const trend4h = this.getTrend(h4);
-        const setup = this.buildSwingSetup(daily, trend4h, weekly, fundingRate);
+        const setup = this.buildZoneSetup(daily, trend1d, trend4h, fundingRate);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
@@ -813,31 +618,23 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
-    // Funnel gozlemi: Breakout Continuation modeli eklendikten sonra hangi
-    // asamada kac sembolun elendigini izlemek icin (bkz. scanDayTrade sonundaki log)
-    const stageCounter: DayTradeStageCounter = {
-      rangeFound: 0, breakoutContinuationConfirmed: 0,
-      confirmedCountPassed: 0, rrPassed: 0,
-    };
-    let attempted = 0;
+    const stageCounter: ZoneStageCounter = { attempted: 0, freshZoneFound: 0, tpZonesSufficient: 0, stopValid: 0 };
 
     for (const { symbol } of symbols) {
       try {
-        const h1 = await this.fetchBinance1h(symbol);
-        const m15 = await this.fetchBinance15m(symbol);
         const h4 = await this.fetchBinance4h(symbol);
-        if (h1.length < 60 || m15.length < 30 || h4.length < 30) continue;
+        const daily = await this.fetchBinanceDaily(symbol);
+        if (h4.length < 30 || daily.length < 30) continue;
 
-        attempted++;
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
-        const trend15m = this.getTrend(m15);
-        // 1h: trend/BOS, 15dk: Breakout Continuation teyidi, 4h: range kaynagi
-        const setup = this.buildDayTradeSetup(h1, trend15m, h4, m15, fundingRate, stageCounter);
+        const trend1d = this.getTrend(daily);
+        const trend4h = this.getTrend(h4);
+        const setup = this.buildZoneSetup(h4, trend1d, trend4h, fundingRate, stageCounter);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
 
-        const closes = h1.slice(-60).map((c) => c.close);
+        const closes = h4.slice(-60).map((c) => c.close);
         returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
 
         candidates.push({ symbol, ...setup, winRatePercent: winRate, fundingRate, style: 'DAY' });
@@ -854,9 +651,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
 
     console.log(
-      `[scanDayTrade] denenen=${attempted} rangeBulundu=${stageCounter.rangeFound} ` +
-      `breakoutContinuation=${stageCounter.breakoutContinuationConfirmed} ` +
-      `confirmedCountGecti=${stageCounter.confirmedCountPassed} rrGecti(minRR=${this.getMinRR()})=${stageCounter.rrPassed} ` +
+      `[scanDayTrade] denenen=${stageCounter.attempted} freshZoneBulundu=${stageCounter.freshZoneFound} ` +
+      `stopHesaplandi=${stageCounter.stopValid} yeterliTpZone=${stageCounter.tpZonesSufficient} ` +
       `korelasyonSonrasi(selected)=${selected.length}`,
     );
 
@@ -867,10 +663,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return selected;
   }
 
-  // Forex Swing: kripto'daki scanCrypto ile ayni Breakout Continuation modelini
-  // (buildSwingSetup) kullanir, sadece veri kaynagi Binance yerine Yahoo Finance.
-  // Sembol listesi HistoricalCandle'daki manuel-seed'e bagimli degil, dogrudan
-  // YAHOO_MAP'ten alinir (zaten ~20 forex/emtia sembolu tanimli).
+  // Forex Swing: kripto'daki scanCrypto ile ayni Supply/Demand Zone modelini
+  // (buildZoneSetup) kullanir, sadece veri kaynagi Binance yerine Yahoo Finance.
+  // Sembol listesi dogrudan YAHOO_MAP'ten alinir (forex majorleri + emtia).
   async scanForexSwing() {
     const symbols = Object.keys(YAHOO_MAP);
 
@@ -881,13 +676,14 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       const yahooSymbol = YAHOO_MAP[symbol];
 
       try {
-        const daily = await this.fetchYahoo(yahooSymbol, '6mo', '1d');
-        const hourly = await this.fetchYahoo(yahooSymbol, '5d', '1h');
-        if (daily.length < 60 || hourly.length < 30) continue;
+        const daily = await this.fetchYahoo(yahooSymbol, '2y', '1d');
+        const hourly = await this.fetchYahoo(yahooSymbol, '1mo', '1h');
+        const h4 = this.toFourHour(hourly);
+        if (daily.length < 60 || h4.length < 30) continue;
 
-        const weekly = this.toWeekly(daily);
-        const trend4h = this.getTrend(hourly);
-        const setup = this.buildSwingSetup(daily, trend4h, weekly, null);
+        const trend1d = this.getTrend(daily);
+        const trend4h = this.getTrend(h4);
+        const setup = this.buildZoneSetup(daily, trend1d, trend4h, null);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
@@ -916,37 +712,33 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return selected;
   }
 
-  // Forex Day Trade: scanDayTrade ile ayni Breakout Continuation modeli
-  // (buildDayTradeSetup), Yahoo Finance saatlik+15dk veriyle. Yahoo native 4h
-  // sunmadigi icin 4H, saatlik mumlardan toFourHour() ile sentezlenir.
+  // Forex Day Trade: scanDayTrade ile ayni Supply/Demand Zone modeli
+  // (buildZoneSetup), Yahoo Finance saatlik veriyle. Yahoo native 4h sunmadigi
+  // icin 4H, saatlik mumlardan toFourHour() ile sentezlenir.
   async scanForexDayTrade() {
     const symbols = Object.keys(YAHOO_MAP);
 
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
-    const stageCounter: DayTradeStageCounter = {
-      rangeFound: 0, breakoutContinuationConfirmed: 0,
-      confirmedCountPassed: 0, rrPassed: 0,
-    };
-    let attempted = 0;
+    const stageCounter: ZoneStageCounter = { attempted: 0, freshZoneFound: 0, tpZonesSufficient: 0, stopValid: 0 };
 
     for (const symbol of symbols) {
       const yahooSymbol = YAHOO_MAP[symbol];
 
       try {
-        const h1 = await this.fetchYahoo(yahooSymbol, '1mo', '1h');
-        const m15 = await this.fetchYahoo(yahooSymbol, '5d', '15m');
-        const h4 = this.toFourHour(h1);
-        if (h1.length < 60 || m15.length < 30 || h4.length < 30) continue;
+        const hourly = await this.fetchYahoo(yahooSymbol, '1mo', '1h');
+        const daily = await this.fetchYahoo(yahooSymbol, '2y', '1d');
+        const h4 = this.toFourHour(hourly);
+        if (h4.length < 30 || daily.length < 30) continue;
 
-        attempted++;
-        const trend15m = this.getTrend(m15);
-        const setup = this.buildDayTradeSetup(h1, trend15m, h4, m15, null, stageCounter);
+        const trend1d = this.getTrend(daily);
+        const trend4h = this.getTrend(h4);
+        const setup = this.buildZoneSetup(h4, trend1d, trend4h, null, stageCounter);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
 
-        const closes = h1.slice(-60).map((c) => c.close);
+        const closes = h4.slice(-60).map((c) => c.close);
         returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
 
         candidates.push({ symbol, ...setup, winRatePercent: winRate, fundingRate: null, style: 'DAY' });
@@ -964,9 +756,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
 
     console.log(
-      `[scanForexDayTrade] denenen=${attempted} rangeBulundu=${stageCounter.rangeFound} ` +
-      `breakoutContinuation=${stageCounter.breakoutContinuationConfirmed} ` +
-      `confirmedCountGecti=${stageCounter.confirmedCountPassed} rrGecti(minRR=${this.getMinRR()})=${stageCounter.rrPassed} ` +
+      `[scanForexDayTrade] denenen=${stageCounter.attempted} freshZoneBulundu=${stageCounter.freshZoneFound} ` +
+      `stopHesaplandi=${stageCounter.stopValid} yeterliTpZone=${stageCounter.tpZonesSufficient} ` +
       `korelasyonSonrasi(selected)=${selected.length}`,
     );
 
@@ -1039,8 +830,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // Bir onceki taramadaki AKTIF (stillValid) sembolleri al ki sadece
     // YENI aktif sinyallerde bildirim gonderelim, ayni sinyali her 15
     // dakikada tekrar tekrar bildirim olarak spam etmeyelim
-    // NOT: style+market filtresi olmadan bu sorgu forex/day-trade taramalari
-    // eklendiginde yanlis "onceki tarama" satirini yakalayabilirdi - artik filtreli.
     const previousScan = await this.prisma.scanResult.findFirst({
       where: { style: 'SWING', market: 'CRYPTO' },
       orderBy: { createdAt: 'desc' },
@@ -1254,6 +1043,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           tp3: s.tp3,
           rr: s.rr,
           strength: s.strength,
+          trendLabel: s.trendLabel,
           style,
           market: market as any,
           status: 'WATCHING',
@@ -1363,28 +1153,43 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
+  // Kazanc/kayip istatistiklerini hem genel toplam hem de Pro-Trend/Counter-Trend
+  // olarak AYRI hesaplar - hangisinin daha iyi performans verdigi net gorulebilsin.
+  // Filtreleme icin degil, sadece gruplama/karsilastirma icin (bkz. sema notu).
+  private async computeSignalStats(style: string, market: string, trendLabel?: 'PRO_TREND' | 'COUNTER_TREND') {
+    const baseWhere: any = { style, market: market as any };
+    if (trendLabel) baseWhere.trendLabel = trendLabel;
+
+    const [activeCount, wins, losses] = await Promise.all([
+      this.prisma.trackedSignal.count({
+        where: { ...baseWhere, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      }),
+      // Kazandi: kapanmis VE en az TP1'e ulasmis (TP1/TP2/TP3 hepsi gercek kar,
+      // TP1 sonrasi stop basabasa cekildigi icin bu asamadan sonra kayip riski yok)
+      this.prisma.trackedSignal.count({
+        where: { ...baseWhere, closedAt: { not: null }, status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] } },
+      }),
+      this.prisma.trackedSignal.count({ where: { ...baseWhere, status: 'HIT_STOP' } }),
+    ]);
+    const total = activeCount + wins + losses;
+    const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
+    return { total, wins, losses, winRate };
+  }
+
   async getTrackedSignals(style: string = 'SWING', market: string = 'CRYPTO') {
     const signals = await this.prisma.trackedSignal.findMany({
       where: { style, market: market as any },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    const [activeCount, wins, losses] = await Promise.all([
-      this.prisma.trackedSignal.count({
-        where: { style, market: market as any, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
-      }),
-      // Kazandi: kapanmis VE en az TP1'e ulasmis (TP1/TP2/TP3 hepsi gercek kar,
-      // TP1 sonrasi stop basabasa cekildigi icin bu asamadan sonra kayip riski yok)
-      this.prisma.trackedSignal.count({
-        where: { style, market: market as any, closedAt: { not: null }, status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] } },
-      }),
-      this.prisma.trackedSignal.count({ where: { style, market: market as any, status: 'HIT_STOP' } }),
+    const [overall, proTrend, counterTrend] = await Promise.all([
+      this.computeSignalStats(style, market),
+      this.computeSignalStats(style, market, 'PRO_TREND'),
+      this.computeSignalStats(style, market, 'COUNTER_TREND'),
     ]);
-    const total = activeCount + wins + losses;
-    const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
     return {
       signals,
-      stats: { total, wins, losses, winRate },
+      stats: { ...overall, proTrend, counterTrend },
     };
   }
 

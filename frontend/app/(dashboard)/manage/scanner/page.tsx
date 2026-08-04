@@ -14,13 +14,58 @@ import {
   type ScanSignal,
   type TrackedSignal,
   type ScanMarket,
+  type TrendLabel,
+  type SignalStatsBlock,
 } from "@/lib/hooks/use-admin-scanner";
 
 const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: string; color: string }> = {
-  GUCLU: { label: "KALİTELİ (4/4)", bg: "#22C55E22", color: "#22C55E" },
-  ORTA: { label: "ORTA (3/4)", bg: "#F39C3D22", color: "#F39C3D" },
-  RISKLI: { label: "DÜŞÜK (2/4)", bg: "#EF444422", color: "#EF4444" },
+  GUCLU: { label: "GÜÇLÜ", bg: "#22C55E22", color: "#22C55E" },
+  ORTA: { label: "ORTA", bg: "#F39C3D22", color: "#F39C3D" },
+  RISKLI: { label: "RİSKLİ", bg: "#EF444422", color: "#EF4444" },
 };
+
+const TREND_LABEL_STYLES: Record<TrendLabel, { label: string; bg: string; color: string }> = {
+  PRO_TREND: { label: "Pro-Trend", bg: "#3B5BFF22", color: "#3B5BFF" },
+  COUNTER_TREND: { label: "Counter-Trend", bg: "#8B5CF622", color: "#8B5CF6" },
+};
+
+function StatsCard({
+  title,
+  accentColor,
+  stats,
+}: {
+  title: string;
+  accentColor: string;
+  stats: SignalStatsBlock;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card-inner p-3 space-y-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: accentColor }}>
+        {title}
+      </p>
+      <div className="flex items-center gap-3 text-xs text-[#A8A6A0] flex-wrap">
+        <span>Toplam: {stats.total}</span>
+        <span className="text-[#22C55E]">Kazandı: {stats.wins}</span>
+        <span className="text-[#EF4444]">Stop: {stats.losses}</span>
+      </div>
+      <p className="text-sm font-semibold text-[#F5F1EA]">
+        {stats.winRate !== null ? `%${stats.winRate} başarı` : "Yetersiz veri"}
+      </p>
+    </div>
+  );
+}
+
+function TrendBadge({ trendLabel }: { trendLabel: TrendLabel }) {
+  const style = TREND_LABEL_STYLES[trendLabel];
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ backgroundColor: style.bg, color: style.color }}
+    >
+      {style.label}
+    </span>
+  );
+}
 
 function fmt(n: number) {
   const abs = Math.abs(n);
@@ -103,12 +148,15 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
             <p className="text-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
-        <span
-          className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-          style={{ backgroundColor: strengthStyle.bg, color: strengthStyle.color }}
-        >
-          {strengthStyle.label}
-        </span>
+        <div className="flex flex-col items-end gap-1.5">
+          <span
+            className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{ backgroundColor: strengthStyle.bg, color: strengthStyle.color }}
+          >
+            {strengthStyle.label}
+          </span>
+          <TrendBadge trendLabel={signal.trendLabel} />
+        </div>
       </div>
 
       <div className="flex items-center justify-between rounded-xl border border-[#3B5BFF33] bg-gradient-to-r from-[#3B5BFF14] to-transparent px-3 py-2">
@@ -265,6 +313,7 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           >
             {strengthStyle.label}
           </span>
+          <TrendBadge trendLabel={signal.trendLabel} />
         </div>
       </div>
       {isOpen && (
@@ -469,20 +518,13 @@ export default function AdminScannerPage() {
           )}
           {tracked && tracked.signals.length > 0 && (
             <div className="space-y-3">
-              <div className="space-y-1">
-                <h2 className="text-sm font-semibold text-[#F5F1EA]">
-                  Takip Edilenler ({tracked.signals.length})
-                </h2>
-                <div className="flex items-center gap-3 text-xs text-[#A8A6A0] flex-wrap">
-                  <span>Toplam: {tracked.stats.total}</span>
-                  <span className="text-[#22C55E]">Kazandi: {tracked.stats.wins}</span>
-                  <span className="text-[#EF4444]">Stop: {tracked.stats.losses}</span>
-                  {tracked.stats.winRate !== null && (
-                    <span className="font-semibold text-[#F5F1EA]">
-                      Basari: %{tracked.stats.winRate}
-                    </span>
-                  )}
-                </div>
+              <h2 className="text-sm font-semibold text-[#F5F1EA]">
+                Takip Edilenler ({tracked.signals.length})
+              </h2>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <StatsCard title="Toplam" accentColor="#F5F1EA" stats={tracked.stats} />
+                <StatsCard title="Pro-Trend" accentColor="#3B5BFF" stats={tracked.stats.proTrend} />
+                <StatsCard title="Counter-Trend" accentColor="#8B5CF6" stats={tracked.stats.counterTrend} />
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {tracked.signals.map((s) => (
