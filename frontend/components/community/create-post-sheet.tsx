@@ -39,7 +39,14 @@ const DIRECTION_OPTIONS: { value: PostDirection; label: string; activeClass: str
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-export function CreatePostSheet() {
+export function CreatePostSheet({
+  postsToday,
+  dailyPostLimit,
+}: {
+  postsToday: number;
+  dailyPostLimit: number;
+}) {
+  const limitReached = postsToday >= dailyPostLimit;
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -80,6 +87,7 @@ export function CreatePostSheet() {
   }
 
   async function submit() {
+    if (limitReached) return;
     if (!file) return toast.error("Lütfen bir grafik görseli seçin.");
     if (!title.trim()) return toast.error("Başlık gerekli.");
     if (!symbol.trim()) return toast.error("Sembol gerekli.");
@@ -220,9 +228,14 @@ export function CreatePostSheet() {
         </div>
 
         <SheetFooter>
-          <Button onClick={submit} disabled={createPost.isPending} className="w-full">
+          <Button onClick={submit} disabled={createPost.isPending || limitReached} className="w-full">
             {createPost.isPending ? "Gönderiliyor..." : "Paylaş"}
           </Button>
+          {limitReached && (
+            <p className="text-center text-xs text-warning">
+              Bugünkü paylaşım hakkınızı kullandınız, yarın tekrar deneyebilirsiniz.
+            </p>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>

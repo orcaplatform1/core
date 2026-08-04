@@ -3,12 +3,23 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StorageService } from '../storage/storage.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { BadgesService } from '../badges/badges.service';
 import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
 import { CreatePostDto } from './dto/create-post.dto';
 import { GetPostUploadUrlDto } from './dto/get-post-upload-url.dto';
-import { COMMUNITY_REPORT_THRESHOLD } from './community.constants';
+import {
+  COMMUNITY_REPORT_THRESHOLD,
+  COMMUNITY_LIKED_ANALYST_THRESHOLD,
+  COMMUNITY_DAILY_POST_LIMIT,
+} from './community.constants';
 
-const POST_USER_SELECT = { id: true, username: true, fullName: true, avatarUrl: true } as const;
+const POST_USER_SELECT = {
+  id: true,
+  username: true,
+  fullName: true,
+  avatarUrl: true,
+  isFoundingMember: true,
+} as const;
 
 const POST_SELECT = {
   id: true,
@@ -21,10 +32,17 @@ const POST_SELECT = {
   ictTags: true,
   createdAt: true,
   hiddenAt: true,
+  isPinned: true,
   user: { select: POST_USER_SELECT },
   likes: { select: { userId: true, type: true } },
   _count: { select: { comments: true } },
 };
+
+function startOfUtcDay(): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
 
 @Injectable()
 export class CommunityService {
@@ -33,6 +51,7 @@ export class CommunityService {
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
     private readonly auditLog: AuditLogService,
+    private readonly badges: BadgesService,
   ) {}
 
   // "Bir programi satin almis (enrollment'i olan) ogrenci" kontrolu - mentor
@@ -42,6 +61,17 @@ export class CommunityService {
     if (enrollmentCount === 0) {
       throw new ForbiddenException(
         'Bu özellik yalnızca bir eğitim programına kayıtlı öğrenciler içindir.',
+      );
+    }
+  }
+
+  private async ensureDailyPostLimit(userId: string) {
+    const postedToday = await this.prisma.communityPost.count({
+      where: { userId, createdAt: { gte: startOfUtcDay() } },
+    });
+    if (postedToday >= COMMUNITY_DAILY_POST_LIMIT) {
+      throw new ForbiddenException(
+        'Bugünkü paylaşım hakkınızı kullandınız, yarın tekrar deneyebilirsiniz.',
       );
     }
   }
@@ -60,6 +90,7 @@ export class CommunityService {
       direction: p.direction,
       ictTags: p.ictTags,
       createdAt: p.createdAt,
+      isPinned: p.isPinned,
       user: p.user,
       likes,
       dislikes,
@@ -77,15 +108,24 @@ export class CommunityService {
 
     const where = {
       hiddenAt: null,
+      isPinned: false,
       user: NOT_DELETED_USER_WHERE,
       ...(opts.symbol ? { symbol: { equals: opts.symbol, mode: 'insensitive' as const } } : {}),
     };
 
-    const posts = await this.prisma.communityPost.findMany({
-      where,
-      select: POST_SELECT,
-      orderBy: { createdAt: 'desc' },
-    });
+    const [pinned, posts] = await Promise.all([
+      // "Haftanin Setup'i" - akisin geri kalanindan ayri, admin manage/community'den
+      // secer (bkz. setPinned). Sembol filtresi uygulanmaz - her zaman gorunur.
+      this.prisma.communityPost.findFirst({
+        where: { isPinned: true, hiddenAt: null, user: NOT_DELETED_USER_WHERE },
+        select: POST_SELECT,
+      }),
+      this.prisma.communityPost.findMany({
+        where,
+        select: POST_SELECT,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     const shaped = posts.map((p) => this.shapePost(p, userId));
     if (opts.sort === 'top') {
@@ -97,13 +137,38 @@ export class CommunityService {
     const skip = (page - 1) * limit;
     const pageItems = shaped.slice(skip, skip + limit);
 
-    const viewer = { isAuthenticated: !!userId, isEnrolled: false };
+    const viewer: {
+      isAuthenticated: boolean;
+      isEnrolled: boolean;
+      postsToday: number;
+      dailyPostLimit: number;
+    } = {
+      isAuthenticated: !!userId,
+      isEnrolled: false,
+      postsToday: 0,
+      dailyPostLimit: COMMUNITY_DAILY_POST_LIMIT,
+    };
     if (userId) {
-      const enrollmentCount = await this.prisma.enrollment.count({ where: { userId } });
+      const [enrollmentCount, postsToday] = await Promise.all([
+        this.prisma.enrollment.count({ where: { userId } }),
+        this.prisma.communityPost.count({ where: { userId, createdAt: { gte: startOfUtcDay() } } }),
+      ]);
       viewer.isEnrolled = enrollmentCount > 0;
+      viewer.postsToday = postsToday;
     }
 
-    return { posts: pageItems, pagination: { page, limit, total, totalPages }, viewer };
+    return {
+      pinnedPost: pinned ? this.shapePost(pinned, userId) : null,
+      posts: pageItems,
+      pagination: { page, limit, total, totalPages },
+      viewer,
+    };
+  }
+
+  async getOne(postId: string, userId?: string) {
+    const post = await this.prisma.communityPost.findUnique({ where: { id: postId }, select: POST_SELECT });
+    if (!post || post.hiddenAt) throw new NotFoundException('Paylaşım bulunamadı.');
+    return this.shapePost(post, userId);
   }
 
   async getUploadUrl(userId: string, dto: GetPostUploadUrlDto) {
@@ -113,6 +178,7 @@ export class CommunityService {
 
   async create(userId: string, dto: CreatePostDto) {
     await this.ensureEnrolled(userId);
+    await this.ensureDailyPostLimit(userId);
     if (!dto.disclaimerAccepted) {
       throw new BadRequestException(
         'Paylaşım gönderilmeden önce eğitim amaçlı olduğunu onaylayan kutuyu işaretlemelisiniz.',
@@ -132,6 +198,13 @@ export class CommunityService {
       },
       select: POST_SELECT,
     });
+
+    // "Ilk Adim" rozetinin STUDENT login'deki verilme mantigiyla birebir ayni
+    // desen: idempotent (grantByNameIfEligible zaten UserBadge unique kontrolu
+    // yapiyor), bu yuzden her paylasimda cagirmak guvenli - sadece ilki
+    // rozeti tetikler.
+    await this.badges.grantByNameIfEligible(userId, 'İlk Setup');
+
     return this.shapePost(post, userId);
   }
 
@@ -144,19 +217,71 @@ export class CommunityService {
       where: { postId_userId: { postId, userId } },
     });
 
+    let action: 'ADD' | 'REMOVE' | 'CHANGE';
     if (!existing) {
       await this.prisma.postLike.create({ data: { postId, userId, type } });
+      action = 'ADD';
     } else if (existing.type === type) {
+      // ayni butona tekrar basmak reaksiyonu geri alir (toggle-off)
       await this.prisma.postLike.delete({ where: { id: existing.id } });
+      action = 'REMOVE';
     } else {
       await this.prisma.postLike.update({ where: { id: existing.id }, data: { type } });
+      action = 'CHANGE';
     }
 
     const fresh = await this.prisma.postLike.findMany({ where: { postId }, select: { type: true } });
-    return {
-      likes: fresh.filter((r) => r.type === 'LIKE').length,
-      dislikes: fresh.filter((r) => r.type === 'DISLIKE').length,
-    };
+    const likes = fresh.filter((r) => r.type === 'LIKE').length;
+    const dislikes = fresh.filter((r) => r.type === 'DISLIKE').length;
+
+    if (likes >= COMMUNITY_LIKED_ANALYST_THRESHOLD) {
+      await this.badges.grantByNameIfEligible(post.userId, 'Beğenilen Analist');
+    }
+
+    // Yeni bir begeni eklendiyse (dislike->like degisimi de dahil, toggle-off
+    // haric) ve begenen kisi kendi gonderisini begenmediyse bildirim uret -
+    // ama her begeni icin ayri bildirim SPAM olur, bu yuzden onceki okunmamis
+    // begeni bildirimi varsa onu guncelleyip "X ve N kisi daha" seklinde
+    // gruplariz (bkz. NotificationsService.updateMessage).
+    const likeAdded = type === 'LIKE' && action !== 'REMOVE';
+    if (likeAdded && userId !== post.userId) {
+      await this.notifyLike(post.id, post.userId, userId, likes);
+    }
+
+    return { likes, dislikes };
+  }
+
+  // "likes" o an postun TOPLAM begeni sayisi (react() icinde zaten hesaplandi) -
+  // begenen kisi disindaki digerlerinin sayisi "others" olarak mesaja yazilir.
+  // Bildirim henuz okunmamissa YENI satir eklemek yerine ayni satiri
+  // guncelleriz, boylece her begeni icin ayri bildirim SPAM'i olusmaz.
+  private async notifyLike(postId: string, ownerId: string, likerId: string, totalLikes: number) {
+    const liker = await this.prisma.user.findUnique({ where: { id: likerId }, select: { fullName: true } });
+    const likerName = liker?.fullName ?? 'Bir kullanıcı';
+    const link = `/community?post=${postId}`;
+    const others = Math.max(totalLikes - 1, 0);
+    const message =
+      others > 0
+        ? `${likerName} ve ${others} kişi daha setup'ınızı beğendi.`
+        : `${likerName} setup'ınızı beğendi.`;
+
+    const existingNotif = await this.prisma.notification.findFirst({
+      where: { userId: ownerId, type: 'COMMUNITY_POST_LIKE', link, read: false },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingNotif) {
+      await this.notifications.updateMessage(existingNotif.id, message);
+      return;
+    }
+
+    await this.notifications.create({
+      userId: ownerId,
+      type: 'COMMUNITY_POST_LIKE' as any,
+      title: 'Setup\'ınız beğenildi',
+      message,
+      link,
+    });
   }
 
   async listComments(postId: string, page = 1, limit = 20) {
@@ -183,10 +308,23 @@ export class CommunityService {
     const post = await this.prisma.communityPost.findUnique({ where: { id: postId } });
     if (!post || post.hiddenAt) throw new NotFoundException('Paylaşım bulunamadı.');
 
-    return this.prisma.postComment.create({
+    const comment = await this.prisma.postComment.create({
       data: { postId, userId, text },
       select: { id: true, text: true, createdAt: true, user: { select: POST_USER_SELECT } },
     });
+
+    if (post.userId !== userId) {
+      const preview = text.length > 60 ? `${text.slice(0, 60).trim()}…` : text;
+      await this.notifications.create({
+        userId: post.userId,
+        type: 'COMMUNITY_POST_COMMENT' as any,
+        title: 'Setup\'ınıza yorum geldi',
+        message: `${comment.user.fullName} setup'ınıza yorum yaptı: "${preview}"`,
+        link: `/community?post=${postId}`,
+      });
+    }
+
+    return comment;
   }
 
   async report(postId: string, reporterId: string, reason: string) {
@@ -206,7 +344,10 @@ export class CommunityService {
     const reportCount = await this.prisma.postReport.count({ where: { postId } });
 
     if (reportCount >= COMMUNITY_REPORT_THRESHOLD && !post.hiddenAt) {
-      await this.prisma.communityPost.update({ where: { id: postId }, data: { hiddenAt: new Date() } });
+      await this.prisma.communityPost.update({
+        where: { id: postId },
+        data: { hiddenAt: new Date(), isPinned: false },
+      });
 
       const admins = await this.prisma.user.findMany({ where: { role: 'SUPER_ADMIN' }, select: { id: true } });
       await Promise.all(
@@ -243,6 +384,49 @@ export class CommunityService {
       },
       orderBy: { hiddenAt: 'desc' },
     });
+  }
+
+  // Admin'in "Haftanin Setup'i" olarak one cikaracak post secebilmesi icin -
+  // gizlenmemis tum paylasimlar, en yeniden eskiye.
+  async listActive(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { hiddenAt: null, user: NOT_DELETED_USER_WHERE };
+    const [data, total] = await Promise.all([
+      this.prisma.communityPost.findMany({
+        where,
+        select: POST_SELECT,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.communityPost.count({ where }),
+    ]);
+    return {
+      data: data.map((p) => this.shapePost(p)),
+      pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
+  }
+
+  async setPinned(postId: string, actorId: string) {
+    const post = await this.prisma.communityPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Paylaşım bulunamadı.');
+    if (post.hiddenAt) throw new BadRequestException('Gizlenmiş bir paylaşım öne çıkarılamaz.');
+
+    await this.prisma.$transaction([
+      this.prisma.communityPost.updateMany({ where: { isPinned: true }, data: { isPinned: false } }),
+      this.prisma.communityPost.update({ where: { id: postId }, data: { isPinned: true } }),
+    ]);
+    await this.auditLog.log(actorId, 'COMMUNITY_POST_PIN', 'CommunityPost', postId, { title: post.title });
+    return { success: true };
+  }
+
+  async unpin(postId: string, actorId: string) {
+    const post = await this.prisma.communityPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Paylaşım bulunamadı.');
+
+    await this.prisma.communityPost.update({ where: { id: postId }, data: { isPinned: false } });
+    await this.auditLog.log(actorId, 'COMMUNITY_POST_UNPIN', 'CommunityPost', postId, { title: post.title });
+    return { success: true };
   }
 
   async restore(postId: string, actorId: string) {

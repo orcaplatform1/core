@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PageHero } from "@/components/marketing/page-hero";
 import { CommunityContent } from "@/components/community/community-content";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
@@ -15,7 +16,9 @@ export default async function CommunityPage() {
   return (
     <>
       <PageHero title="Topluluk" heroImageSrc={siteContent.heroImageUrl ?? undefined} />
-      <CommunityContent />
+      <Suspense fallback={null}>
+        <CommunityContent />
+      </Suspense>
     </>
   );
 }

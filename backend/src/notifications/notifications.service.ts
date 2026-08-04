@@ -44,6 +44,18 @@ export class NotificationsService {
     return notification;
   }
 
+  // Var olan bir bildirimin metnini gunceller ve tekrar "okunmadi" yapar -
+  // begeni gruplama gibi "ayni bildirimi spam etmeden guncelle" senaryolari
+  // icin (bkz. community.service.ts react()).
+  async updateMessage(id: string, message: string) {
+    const updated = await this.prisma.notification.update({
+      where: { id },
+      data: { message, read: false, createdAt: new Date() },
+    });
+    this.gateway.emitToUser(updated.userId, 'notification', updated);
+    return updated;
+  }
+
   async createForManyUsers(
     userIds: string[],
     dto: Omit<CreateNotificationDto, 'userId'> & { broadcastId?: string },

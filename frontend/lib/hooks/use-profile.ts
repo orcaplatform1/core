@@ -19,6 +19,7 @@ export type PublicProfile = {
   online: boolean;
   performance: MyStats | null;
   userBadges: { earnedAt: string; badge: { name: string; iconUrl: string | null } }[];
+  communityStats: { postsCount: number; likesReceived: number } | null;
   isBlockedByMe: boolean;
   hasBlockedMe: boolean;
 };

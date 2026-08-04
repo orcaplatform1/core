@@ -54,6 +54,12 @@ model User {
   referredByStaffId String?
   financialProfile  FinancialProfile?
 
+  // Ilk 500 program satin alan ogrenciye ilk odeme onaylandiginda bir kereligine
+  // set edilir (bkz. payments.service.ts approve()) - sonradan program sayisi
+  // artsa da geri alinmaz. Ekstra bir yetki/rol vermez, sadece rozet + topluluk
+  // gonderilerinde "Kurucu Uye" etiketi icin kullanilir.
+  isFoundingMember Boolean @default(false)
+
   referredByUserId      String?
   referredBy            User?   @relation("StudentReferral", fields: [referredByUserId], references: [id])
   referrals             User[]  @relation("StudentReferral")
@@ -951,6 +957,8 @@ enum NotificationType {
   STREAK_REMINDER
   COMMENT_REPLY
   COMMENT_MENTION
+  COMMUNITY_POST_COMMENT
+  COMMUNITY_POST_LIKE
 }
 
 enum SupportTicketCategory {
@@ -1311,6 +1319,12 @@ model CommunityPost {
   // kuyruguna dusmus ve herkesten gizlenmis demektir.
   hiddenAt DateTime?
 
+  // "Haftanin Setup'i" - admin manage/community'den elle sec/kaldir (otomatik
+  // rotasyon yok). Ayni anda en fazla bir post true olabilir, yeni biri
+  // secildiginde oncekinin pin'i community.service.ts icinde transaction ile
+  // otomatik kaldirilir.
+  isPinned Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1320,6 +1334,7 @@ model CommunityPost {
 
   @@index([symbol])
   @@index([createdAt])
+  @@index([isPinned])
   @@index([hiddenAt])
 }
 

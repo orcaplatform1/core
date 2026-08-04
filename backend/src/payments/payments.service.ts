@@ -4,6 +4,10 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { createHmac, randomUUID } from 'crypto';
 import { InvoicesService } from '../invoices/invoices.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { BadgesService } from '../badges/badges.service';
+import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
+
+const FOUNDING_MEMBER_LIMIT = 500;
 
 const STAFF_DISCOUNT_RATE = 0.15;
 const STAFF_COMMISSION_RATE = 0.05;
@@ -28,7 +32,26 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly invoicesService: InvoicesService,
     private readonly notificationsService: NotificationsService,
+    private readonly badgesService: BadgesService,
   ) {}
+
+  // Ilk 500 program satin alan (mentor kredisi degil, gercek program erisimi
+  // acan) ogrenciye "Kurucu Uye" statusu bir kereligine verilir - ekstra rol/
+  // yetki YOK, sadece profilde/topluluk gonderilerinde gorunen bir etiket +
+  // rozet. Anonimlestirilmis (silinmis-*) kullanicilar sayaca dahil edilmez ki
+  // test/demo hesaplarinin acilip silinmesi gercek sayiyi bozmasin.
+  private async assignFoundingMemberIfEligible(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { isFoundingMember: true } });
+    if (!user || user.isFoundingMember) return;
+
+    const foundingCount = await this.prisma.user.count({
+      where: { isFoundingMember: true, ...NOT_DELETED_USER_WHERE },
+    });
+    if (foundingCount >= FOUNDING_MEMBER_LIMIT) return;
+
+    await this.prisma.user.update({ where: { id: userId }, data: { isFoundingMember: true } });
+    await this.badgesService.grantByNameIfEligible(userId, 'Kurucu Üye');
+  }
 
   private async createBinancePayOrder(paymentId: string, amount: number, currency: string) {
     const apiKey = process.env.BINANCE_PAY_API_KEY;
@@ -344,6 +367,8 @@ export class PaymentsService {
         });
       }
     }
+
+    await this.assignFoundingMemberIfEligible(payment.userId);
 
     if (payment.referredByStaffId) {
       const commissionAmount = Math.round(payment.amount * STAFF_COMMISSION_RATE * 100) / 100;

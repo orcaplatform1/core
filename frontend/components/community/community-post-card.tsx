@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ThumbsUp, ThumbsDown, MessageSquare, Flag, Lock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, Flag, Lock, TrendingUp, TrendingDown, Minus, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -80,7 +80,17 @@ function ReportDialog({ postId, onClose }: { postId: string; onClose: () => void
   );
 }
 
-export function CommunityPostCard({ post, canInteract }: { post: CommunityPost; canInteract: boolean }) {
+export function CommunityPostCard({
+  post,
+  canInteract,
+  featured = false,
+  highlighted = false,
+}: {
+  post: CommunityPost;
+  canInteract: boolean;
+  featured?: boolean;
+  highlighted?: boolean;
+}) {
   const router = useRouter();
   const react = useReactToCommunityPost();
   const [reporting, setReporting] = useState(false);
@@ -105,11 +115,25 @@ export function CommunityPostCard({ post, canInteract }: { post: CommunityPost; 
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={post.imageUrl} alt={post.title} className="h-56 w-full object-cover" />
+    <div
+      id={`community-post-${post.id}`}
+      className={`relative flex flex-col overflow-hidden rounded-2xl border bg-card transition-shadow duration-300 ${
+        featured
+          ? "border-primary/50 shadow-[0_0_0_1px_rgba(59,91,255,0.25),0_0_32px_rgba(59,91,255,0.18)]"
+          : "border-border"
+      } ${highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+    >
+      {featured && (
+        <div className="absolute left-0 top-0 z-10 flex items-center gap-1 rounded-br-xl bg-purple px-3 py-1.5 text-xs font-semibold text-white">
+          <Trophy className="size-3.5" />
+          Haftanın Setup&apos;ı
+        </div>
+      )}
 
-      <div className="flex flex-col gap-3 p-5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={post.imageUrl} alt={post.title} className={featured ? "h-72 w-full object-cover" : "h-56 w-full object-cover"} />
+
+      <div className={featured ? "flex flex-col gap-3 p-6" : "flex flex-col gap-3 p-5"}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Avatar size="sm">
@@ -119,12 +143,19 @@ export function CommunityPostCard({ post, canInteract }: { post: CommunityPost; 
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <Link
-                href={`/profile/${post.user.id}`}
-                className="block truncate text-sm font-semibold text-foreground hover:underline"
-              >
-                @{post.user.username ?? post.user.fullName}
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href={`/profile/${post.user.id}`}
+                  className="block truncate text-sm font-semibold text-foreground hover:underline"
+                >
+                  @{post.user.username ?? post.user.fullName}
+                </Link>
+                {post.user.isFoundingMember && (
+                  <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[9px] font-semibold text-warning">
+                    Kurucu Üye
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-muted-foreground">{timeAgo(post.createdAt)}</p>
             </div>
           </div>
@@ -145,7 +176,9 @@ export function CommunityPostCard({ post, canInteract }: { post: CommunityPost; 
         </div>
 
         <div>
-          <h3 className="text-base font-semibold text-foreground">{post.title}</h3>
+          <h3 className={featured ? "text-lg font-semibold text-foreground" : "text-base font-semibold text-foreground"}>
+            {post.title}
+          </h3>
           {post.description && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.description}</p>
           )}

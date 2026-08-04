@@ -531,6 +531,18 @@ export class UsersService {
     const isStaffOrAdmin = user.role === 'STAFF' || user.role === 'SUPER_ADMIN';
     const performance = !isStaffOrAdmin ? await this.stats.getMyStats(id) : null;
 
+    // Rozet vitrininin hemen ustunde gosterilen kucuk topluluk ozeti
+    // ("X Paylasim · Y Toplam Begeni") - sadece bilgi amacli.
+    const communityStats = !isStaffOrAdmin
+      ? await (async () => {
+          const [postsCount, likesReceived] = await Promise.all([
+            this.prisma.communityPost.count({ where: { userId: id, hiddenAt: null } }),
+            this.prisma.postLike.count({ where: { type: 'LIKE', post: { userId: id, hiddenAt: null } } }),
+          ]);
+          return { postsCount, likesReceived };
+        })()
+      : null;
+
     return {
       ...user,
       // Yetkili/kurucu profillerinde seri, rozet gibi ogrenci-odakli istatistikler
@@ -538,6 +550,7 @@ export class UsersService {
       currentStreak: isStaffOrAdmin ? null : user.currentStreak,
       longestStreak: isStaffOrAdmin ? null : user.longestStreak,
       userBadges: isStaffOrAdmin ? [] : user.userBadges,
+      communityStats,
       online: this.presence.isOnline(user.id),
       isBlockedByMe: !!isBlockedByMe,
       hasBlockedMe: !!hasBlockedMe,

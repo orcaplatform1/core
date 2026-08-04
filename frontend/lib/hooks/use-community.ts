@@ -19,6 +19,7 @@ export type CommunityPostUser = {
   username: string | null;
   fullName: string;
   avatarUrl: string | null;
+  isFoundingMember: boolean;
 };
 
 export type CommunityPost = {
@@ -31,6 +32,7 @@ export type CommunityPost = {
   direction: PostDirection;
   ictTags: string[];
   createdAt: string;
+  isPinned: boolean;
   user: CommunityPostUser;
   likes: number;
   dislikes: number;
@@ -39,9 +41,10 @@ export type CommunityPost = {
 };
 
 export type CommunityFeedResponse = {
+  pinnedPost: CommunityPost | null;
   posts: CommunityPost[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
-  viewer: { isAuthenticated: boolean; isEnrolled: boolean };
+  viewer: { isAuthenticated: boolean; isEnrolled: boolean; postsToday: number; dailyPostLimit: number };
 };
 
 export function useCommunityFeed(opts: { sort: "newest" | "top"; symbol?: string; page: number }) {
@@ -50,6 +53,14 @@ export function useCommunityFeed(opts: { sort: "newest" | "top"; symbol?: string
   return useQuery({
     queryKey: ["community", "posts", opts.sort, opts.symbol ?? "", opts.page],
     queryFn: () => apiClient<CommunityFeedResponse>(`/community/posts?${params.toString()}`, { auth: false }),
+  });
+}
+
+export function useCommunityPost(postId: string | null) {
+  return useQuery({
+    queryKey: ["community", "post", postId],
+    queryFn: () => apiClient<CommunityPost>(`/community/posts/${postId}`, { auth: false }),
+    enabled: !!postId,
   });
 }
 
@@ -185,5 +196,36 @@ export function useDeleteCommunityPost() {
   return useMutation({
     mutationFn: (id: string) => apiClient(`/manage/community/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "community", "hidden"] }),
+  });
+}
+
+export function useAdminActiveCommunityPosts(page: number) {
+  return useQuery({
+    queryKey: ["admin", "community", "active", page],
+    queryFn: () =>
+      apiClient<{ data: CommunityPost[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(
+        `/manage/community/active?page=${page}`,
+      ),
+  });
+}
+
+function invalidateCommunityAdminAndFeed(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["admin", "community", "active"] });
+  qc.invalidateQueries({ queryKey: ["community", "posts"] });
+}
+
+export function usePinCommunityPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient(`/manage/community/${id}/pin`, { method: "PATCH" }),
+    onSuccess: () => invalidateCommunityAdminAndFeed(qc),
+  });
+}
+
+export function useUnpinCommunityPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient(`/manage/community/${id}/unpin`, { method: "PATCH" }),
+    onSuccess: () => invalidateCommunityAdminAndFeed(qc),
   });
 }

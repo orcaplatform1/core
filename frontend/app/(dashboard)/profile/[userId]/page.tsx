@@ -201,6 +201,14 @@ export default function PublicProfilePage({
             </div>
           )}
 
+          {profile.communityStats && (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{profile.communityStats.postsCount}</span> Paylaşım
+              {" · "}
+              <span className="font-medium text-foreground">{profile.communityStats.likesReceived}</span> Toplam Beğeni
+            </p>
+          )}
+
           {profile.userBadges.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-6">
               <h3 className="text-sm font-semibold text-foreground">Rozetler</h3>

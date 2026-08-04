@@ -33,6 +33,13 @@ export class CommunityController {
     });
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('community/posts/:id')
+  getOne(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as any)?.id;
+    return this.communityService.getOne(id, userId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('community/posts/upload-url')
   getUploadUrl(@Req() req: Request, @Body() dto: GetPostUploadUrlDto) {
@@ -78,6 +85,29 @@ export class CommunityController {
   @Get('manage/community/hidden')
   listHidden() {
     return this.communityService.listHidden();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF', 'SUPER_ADMIN')
+  @Get('manage/community/active')
+  listActive(@Query('page') page?: string) {
+    return this.communityService.listActive(page ? parseInt(page, 10) : 1);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF', 'SUPER_ADMIN')
+  @Patch('manage/community/:id/pin')
+  setPinned(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.communityService.setPinned(id, userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('STAFF', 'SUPER_ADMIN')
+  @Patch('manage/community/:id/unpin')
+  unpin(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as any).id;
+    return this.communityService.unpin(id, userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

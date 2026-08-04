@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, Lock, Users } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Search, Lock, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCommunityFeed } from "@/lib/hooks/use-community";
+import { useCommunityFeed, useCommunityPost } from "@/lib/hooks/use-community";
 import { CommunityPostCard } from "./community-post-card";
 import { CreatePostSheet } from "./create-post-sheet";
 
@@ -21,12 +22,35 @@ export function CommunityContent() {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useCommunityFeed({ sort, symbol: symbol || undefined, page });
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const linkedPostId = searchParams.get("post");
+  const { data: linkedPost } = useCommunityPost(linkedPostId);
+  const linkedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (linkedPost && linkedRef.current) {
+      linkedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [linkedPost]);
+
   function applySymbolFilter() {
     setSymbol(symbolInput.trim());
     setPage(1);
   }
 
+  function clearLinkedPost() {
+    router.replace("/community");
+  }
+
   const canInteract = !!data?.viewer.isEnrolled;
+  const postsToday = data?.viewer.postsToday ?? 0;
+  const dailyPostLimit = data?.viewer.dailyPostLimit ?? 3;
+
+  // Bildirimden gelen ?post= linki her zaman en yeni sayfada olmayabilir
+  // (farkli sirlama/sayfalama) - o yuzden akistan ayri, kendi vurgulanmis
+  // kartinda gosterilip ana listeden tekrar etmemesi icin filtrelenir.
+  const feedPosts = (data?.posts ?? []).filter((p) => p.id !== linkedPostId);
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 lg:px-8">
@@ -38,7 +62,7 @@ export function CommunityContent() {
           </p>
         </div>
         {canInteract ? (
-          <CreatePostSheet />
+          <CreatePostSheet postsToday={postsToday} dailyPostLimit={dailyPostLimit} />
         ) : (
           <Button variant="gradient" render={<Link href="/subscription" />}>
             <Lock className="size-4" /> Paylaşım Yap
@@ -78,13 +102,35 @@ export function CommunityContent() {
         </div>
       </div>
 
+      {data?.pinnedPost && (
+        <div className="mb-8">
+          <CommunityPostCard post={data.pinnedPost} canInteract={canInteract} featured />
+        </div>
+      )}
+
+      {linkedPost && (
+        <div ref={linkedRef} className="mb-8">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Bağlantılı gönderi</p>
+            <button
+              type="button"
+              onClick={clearLinkedPost}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" /> Kapat
+            </button>
+          </div>
+          <CommunityPostCard post={linkedPost} canInteract={canInteract} highlighted />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-96 animate-pulse rounded-2xl bg-card" />
           ))}
         </div>
-      ) : !data || data.posts.length === 0 ? (
+      ) : feedPosts.length === 0 && !data?.pinnedPost ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card py-20 text-center">
           <Users className="size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
@@ -94,12 +140,12 @@ export function CommunityContent() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {data.posts.map((post) => (
+            {feedPosts.map((post) => (
               <CommunityPostCard key={post.id} post={post} canInteract={canInteract} />
             ))}
           </div>
 
-          {data.pagination.totalPages > 1 && (
+          {data && data.pagination.totalPages > 1 && (
             <div className="mt-10 flex flex-wrap items-center justify-center gap-1.5">
               {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map((p) => (
                 <button

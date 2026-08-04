@@ -13,3 +13,10 @@ export const COMMUNITY_POST_DISCLAIMER =
 // Bir paylasim bu sayida farkli kullanicidan sikayet alinca otomatik gizlenir
 // ve manage/community moderasyon kuyruguna duser.
 export const COMMUNITY_REPORT_THRESHOLD = 5;
+
+// Bir paylasim bu begeni sayisina ulasinca sahibine "Begenilen Analist" rozeti
+// otomatik verilir (bkz. community.service.ts react()).
+export const COMMUNITY_LIKED_ANALYST_THRESHOLD = 10;
+
+// Kullanici basina gunluk (UTC gece yarisi sifirlanir) en fazla paylasim sayisi.
+export const COMMUNITY_DAILY_POST_LIMIT = 3;
