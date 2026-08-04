@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
-export type WhaleCategory = "EXCHANGE" | "INSTITUTION" | "WHALE";
+export type WhaleCategory = "EXCHANGE" | "INSTITUTION" | "WHALE" | "UNKNOWN";
 export type MovementDirection = "IN" | "OUT";
 
 export type WhaleAddressActivity = {
@@ -12,6 +12,7 @@ export type WhaleAddressActivity = {
   label: string;
   category: WhaleCategory;
   network: string;
+  rank: number | null;
   latestBalanceSat: number | null;
   latestBalanceCapturedAt: string | null;
 };

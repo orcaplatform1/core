@@ -1,6 +1,8 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { WhaleTrackerService } from './whale-tracker.service';
 
 @UseGuards(JwtAuthGuard)
@@ -12,5 +14,12 @@ export class WhaleTrackerController {
   @Get()
   getRecentActivity() {
     return this.whaleTrackerService.getRecentActivity();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPER_ADMIN')
+  @Post('sync')
+  syncTopAddresses() {
+    return this.whaleTrackerService.syncTopAddresses();
   }
 }

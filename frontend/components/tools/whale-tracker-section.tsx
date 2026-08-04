@@ -14,12 +14,14 @@ const CATEGORY_LABEL: Record<WhaleCategory, string> = {
   EXCHANGE: "Borsa",
   INSTITUTION: "Kurum",
   WHALE: "Balina",
+  UNKNOWN: "Bilinmeyen",
 };
 
 const CATEGORY_BADGE_CLASS: Record<WhaleCategory, string> = {
   EXCHANGE: "bg-primary/12 text-primary",
   INSTITUTION: "bg-purple/12 text-purple",
   WHALE: "bg-warning/12 text-warning",
+  UNKNOWN: "bg-muted text-muted-foreground",
 };
 
 function satToBtc(sat: number): number {
@@ -115,6 +117,7 @@ export function WhaleTrackerSection() {
               title={a.address}
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CATEGORY_BADGE_CLASS[a.category]}`}
             >
+              {a.rank != null && <span className="text-muted-foreground">#{a.rank} · </span>}
               {a.label} · {CATEGORY_LABEL[a.category]}
               {a.latestBalanceSat != null && (
                 <span className="ml-1 text-muted-foreground">({fmtBtc(a.latestBalanceSat)} BTC)</span>
@@ -122,6 +125,13 @@ export function WhaleTrackerSection() {
             </span>
           ))}
         </div>
+
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Liste bitinfocharts rich-list verisiyle günde bir güncellenen ilk 30 en yüksek bakiyeli Bitcoin adresini
+          gösterir. Bazı kurumsal saklama (custody) adresleri — örn. Coinbase Custody — birden fazla ETF&apos;in
+          (BlackRock IBIT dahil) varlıklarını aynı havuzda tutabilir; bu adresler genel &quot;Coinbase Custody&quot;
+          gibi bir etiketle görünür, hangi ETF&apos;e ait olduğu kesin olarak ayrıştırılamaz.
+        </p>
 
         {movements.length === 0 ? (
           <WhaleEmptyState />
