@@ -47,10 +47,10 @@ function StatsCard({
         <span>Toplam: {stats.total}</span>
         <span className="text-[#22C55E]">Kazandı: {stats.wins}</span>
         <span className="text-[#EF4444]">Stop: {stats.losses}</span>
+        <span className="font-semibold text-[#F5F1EA]">
+          Başarı: {stats.winRate !== null ? `%${stats.winRate}` : "Yetersiz veri"}
+        </span>
       </div>
-      <p className="text-sm font-semibold text-[#F5F1EA]">
-        {stats.winRate !== null ? `%${stats.winRate} başarı` : "Yetersiz veri"}
-      </p>
     </div>
   );
 }

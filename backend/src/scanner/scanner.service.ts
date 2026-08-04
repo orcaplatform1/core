@@ -61,6 +61,14 @@ const YAHOO_MAP: Record<string, string> = {
   USDCNH: 'USDCNH=X', USDZAR: 'USDZAR=X', USDMXN: 'USDMXN=X',
 };
 
+// USDT karsisinda anlamli bir supply/demand hareketi olusturmayan (fiyati zaten
+// ~1.00 civarinda sabit kalan) stablecoin taban varliklari - tarama evreninden
+// tamamen cikarilir (bkz. fetchTopBinanceSymbols). Buyumesi muhtemel bir liste,
+// kolay guncellenebilmesi icin ayri bir config sabiti olarak tutulur.
+const STABLECOIN_BASE_ASSETS = new Set([
+  'USDC', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'USDP', 'PYUSD', 'USDD', 'GUSD',
+]);
+
 // Base mumdan sonraki en fazla 3 mumluk pencerede kapanis bazli net yer
 // degistirme ATR'nin kac kati olursa "impulsif" sayilir.
 const ZONE_IMPULSE_ATR_MULT = 1.8;
@@ -70,6 +78,24 @@ const ZONE_WICK_LOOKBACK = 10;
 const ZONE_WICK_TICK_BUFFER_PCT = 0.001;
 // Fitil bulunamazsa stop, zone sinirinin bu yuzde disina sabitlenir.
 const ZONE_STOP_FALLBACK_PCT = 0.005;
+// Bulunan fitil, zone'un kendi yuksekliginin bu katindan daha uzaktaysa
+// "yakinda" sayilmaz - o kadar uzak bir fitile dayanan stop, zone olcegine
+// gore orantisiz buyuk cikar (bkz. VIRTUALUSDT vakasi), bunun yerine
+// ZONE_STOP_FALLBACK_PCT'e dusulur.
+const MAX_WICK_DISTANCE_TO_ZONE_HEIGHT_MULT = 2;
+// Karsit zone'un (TP adayi) yakin kenari, entry zone sinirindan en az bu yuzde
+// kadar ayrismis olmali - yoksa entry zone'a bitisik/orta noktasina cok yakin
+// bir "karsit zone" gecerli bir TP hedefi sayilmaz (bkz. VIRTUALUSDT/TSLABUSDT
+// vakalari - eskiden entry ORTA noktasina gore karsilastiriliyordu, bu da
+// zone'un kendi ust/alt yarisiyla ortusen bir "karsit" zone'un bile TP1 olarak
+// secilmesine izin veriyordu).
+const MIN_ZONE_SEPARATION_PCT = 0.005;
+// Day-trade (4 saatlik) taramada zone tespiti ve karsit-zone/TP aramasi bu
+// kadar mumluk (60 x 4S = 10 gun) bir pencereyle sinirlanir - swing (gunluk,
+// bu limit UYGULANMAZ) ile ayni tam gecmisi taramak, gunler/haftalar once
+// olusmus ve artik fiyattan cok uzak zone'lara kadar geri gidip swing
+// olcegindeki mesafelerde TP'ler uretiyordu (bkz. ESPUSDT vakasi).
+const DAY_TRADE_ZONE_LOOKBACK_CANDLES = 60;
 
 @Injectable()
 export class ScannerService {
@@ -84,7 +110,12 @@ export class ScannerService {
       if (!res.ok) return [];
       const data = await res.json();
       return data
-        .filter((t: any) => t.symbol.endsWith('USDT') && !t.symbol.includes('UPUSDT') && !t.symbol.includes('DOWNUSDT'))
+        .filter((t: any) =>
+          t.symbol.endsWith('USDT') &&
+          !t.symbol.includes('UPUSDT') &&
+          !t.symbol.includes('DOWNUSDT') &&
+          !STABLECOIN_BASE_ASSETS.has(t.symbol.slice(0, -4)),
+        )
         .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
         .slice(0, limit)
         .map((t: any) => t.symbol);
@@ -283,17 +314,24 @@ export class ScannerService {
   // ATR bazli tampon KULLANILMAZ - sadece sabit yuzdelik tampon.
   private computeZoneStop(zone: Zone, candles: Candle[], bullish: boolean): number {
     const lookbackStart = Math.max(0, zone.baseIndex - ZONE_WICK_LOOKBACK);
+    const zoneHeight = zone.top - zone.bottom;
+    const maxWickDistance = zoneHeight * MAX_WICK_DISTANCE_TO_ZONE_HEIGHT_MULT;
     let bestWick: number | null = null;
 
     for (let idx = lookbackStart; idx <= zone.baseIndex; idx++) {
       const c = candles[idx];
       if (bullish) {
         if (c.low >= zone.bottom) continue;
+        // Fitil zone'un kendi yuksekligine gore cok uzaktaysa (bkz.
+        // MAX_WICK_DISTANCE_TO_ZONE_HEIGHT_MULT) "yakinda" sayilmaz - orantisiz
+        // buyuk bir stop mesafesi uretmesin diye aday listesine hic girmez.
+        if (zone.bottom - c.low > maxWickDistance) continue;
         const sweptLater = candles.slice(idx + 1).some((later) => later.low <= c.low);
         if (sweptLater) continue;
         if (bestWick === null || c.low < bestWick) bestWick = c.low;
       } else {
         if (c.high <= zone.top) continue;
+        if (c.high - zone.top > maxWickDistance) continue;
         const sweptLater = candles.slice(idx + 1).some((later) => later.high >= c.high);
         if (sweptLater) continue;
         if (bestWick === null || c.high > bestWick) bestWick = c.high;
@@ -337,7 +375,15 @@ export class ScannerService {
     trend4h: 'UP' | 'DOWN' | 'FLAT',
     fundingRate: number | null,
     stageCounter?: ZoneStageCounter,
+    zoneLookbackCandles?: number,
   ): Setup | null {
+    // Day-trade cagrilarinda (bkz. DAY_TRADE_ZONE_LOOKBACK_CANDLES) zone tespiti
+    // ve karsit-zone/TP aramasi son N muma sinirlanir - swing (parametre
+    // verilmez) tum gecmisi tarar. Sondan kesildigi icin "guncel fiyat"
+    // (son mum) her iki durumda da ayni kalir.
+    if (zoneLookbackCandles && candles.length > zoneLookbackCandles) {
+      candles = candles.slice(-zoneLookbackCandles);
+    }
     if (candles.length < 30) return null;
     if (stageCounter) stageCounter.attempted++;
 
@@ -386,10 +432,19 @@ export class ScannerService {
     // TP1/2/3: karsit yondeki en yakin 3 FRESH zone, entry'nin islem
     // yonunde otesinde olanlar, yakinlik sirasiyla. Near-edge (LONG'da supply
     // zone'un ALT sinirini, SHORT'ta demand zone'un UST sinirini) TP fiyati olur.
+    //
+    // Karsilastirma entry ORTA noktasina degil, entry zone'un DIS sinirina
+    // (entryZoneTop/Bottom) + bir MIN_ZONE_SEPARATION_PCT tamponuna gore
+    // yapilir - yoksa entry zone'un kendi ust/alt yarisiyla ortusen ya da
+    // hemen bitisigindeki bir zone bile gecerli bir TP adayi sayilabiliyordu
+    // (bkz. VIRTUALUSDT/TSLABUSDT vakalari - TP1 entry zone'un icinde cikmisti).
     const oppositeType: 'SUPPLY' | 'DEMAND' = bullish ? 'SUPPLY' : 'DEMAND';
+    const minSeparationEdge = bullish
+      ? entryZoneTop * (1 + MIN_ZONE_SEPARATION_PCT)
+      : entryZoneBottom * (1 - MIN_ZONE_SEPARATION_PCT);
     const targetZones = freshZones
       .filter((z) => z.type === oppositeType)
-      .filter((z) => (bullish ? z.bottom > entry : z.top < entry))
+      .filter((z) => (bullish ? z.bottom > minSeparationEdge : z.top < minSeparationEdge))
       .sort((a, b) => (bullish ? a.bottom - b.bottom : b.top - a.top));
     if (targetZones.length < 3) return null;
     if (stageCounter) stageCounter.tpZonesSufficient++;
@@ -629,7 +684,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const fundingRate = await this.fetchBinanceFundingRate(symbol);
         const trend1d = this.getTrend(daily);
         const trend4h = this.getTrend(h4);
-        const setup = this.buildZoneSetup(h4, trend1d, trend4h, fundingRate, stageCounter);
+        const setup = this.buildZoneSetup(h4, trend1d, trend4h, fundingRate, stageCounter, DAY_TRADE_ZONE_LOOKBACK_CANDLES);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
@@ -733,7 +788,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
         const trend1d = this.getTrend(daily);
         const trend4h = this.getTrend(h4);
-        const setup = this.buildZoneSetup(h4, trend1d, trend4h, null, stageCounter);
+        const setup = this.buildZoneSetup(h4, trend1d, trend4h, null, stageCounter, DAY_TRADE_ZONE_LOOKBACK_CANDLES);
         if (!setup) continue;
 
         const winRate = await this.getCachedWinRate(symbol, setup.direction);
