@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag, Gift, Rocket } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -218,11 +218,30 @@ export default function ManagePage() {
             <p className="text-body-xs text-[#A8A6A0]">Ziyaretçi istatistikleri, rol dağılımı, şu an aktif olanlar</p>
           </div>
         </Link>
-      </div>
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-body-sm text-[#A8A6A0]">
-          Tüm yönetim bölümleri tamamlandı.
-        </p>
+        <Link
+          href="/manage/airdrops"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B5BFF22]">
+            <Gift size={20} color="#3B5BFF" />
+          </div>
+          <div>
+            <p className="text-card-title-sm text-[#F5F1EA]">Airdrop Center</p>
+            <p className="text-body-xs text-[#A8A6A0]">Airdrop ekle/düzenle, #Ads pinleme</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/ico"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D9A44122]">
+            <Rocket size={20} color="#D9A441" />
+          </div>
+          <div>
+            <p className="text-card-title-sm text-[#F5F1EA]">ICO / IDO</p>
+            <p className="text-body-xs text-[#A8A6A0]">Lansman ekle/düzenle, #Ads pinleme</p>
+          </div>
+        </Link>
       </div>
     </div>
   );

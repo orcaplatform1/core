@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 export type ScanMarket = "CRYPTO" | "FOREX";
-export type TrendLabel = "PRO_TREND" | "COUNTER_TREND";
 export type ScanSignal = {
   symbol: string;
   direction: "LONG" | "SHORT";
@@ -16,13 +15,9 @@ export type ScanSignal = {
   tp3: number;
   rr: number;
   reasons: string[];
-  confidenceScore: number;
   strength: "GUCLU" | "ORTA" | "RISKLI";
   stillValid: boolean;
   distancePercent: number;
-  trendLabel: TrendLabel;
-  htfTrend1d: "UP" | "DOWN" | "FLAT";
-  htfTrend4h: "UP" | "DOWN" | "FLAT";
   fundingRate: number | null;
   aiCommentary: string | null;
 };
@@ -69,7 +64,6 @@ export type TrackedSignal = {
   tp3: number;
   rr: number;
   strength: "GUCLU" | "ORTA" | "RISKLI";
-  trendLabel: TrendLabel;
   status: "WATCHING" | "TRIGGERED" | "HIT_TP1" | "HIT_TP2" | "HIT_TP3" | "HIT_STOP" | "EXPIRED";
   createdAt: string;
   triggeredAt: string | null;
@@ -83,10 +77,7 @@ export type SignalStatsBlock = {
 };
 export type TrackedSignalsData = {
   signals: TrackedSignal[];
-  stats: SignalStatsBlock & {
-    proTrend: SignalStatsBlock;
-    counterTrend: SignalStatsBlock;
-  };
+  stats: SignalStatsBlock;
 };
 export function useTrackedSignals(market: ScanMarket = "CRYPTO") {
   return useQuery({

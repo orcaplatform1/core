@@ -14,7 +14,6 @@ import {
   type ScanSignal,
   type TrackedSignal,
   type ScanMarket,
-  type TrendLabel,
   type SignalStatsBlock,
 } from "@/lib/hooks/use-admin-scanner";
 
@@ -23,11 +22,6 @@ const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: strin
   GUCLU: { label: "GÜÇLÜ", bg: "#22C55E22", color: "#22C55E" },
   ORTA: { label: "ORTA", bg: "#F39C3D22", color: "#F39C3D" },
   RISKLI: { label: "RİSKLİ", bg: "#EF444422", color: "#EF4444" },
-};
-
-const TREND_LABEL_STYLES: Record<TrendLabel, { label: string; bg: string; color: string }> = {
-  PRO_TREND: { label: "Pro-Trend", bg: "#3B5BFF22", color: "#3B5BFF" },
-  COUNTER_TREND: { label: "Counter-Trend", bg: "#8B5CF622", color: "#8B5CF6" },
 };
 
 function StatsCard({
@@ -53,18 +47,6 @@ function StatsCard({
         </span>
       </div>
     </div>
-  );
-}
-
-function TrendBadge({ trendLabel }: { trendLabel: TrendLabel }) {
-  const style = TREND_LABEL_STYLES[trendLabel];
-  return (
-    <span
-      className="rounded-full px-2 py-0.5 text-badge"
-      style={{ backgroundColor: style.bg, color: style.color }}
-    >
-      {style.label}
-    </span>
   );
 }
 
@@ -156,7 +138,6 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
           >
             {strengthStyle.label}
           </span>
-          <TrendBadge trendLabel={signal.trendLabel} />
         </div>
       </div>
 
@@ -314,7 +295,6 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           >
             {strengthStyle.label}
           </span>
-          <TrendBadge trendLabel={signal.trendLabel} />
         </div>
       </div>
       {isOpen && (
@@ -491,11 +471,7 @@ export default function AdminScannerPage() {
               <h2 className="text-h2 text-[#F5F1EA]">
                 Takip Edilenler ({tracked.signals.length})
               </h2>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <StatsCard title="Toplam" accentColor="#F5F1EA" stats={tracked.stats} />
-                <StatsCard title="Pro-Trend" accentColor="#3B5BFF" stats={tracked.stats.proTrend} />
-                <StatsCard title="Counter-Trend" accentColor="#8B5CF6" stats={tracked.stats.counterTrend} />
-              </div>
+              <StatsCard title="Toplam" accentColor="#F5F1EA" stats={tracked.stats} />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {tracked.signals.map((s) => (
                   <TrackedSignalCard key={s.id} signal={s} market={market} />

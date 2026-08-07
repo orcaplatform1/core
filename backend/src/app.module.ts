@@ -59,6 +59,7 @@ import { SuspensionsModule } from './suspensions/suspensions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SupportModule } from './support/support.module';
 import { CommunityModule } from './community/community.module';
+import { AirdropModule } from './airdrop/airdrop.module';
 
 @Module({
   imports: [
@@ -132,6 +133,7 @@ import { CommunityModule } from './community/community.module';
     AnalyticsModule,
     SupportModule,
     CommunityModule,
+    AirdropModule,
   ],
   providers: [
     {

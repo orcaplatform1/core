@@ -23,13 +23,9 @@ interface Setup {
   tp3: number;
   rr: number;
   reasons: string[];
-  confidenceScore: number;
   strength: 'GUCLU' | 'ORTA' | 'RISKLI';
   stillValid: boolean;
   distancePercent: number;
-  trendLabel: 'PRO_TREND' | 'COUNTER_TREND';
-  htfTrend1d: 'UP' | 'DOWN' | 'FLAT';
-  htfTrend4h: 'UP' | 'DOWN' | 'FLAT';
   patternType: 'ICT_BREAKOUT_RETEST' | 'FX_LIQUIDITY_SWEEP';
 }
 
@@ -312,13 +308,9 @@ export class ScannerService {
       tp3: tp,
       rr: ICT_RR_MULT,
       reasons,
-      confidenceScore: 100,
       strength: 'GUCLU',
       stillValid,
       distancePercent,
-      trendLabel: 'PRO_TREND',
-      htfTrend1d: 'UP',
-      htfTrend4h: 'UP',
       patternType: 'ICT_BREAKOUT_RETEST',
     };
   }
@@ -347,7 +339,7 @@ export class ScannerService {
     const prompt = `Sen deneyimli bir teknik analiz uzmanısın. Aşağıdaki kural bazlı tarama sonucu için kısa, profesyonel bir senaryo yorumu yap. Yatırım tavsiyesi verme, sadece teknik durumu ve olası senaryoları özetle.
 
 Enstrüman: ${symbol}
-Yön: ${setup.direction} (${setup.trendLabel === 'PRO_TREND' ? 'Pro-Trend' : 'Counter-Trend'})
+Yön: ${setup.direction}
 Giriş Bölgesi: ${setup.entryZoneBottom} - ${setup.entryZoneTop}
 Stop: ${setup.stop}
 TP1: ${setup.tp1}, TP2: ${setup.tp2}, TP3: ${setup.tp3}
@@ -409,8 +401,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       } catch { continue; }
       await new Promise((r) => setTimeout(r, 150));
     }
-
-    candidates.sort((a, b) => b.confidenceScore - a.confidenceScore);
 
     const selected: any[] = [];
     for (const c of candidates) {
@@ -540,13 +530,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       tp3: tp,
       rr: FX_RR_MULT,
       reasons,
-      confidenceScore: 100,
       strength: 'GUCLU',
       stillValid,
       distancePercent,
-      trendLabel: 'PRO_TREND',
-      htfTrend1d: 'UP',
-      htfTrend4h: 'UP',
       patternType: 'FX_LIQUIDITY_SWEEP',
     };
   }
@@ -604,8 +590,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       } catch { continue; }
       await new Promise((r) => setTimeout(r, 150));
     }
-
-    candidates.sort((a, b) => b.confidenceScore - a.confidenceScore);
 
     const selected: any[] = [];
     for (const c of candidates) {
@@ -788,7 +772,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           tp3: s.tp3,
           rr: s.rr,
           strength: s.strength,
-          trendLabel: s.trendLabel,
           style,
           market: market as any,
           status: 'WATCHING',
@@ -899,12 +882,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
-  // Kazanc/kayip istatistiklerini hem genel toplam hem de Pro-Trend/Counter-Trend
-  // olarak AYRI hesaplar - hangisinin daha iyi performans verdigi net gorulebilsin.
-  // Filtreleme icin degil, sadece gruplama/karsilastirma icin (bkz. sema notu).
-  private async computeSignalStats(style: string, market: string, trendLabel?: 'PRO_TREND' | 'COUNTER_TREND') {
+  private async computeSignalStats(style: string, market: string) {
     const baseWhere: any = { style, market: market as any };
-    if (trendLabel) baseWhere.trendLabel = trendLabel;
 
     const [activeCount, wins, losses] = await Promise.all([
       this.prisma.trackedSignal.count({
@@ -928,15 +907,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
-    const [overall, proTrend, counterTrend] = await Promise.all([
-      this.computeSignalStats(style, market),
-      this.computeSignalStats(style, market, 'PRO_TREND'),
-      this.computeSignalStats(style, market, 'COUNTER_TREND'),
-    ]);
-    return {
-      signals,
-      stats: { ...overall, proTrend, counterTrend },
-    };
+    const stats = await this.computeSignalStats(style, market);
+    return { signals, stats };
   }
 
 

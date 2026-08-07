@@ -264,7 +264,13 @@ body {
   content: "";
   position: absolute;
   inset: -100%;
-  background: conic-gradient(from 0deg, #3B5BFF 0%, #5A7CFF 33%, #8B5CF6 66%, #3B5BFF 100%);
+  /* Onceki blue->purple->blue gecisi renk kontrasti cok dusuktu - donus DOM'da
+     dogru ilerliyordu (getComputedStyle ile dogrulandi) ama goze donuyormus gibi
+     gorunmuyordu (AI Mentor kutusunda daha once yasanan ayni sorun, bkz.
+     .premium-glow-card::before). Ayni "kuyruklu yildiz" cozumu: cogunlukla
+     mavi/mor zemin + parlak beyaz-mor bir flas bandi, boylece donus goze net
+     carpiyor. */
+  background: conic-gradient(from 0deg, #3B5BFF 0%, #3B5BFF 45%, #8B5CF6 60%, #FFFFFF 72%, #C4B5FD 80%, #3B5BFF 92%, #3B5BFF 100%);
   animation: premium-glow-spin 5s linear infinite;
   will-change: transform;
 }

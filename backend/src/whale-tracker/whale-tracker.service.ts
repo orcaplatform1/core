@@ -160,9 +160,13 @@ export class WhaleTrackerService {
 
     for (const address of addresses) {
       try {
-        const res = await fetch(`https://mempool.space/api/address/${address.address}`);
+        // mempool.space bu sunucudan erisilemiyor (TCP baglanti timeout, tum
+        // IP'lerinde) - blockstream.info ayni Esplora API semasini (ayni
+        // chain_stats.funded_txo_sum/spent_txo_sum, ayni /txs sekli) sunan
+        // kardeş proje, bu sunucudan calisan bir alternatif.
+        const res = await fetch(`https://blockstream.info/api/address/${address.address}`);
         if (!res.ok) {
-          this.logger.warn(`mempool.space adres sorgusu başarısız (${address.address}): ${res.status}`);
+          this.logger.warn(`blockstream.info adres sorgusu başarısız (${address.address}): ${res.status}`);
           await new Promise((r) => setTimeout(r, 200));
           continue;
         }
@@ -180,7 +184,9 @@ export class WhaleTrackerService {
           const delta = currentBalanceSat - previous.balanceSat;
           if (Math.abs(Number(delta)) >= MOVEMENT_THRESHOLD_SAT) {
             try {
-              const txsRes = await fetch(`https://mempool.space/api/address/${address.address}/txs`);
+              // ayni gerekce: mempool.space erisilemiyor, blockstream.info /txs
+              // ucu ayni sekilde (txid en yeni once) veri donuyor.
+              const txsRes = await fetch(`https://blockstream.info/api/address/${address.address}/txs`);
               if (txsRes.ok) {
                 const txs = await txsRes.json();
                 const latestTx = Array.isArray(txs) ? txs[0] : null;

@@ -1,123 +1,131 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { IcoProject } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { CreateIcoProjectDto } from './dto/create-ico-project.dto';
+import { UpdateIcoProjectDto } from './dto/update-ico-project.dto';
 
-interface IcoBenchIcoDto {
-  id: string | number;
-  name: string;
-  tokenSymbol?: string;
-  symbol?: string;
-  status?: string;
-  raised?: number | string;
-  raisedAmountUsd?: number | string;
-  rating?: number | string;
-  ratingScore?: number | string;
-  dateStart?: string;
-  startDate?: string;
-  dateEnd?: string;
-  endDate?: string;
-  website?: string;
-  websiteUrl?: string;
-  description?: string;
-}
-
+// ICObench API entegrasyonu kaldirildi (kullanici talebiyle) - tum ICO/IDO
+// kayitlari artik admin panelden manuel eklenir, icodrops.com'daki lansman
+// bilgisi tarzinda (launchpad, katilim linki, satis tipi vb.).
 @Injectable()
 export class IcoTrackerService {
-  private readonly logger = new Logger(IcoTrackerService.name);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
-  constructor(private readonly prisma: PrismaService) {}
-
-  // ICObench Data API, istekleri saniye cinsinden bir timestamp + bu timestamp'in
-  // özel anahtarla HMAC-SHA384 imzasıyla doğrular. Bkz. ICObench Data API dokümantasyonu.
-  private signRequest(publicKey: string, privateKey: string): Record<string, string> {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const hash = crypto.createHmac('sha384', privateKey).update(String(timestamp)).digest('hex');
-    return {
-      'x-icobench-key': publicKey,
-      'x-icobench-hash': hash,
-      'x-icobench-timestamp': String(timestamp),
-    };
-  }
-
-  private mapStatus(raw: string | undefined): 'UPCOMING' | 'ACTIVE' | 'ENDED' {
-    const s = (raw ?? '').toLowerCase();
-    if (s.includes('upcoming')) return 'UPCOMING';
-    if (s.includes('active') || s.includes('ongoing')) return 'ACTIVE';
-    return 'ENDED';
-  }
-
-  private toNumberOrNull(value: number | string | undefined): number | null {
-    if (value == null) return null;
-    const n = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private toDateOrNull(value: string | undefined): Date | null {
-    if (!value) return null;
-    const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-
-  async refresh(): Promise<void> {
-    const publicKey = process.env.ICOBENCH_PUBLIC_KEY;
-    const privateKey = process.env.ICOBENCH_PRIVATE_KEY;
-    if (!publicKey || !privateKey) {
-      this.logger.warn('ICOBENCH_PUBLIC_KEY/ICOBENCH_PRIVATE_KEY not set, skipping refresh');
-      return;
-    }
-
-    try {
-      const headers = this.signRequest(publicKey, privateKey);
-      const res = await fetch('https://icobench.com/api/v1/icos?status=upcoming,active', {
-        headers,
-      });
-      if (!res.ok) {
-        this.logger.warn(`ICObench API request failed with status ${res.status}`);
-        return;
-      }
-      const body = await res.json();
-      const rows: IcoBenchIcoDto[] = Array.isArray(body) ? body : (body?.results ?? body?.data ?? []);
-      if (!Array.isArray(rows) || rows.length === 0) return;
-
-      for (const row of rows) {
-        const externalId = String(row.id);
-        if (!externalId) continue;
-        await this.prisma.icoProject.upsert({
-          where: { externalId },
-          create: {
-            externalId,
-            name: row.name,
-            tokenSymbol: row.tokenSymbol ?? row.symbol ?? null,
-            status: this.mapStatus(row.status),
-            raisedAmountUsd: this.toNumberOrNull(row.raisedAmountUsd ?? row.raised),
-            ratingScore: this.toNumberOrNull(row.ratingScore ?? row.rating),
-            startDate: this.toDateOrNull(row.startDate ?? row.dateStart),
-            endDate: this.toDateOrNull(row.endDate ?? row.dateEnd),
-            websiteUrl: row.websiteUrl ?? row.website ?? null,
-            description: row.description ?? null,
-          },
-          update: {
-            name: row.name,
-            tokenSymbol: row.tokenSymbol ?? row.symbol ?? null,
-            status: this.mapStatus(row.status),
-            raisedAmountUsd: this.toNumberOrNull(row.raisedAmountUsd ?? row.raised),
-            ratingScore: this.toNumberOrNull(row.ratingScore ?? row.rating),
-            startDate: this.toDateOrNull(row.startDate ?? row.dateStart),
-            endDate: this.toDateOrNull(row.endDate ?? row.dateEnd),
-            websiteUrl: row.websiteUrl ?? row.website ?? null,
-            description: row.description ?? null,
-          },
-        });
-      }
-    } catch (err) {
-      this.logger.warn(`ICO refresh failed: ${err}`);
-    }
-  }
-
+  // #Ads etiketli kayitlar tarih/durumdan bagimsiz olarak listenin en ustunde
+  // (aralarinda en son eklenen ustte) gorunmeli - normal siralamayi (durum,
+  // sonra tarih) bozmadan bunu saglamak icin iki ayri sorgu birlestirilir
+  // (bkz. AirdropService.paginate'teki ayni gerekce).
   async getIcos(): Promise<IcoProject[]> {
-    return this.prisma.icoProject.findMany({
-      orderBy: [{ raisedAmountUsd: 'desc' }, { ratingScore: 'desc' }],
+    const [ads, rest] = await Promise.all([
+      this.prisma.icoProject.findMany({ where: { isAd: true }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.icoProject.findMany({
+        where: { isAd: false },
+        orderBy: [{ status: 'asc' }, { startDate: 'asc' }, { raisedAmountUsd: 'desc' }],
+      }),
+    ]);
+    return [...ads, ...rest];
+  }
+
+  async create(dto: CreateIcoProjectDto, actorId: string) {
+    const created = await this.prisma.icoProject.create({
+      data: {
+        name: dto.name,
+        tokenSymbol: dto.tokenSymbol,
+        status: (dto.status as any) ?? 'UPCOMING',
+        raisedAmountUsd: dto.raisedAmountUsd,
+        ratingScore: dto.ratingScore,
+        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+        websiteUrl: dto.websiteUrl,
+        description: dto.description,
+        logo: dto.logo,
+        blockchain: dto.blockchain,
+        category: dto.category,
+        saleType: dto.saleType,
+        launchpad: dto.launchpad,
+        launchpadUrl: dto.launchpadUrl,
+        tokenPrice: dto.tokenPrice,
+        hardCapUsd: dto.hardCapUsd,
+        valuationUsd: dto.valuationUsd,
+        allocationDetails: dto.allocationDetails,
+        requiresKYC: dto.requiresKYC ?? false,
+        requiresWhitelist: dto.requiresWhitelist ?? false,
+        twitter: dto.twitter,
+        telegram: dto.telegram,
+        discord: dto.discord,
+        isAd: dto.isAd ?? false,
+        adExpiresAt: dto.adExpiresAt ? new Date(dto.adExpiresAt) : undefined,
+      },
+    });
+    await this.auditLogService.log(actorId, 'ICO_CREATE', 'IcoProject', created.id);
+    return created;
+  }
+
+  async update(id: string, dto: UpdateIcoProjectDto, actorId: string) {
+    const existing = await this.prisma.icoProject.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('ICO/IDO projesi bulunamadı.');
+    }
+
+    const updated = await this.prisma.icoProject.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.tokenSymbol !== undefined && { tokenSymbol: dto.tokenSymbol }),
+        ...(dto.status !== undefined && { status: dto.status as any }),
+        ...(dto.raisedAmountUsd !== undefined && { raisedAmountUsd: dto.raisedAmountUsd }),
+        ...(dto.ratingScore !== undefined && { ratingScore: dto.ratingScore }),
+        ...(dto.startDate !== undefined && { startDate: new Date(dto.startDate) }),
+        ...(dto.endDate !== undefined && { endDate: new Date(dto.endDate) }),
+        ...(dto.websiteUrl !== undefined && { websiteUrl: dto.websiteUrl }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.logo !== undefined && { logo: dto.logo }),
+        ...(dto.blockchain !== undefined && { blockchain: dto.blockchain }),
+        ...(dto.category !== undefined && { category: dto.category }),
+        ...(dto.saleType !== undefined && { saleType: dto.saleType }),
+        ...(dto.launchpad !== undefined && { launchpad: dto.launchpad }),
+        ...(dto.launchpadUrl !== undefined && { launchpadUrl: dto.launchpadUrl }),
+        ...(dto.tokenPrice !== undefined && { tokenPrice: dto.tokenPrice }),
+        ...(dto.hardCapUsd !== undefined && { hardCapUsd: dto.hardCapUsd }),
+        ...(dto.valuationUsd !== undefined && { valuationUsd: dto.valuationUsd }),
+        ...(dto.allocationDetails !== undefined && { allocationDetails: dto.allocationDetails }),
+        ...(dto.requiresKYC !== undefined && { requiresKYC: dto.requiresKYC }),
+        ...(dto.requiresWhitelist !== undefined && { requiresWhitelist: dto.requiresWhitelist }),
+        ...(dto.twitter !== undefined && { twitter: dto.twitter }),
+        ...(dto.telegram !== undefined && { telegram: dto.telegram }),
+        ...(dto.discord !== undefined && { discord: dto.discord }),
+        ...(dto.isAd !== undefined && { isAd: dto.isAd }),
+        ...(dto.adExpiresAt !== undefined && { adExpiresAt: new Date(dto.adExpiresAt) }),
+      },
+    });
+    await this.auditLogService.log(actorId, 'ICO_UPDATE', 'IcoProject', id);
+    return updated;
+  }
+
+  async remove(id: string, actorId: string) {
+    const existing = await this.prisma.icoProject.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('ICO/IDO projesi bulunamadı.');
+    }
+    await this.prisma.icoProject.delete({ where: { id } });
+    await this.auditLogService.log(actorId, 'ICO_DELETE', 'IcoProject', id);
+    return { message: 'Silindi.' };
+  }
+
+  // #Ads suresi (adExpiresAt) gecen kayitlari normal siraya geri dondurur -
+  // kayit SILINMEZ, sadece pinlenmis konumu kalkar (bkz. AirdropService'teki
+  // ayni gerekce).
+  @Cron('* * * * *')
+  async expireAds() {
+    const now = new Date();
+    await this.prisma.icoProject.updateMany({
+      where: { isAd: true, adExpiresAt: { lt: now } },
+      data: { isAd: false },
     });
   }
 }

@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { IcoTrackerController } from './ico-tracker.controller';
+import { AdminIcoTrackerController } from './admin-ico-tracker.controller';
 import { IcoTrackerService } from './ico-tracker.service';
-import { IcoTrackerSchedulerService } from './ico-tracker-scheduler.service';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  controllers: [IcoTrackerController],
-  providers: [IcoTrackerService, IcoTrackerSchedulerService],
+  imports: [AuditLogModule],
+  controllers: [IcoTrackerController, AdminIcoTrackerController],
+  providers: [IcoTrackerService],
 })
 export class IcoTrackerModule {}

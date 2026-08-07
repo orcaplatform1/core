@@ -1,0 +1,18 @@
+-- AlterTable
+ALTER TABLE "IcoProject" ADD COLUMN     "allocationDetails" TEXT,
+ADD COLUMN     "blockchain" TEXT,
+ADD COLUMN     "category" TEXT,
+ADD COLUMN     "discord" TEXT,
+ADD COLUMN     "hardCapUsd" DOUBLE PRECISION,
+ADD COLUMN     "launchpad" TEXT,
+ADD COLUMN     "launchpadUrl" TEXT,
+ADD COLUMN     "logo" TEXT,
+ADD COLUMN     "requiresKYC" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "requiresWhitelist" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "saleType" TEXT,
+ADD COLUMN     "telegram" TEXT,
+ADD COLUMN     "tokenPrice" DOUBLE PRECISION,
+ADD COLUMN     "twitter" TEXT,
+ADD COLUMN     "valuationUsd" DOUBLE PRECISION,
+ALTER COLUMN "externalId" DROP NOT NULL,
+ALTER COLUMN "status" SET DEFAULT 'UPCOMING';

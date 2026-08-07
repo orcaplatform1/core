@@ -850,18 +850,12 @@ model TrackedSignal {
   market          AssetType @default(CRYPTO)
   strength        String
   status          String    @default("WATCHING")
-  // Sinyalin HTF (1G+4S EMA50/200) trendiyle ayni yonde mi (PRO_TREND) yoksa
-  // ters yonde mi (COUNTER_TREND) oldugu - filtrelemek icin degil, istatistikleri
-  // ikiye ayirip hangisinin daha iyi performans verdigini olcmek icin (bkz.
-  // scanner.service.ts getTrackedSignals()).
-  trendLabel      String    @default("PRO_TREND")
   strategyName    String    @default("SUPPLY_DEMAND_ZONE")
   createdAt       DateTime  @default(now())
   triggeredAt     DateTime?
   closedAt        DateTime?
 
   @@index([status])
-  @@index([trendLabel])
 }
 
 model WinRateCache {
@@ -1177,21 +1171,47 @@ enum IcoStatus {
 }
 
 model IcoProject {
-  id              String    @id @default(cuid())
-  externalId      String    @unique
-  name            String
-  tokenSymbol     String?
-  status          IcoStatus
-  raisedAmountUsd Float?
-  ratingScore     Float?
-  startDate       DateTime?
-  endDate         DateTime?
-  websiteUrl      String?
-  description     String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  // ICObench entegrasyonu kaldirildi (kullanici talebiyle, artik tum kayitlar
+  // admin panelden manuel eklenir) - externalId eski senkron kayitlarindan
+  // kalma, artik opsiyonel (yeni manuel kayitlarda null).
+  externalId        String?   @unique
+  name              String
+  tokenSymbol       String?
+  status            IcoStatus @default(UPCOMING)
+  raisedAmountUsd   Float?
+  ratingScore       Float?
+  startDate         DateTime?
+  endDate           DateTime?
+  websiteUrl        String?
+  description       String?
+  // icodrops.com tarzi lansman/katilim bilgileri
+  logo              String?
+  blockchain        String?
+  category          String?
+  saleType          String?
+  launchpad         String?
+  launchpadUrl      String?
+  tokenPrice        Float?
+  hardCapUsd        Float?
+  valuationUsd      Float?
+  allocationDetails String?
+  requiresKYC       Boolean   @default(false)
+  requiresWhitelist Boolean   @default(false)
+  twitter           String?
+  telegram          String?
+  discord           String?
+  // #Ads etiketi: true ise listelerde tarih/eklenme sirasindan bagimsiz
+  // olarak en usttte gosterilir (birden fazla reklamli kayit varsa aralarinda
+  // en son eklenen ustte). adExpiresAt gecince (bkz. servisteki cron) isAd
+  // otomatik false'a doner, kayit normal siraya geri doner - SILINMEZ.
+  isAd              Boolean   @default(false)
+  adExpiresAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([status])
+  @@index([isAd])
 }
 
 // ---------- Kilidi Açılacak Coinler (CryptoRank) — iskelet, henüz veri yok ----------
@@ -1395,4 +1415,67 @@ model PostReport {
   createdAt  DateTime         @default(now())
 
   @@unique([postId, reporterId])
+}
+
+// ---------- Airdrop Center (CoinMarketCap/Galxe/Layer3/DappRadar) ----------
+enum AirdropStatus {
+  UPCOMING
+  ACTIVE
+  ENDED
+}
+
+enum AirdropDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Airdrop {
+  id                 String            @id @default(cuid())
+  title              String
+  slug               String            @unique
+  projectName        String
+  blockchain         String
+  category           String
+  logo               String?
+  banner             String?
+  description        String?           @db.Text
+  website            String?
+  twitter            String?
+  discord            String?
+  telegram           String?
+  documentation      String?
+  status             AirdropStatus     @default(UPCOMING)
+  rewardType         String
+  estimatedReward    String?
+  estimatedValueUSD  Float?
+  difficulty         AirdropDifficulty @default(MEDIUM)
+  completionTime     String?
+  requiresKYC        Boolean           @default(false)
+  requiresWallet     Boolean           @default(false)
+  requiresDiscord    Boolean           @default(false)
+  requiresTwitter    Boolean           @default(false)
+  requiresTelegram   Boolean           @default(false)
+  startDate          DateTime?
+  endDate            DateTime?
+  snapshotDate       DateTime?
+  claimDate          DateTime?
+  aiScore            Int               @default(50)
+  riskScore          Int               @default(50)
+  featured           Boolean           @default(false)
+  // #Ads etiketi: true ise listelerde tarih/eklenme sirasindan bagimsiz
+  // olarak en usttte gosterilir (birden fazla reklamli kayit varsa aralarinda
+  // en son eklenen ustte). adExpiresAt gecince (bkz. servisteki cron) isAd
+  // otomatik false'a doner, kayit normal siraya geri doner - SILINMEZ.
+  isAd               Boolean           @default(false)
+  adExpiresAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([status])
+  @@index([blockchain])
+  @@index([category])
+  @@index([difficulty])
+  @@index([featured])
+  @@index([isAd])
 }
