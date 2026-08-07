@@ -1,11 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { IcoTrackerService } from './ico-tracker.service';
 
-// Giriş yapmış her rol (GUEST dahil) erişebilir — Araçlar sayfasındaki diğer
-// crypto uçlarıyla aynı erişim/rate-limit kuralları geçerli.
-@UseGuards(JwtAuthGuard)
+// Anonim ziyaretciler de erisebilir (bkz. public-tools.controller.ts'teki ayni gerekce).
+@UseGuards(OptionalJwtAuthGuard)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('tools/crypto/ico')
 export class IcoTrackerController {

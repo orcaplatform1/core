@@ -1,16 +1,17 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CryptoToolsService } from './crypto-tools.service';
 import { ForexToolsService } from './forex-tools.service';
 import { EconomicToolsService } from './economic-tools.service';
 import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
 
-// Giriş yapmış her rol (GUEST dahil) erişebilir — anonim ziyaretçiler değil.
-// Dashboard'daki "Araçlar" sayfası bu uçları çağırıyor; sadece rol/abonelik
-// kısıtı yok, JwtAuthGuard yeterli.
-@UseGuards(JwtAuthGuard)
+// Anonim ziyaretciler de erisebilir (2 dakikalik deneme suresi, bkz.
+// frontend VisitorTrialGate + backend visitor-trial modulu) - giris yapmis
+// kullanicilar (rol/abonelik farketmeksizin) sinirsiz erisir. Kisisellestirme
+// gerekmedigi icin OptionalJwtAuthGuard yeterli, req.user hic kullanilmiyor.
+@UseGuards(OptionalJwtAuthGuard)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('tools')
 export class PublicToolsController {

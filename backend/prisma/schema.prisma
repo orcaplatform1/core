@@ -1479,3 +1479,20 @@ model Airdrop {
   @@index([featured])
   @@index([isAd])
 }
+
+// ---------- Ziyaretci Deneme Suresi (Araclar + Topluluk, giris yapmamis kullanicilar) ----------
+// cookieId, httpOnly + uzun omurlu (1 yil) bir cerezde tasinan rastgele bir
+// kimlik - ilk erisimde olusturulur, expiresAt (firstAccessAt + 2dk) gecince
+// bu kayit kalici olarak "suresi doldu" sayilir, SILINMEZ (ayni cerezle bir
+// daha deneme hakki verilmez). Kullanici cerezleri temizlerse yeni bir
+// cookieId ile yeni bir kayit olusur - cerez-bazli takibin dogasinda olan,
+// kacinilmaz bir sinir (bkz. VisitorTrialService).
+model AnonymousVisitor {
+  id            String   @id @default(cuid())
+  cookieId      String   @unique
+  firstAccessAt DateTime @default(now())
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([expiresAt])
+}

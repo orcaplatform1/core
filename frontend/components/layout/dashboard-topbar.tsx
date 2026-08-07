@@ -90,10 +90,10 @@ export function DashboardTopbar({
     };
   }, [user, queryClient]);
 
-  const { data: notifications } = useMyNotifications();
-  const { data: unread } = useUnreadCount();
-  const { data: announcementUnread } = useAnnouncementUnreadCount();
-  const { data: unreadDm } = useUnreadDmCount();
+  const { data: notifications } = useMyNotifications(!!user);
+  const { data: unread } = useUnreadCount(!!user);
+  const { data: announcementUnread } = useAnnouncementUnreadCount(!!user);
+  const { data: unreadDm } = useUnreadDmCount(!!user);
   const { mutate: markRead } = useMarkNotificationRead();
   const userName = user?.fullName ?? "Kullanici";
   const userAvatarUrl = user?.avatarUrl ?? undefined;

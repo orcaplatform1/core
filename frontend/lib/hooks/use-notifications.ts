@@ -4,19 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import type { Notification } from "@/lib/types/curriculum";
 
-export function useMyNotifications() {
+export function useMyNotifications(enabled: boolean = true) {
   return useQuery({
     queryKey: ["notifications", "me"],
     queryFn: () => apiClient<Notification[]>("/notifications/me"),
     refetchInterval: 60000,
+    enabled,
   });
 }
 
-export function useUnreadCount() {
+export function useUnreadCount(enabled: boolean = true) {
   return useQuery({
     queryKey: ["notifications", "unread-count"],
     queryFn: () => apiClient<{ count: number }>("/notifications/me/unread-count"),
     refetchInterval: 60000,
+    enabled,
   });
 }
 
@@ -52,11 +54,12 @@ export function useMyAnnouncements(page: number = 1, limit: number = 10) {
   });
 }
 
-export function useAnnouncementUnreadCount() {
+export function useAnnouncementUnreadCount(enabled: boolean = true) {
   return useQuery({
     queryKey: ["notifications", "inbox", "unread-count"],
     queryFn: () => apiClient<{ count: number }>("/notifications/me/inbox/unread-count"),
     refetchInterval: 60000,
+    enabled,
   });
 }
 

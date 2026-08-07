@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHero } from "@/components/marketing/page-hero";
 import { CommunityContent } from "@/components/community/community-content";
+import { VisitorTrialGate } from "@/components/layout/visitor-trial-gate";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
@@ -16,9 +17,11 @@ export default async function CommunityPage() {
   return (
     <>
       <PageHero title="Topluluk" heroImageSrc={siteContent.heroImageUrl ?? undefined} />
-      <Suspense fallback={null}>
-        <CommunityContent />
-      </Suspense>
+      <VisitorTrialGate>
+        <Suspense fallback={null}>
+          <CommunityContent />
+        </Suspense>
+      </VisitorTrialGate>
     </>
   );
 }

@@ -36,11 +36,12 @@ export function useConversations() {
   });
 }
 
-export function useUnreadDmCount() {
+export function useUnreadDmCount(enabled: boolean = true) {
   return useQuery({
     queryKey: ["dm", "unread-count"],
     queryFn: () => apiClient<{ count: number }>("/dm/unread-count"),
     refetchInterval: 15000,
+    enabled,
   });
 }
 

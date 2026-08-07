@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { notify } from "@/lib/notify";
@@ -30,6 +30,7 @@ const methods = [
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, user, isLoading } = useAuth();
 
   useEffect(() => {
@@ -37,6 +38,15 @@ export function LoginForm() {
       router.replace("/dashboard");
     }
   }, [isLoading, user, router]);
+
+  // Araclar/Topluluk'taki 2 dakikalik ziyaretci deneme suresi dolunca buraya
+  // yonlendirilir (bkz. VisitorTrialGate) - aniden degil, kisa bir
+  // bilgilendirme mesajiyla.
+  useEffect(() => {
+    if (searchParams.get("reason") === "trial_expired") {
+      notify.info("Ücretsiz deneme süreniz doldu", "Devam etmek için giriş yapın.");
+    }
+  }, [searchParams]);
   const {
     register,
     handleSubmit,
