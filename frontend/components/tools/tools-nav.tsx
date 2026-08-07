@@ -21,7 +21,7 @@ export function ToolsNav({ items, exact = false }: { items: ToolsNavItem[]; exac
             key={item.href}
             href={item.href}
             className={cn(
-              "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-200",
+              "rounded-lg px-3.5 py-2 text-tag transition-colors duration-200",
               active
                 ? "bg-primary/12 text-primary"
                 : "text-muted-foreground hover:bg-card-hover hover:text-foreground",

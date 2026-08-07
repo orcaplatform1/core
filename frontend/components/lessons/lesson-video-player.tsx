@@ -115,7 +115,7 @@ export function LessonVideoPlayer({
         <VideoWatermark />
       </div>
       {completed && (
-        <div className="flex items-center gap-2 text-sm font-medium text-success">
+        <div className="flex items-center gap-2 text-body-sm font-medium text-success">
           <CheckCircle2 className="size-4" />
           Bu dersi tamamladın
         </div>

@@ -48,8 +48,8 @@ export default function CertificatesPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Sertifikam</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">Sertifikam</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           ORCA eğitim programının tamamını bitirince kazanacağın mezuniyet sertifikası.
         </p>
       </div>
@@ -62,11 +62,11 @@ export default function CertificatesPage() {
             <Award className="size-10 text-primary drop-shadow-[0_0_20px_rgba(59,91,255,0.5)]" />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground">{status.certificate.code}</p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">
+            <p className="text-body-xs text-muted-foreground">{status.certificate.code}</p>
+            <h2 className="mt-1 text-card-title-md text-foreground">
               ORCA Mezuniyet Sertifikası
             </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-body-xs text-muted-foreground">
               {new Date(status.certificate.issuedAt).toLocaleDateString("tr-TR", {
                 day: "2-digit",
                 month: "long",
@@ -98,10 +98,10 @@ export default function CertificatesPage() {
           {status.eligible ? (
             <>
               <Sparkles className="size-10 text-purple" />
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-card-title-md text-foreground">
                 Tebrikler, tüm eğitimi tamamladın!
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 Mezuniyet sertifikanı almak için son adım seni bekliyor.
               </p>
               <Button className="h-11 w-full" disabled={isPending} onClick={handleIssue}>
@@ -111,8 +111,8 @@ export default function CertificatesPage() {
           ) : (
             <>
               <Lock className="size-10 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">Henüz hazır değil</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="text-card-title-md text-foreground">Henüz hazır değil</h2>
+              <p className="text-body-sm text-muted-foreground">
                 {status.totalPrograms === 0
                   ? "Sertifika kazanmak için önce bir programa sahip olmalısın."
                   : `${status.completedPrograms}/${status.totalPrograms} program tamamlandı — sertifika için sahip olduğun tüm programları bitirmen gerekiyor.`}

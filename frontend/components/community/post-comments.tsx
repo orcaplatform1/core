@@ -44,9 +44,9 @@ export function PostComments({ postId, canInteract }: { postId: string; canInter
   return (
     <div className="flex flex-col gap-3 border-t border-divider pt-3">
       {isLoading ? (
-        <p className="text-xs text-muted-foreground">Yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Yükleniyor...</p>
       ) : !data || data.data.length === 0 ? (
-        <p className="text-xs text-muted-foreground">Henüz yorum yok.</p>
+        <p className="text-body-xs text-muted-foreground">Henüz yorum yok.</p>
       ) : (
         <div className="flex flex-col gap-2.5">
           {data.data.map((c) => (
@@ -59,12 +59,12 @@ export function PostComments({ postId, canInteract }: { postId: string; canInter
               </Avatar>
               <div className="min-w-0 flex-1 rounded-xl border border-border bg-card-inner px-3 py-2">
                 <div className="flex items-center gap-1.5">
-                  <Link href={`/profile/${c.user.id}`} className="text-xs font-semibold text-foreground hover:underline">
+                  <Link href={`/profile/${c.user.id}`} className="text-card-title-sm text-foreground hover:underline">
                     @{c.user.username ?? c.user.fullName}
                   </Link>
-                  <span className="text-[10px] text-muted-foreground">{timeAgo(c.createdAt)}</span>
+                  <span className="text-body-xs text-muted-foreground">{timeAgo(c.createdAt)}</span>
                 </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-xs text-foreground">{c.text}</p>
+                <p className="mt-0.5 whitespace-pre-wrap text-body-xs text-foreground">{c.text}</p>
               </div>
             </div>
           ))}
@@ -77,7 +77,7 @@ export function PostComments({ postId, canInteract }: { postId: string; canInter
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder={canInteract ? "Yorum yaz..." : "Yorum yazmak için satın alın"}
-          className="h-8 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring"
+          className="h-8 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-input text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring"
         />
         <button
           type="button"

@@ -14,7 +14,7 @@ export function LessonActiveTask({ lessonId }: { lessonId: string }) {
   }
 
   if (!data?.task) {
-    return <p className="text-sm text-muted-foreground">Bu derse tanımlı bir görev yok.</p>;
+    return <p className="text-body-sm text-muted-foreground">Bu derse tanımlı bir görev yok.</p>;
   }
 
   const { task, myProgress } = data;
@@ -24,8 +24,8 @@ export function LessonActiveTask({ lessonId }: { lessonId: string }) {
 
   return (
     <div>
-      <p className="text-sm font-medium text-foreground">{task.title}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{task.description}</p>
+      <p className="text-body-sm font-medium text-foreground">{task.title}</p>
+      <p className="mt-1 text-body-xs text-muted-foreground">{task.description}</p>
 
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
         <div
@@ -38,7 +38,7 @@ export function LessonActiveTask({ lessonId }: { lessonId: string }) {
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span
-          className={`flex items-center gap-1 text-xs font-semibold ${
+          className={`flex items-center gap-1 text-body-xs font-semibold ${
             completed ? "text-success" : "text-muted-foreground"
           }`}
         >

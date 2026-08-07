@@ -17,8 +17,8 @@ export default function CoursesPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Eğitimlerim</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">Eğitimlerim</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           Sahip olduğun programlar ve kaldığın yerden devam et.
         </p>
       </div>
@@ -31,7 +31,7 @@ export default function CoursesPage() {
         </div>
       ) : myPrograms.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-10 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Henüz bir programa sahip değilsin.
           </p>
           <Button className="mt-4 h-11" render={<Link href="/programs">Programları İncele</Link>} />
@@ -46,8 +46,8 @@ export default function CoursesPage() {
             >
               <div className="h-32 w-full bg-gradient-to-br from-primary/20 via-card to-purple/10" />
               <div className="p-5">
-                <h3 className="text-base font-semibold text-foreground">{program.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Devam etmek için tıkla</p>
+                <h3 className="text-card-title-sm text-foreground">{program.title}</h3>
+                <p className="mt-1 text-body-xs text-muted-foreground">Devam etmek için tıkla</p>
               </div>
             </Link>
           ))}

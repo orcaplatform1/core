@@ -19,20 +19,20 @@ function formatEventDate(iso: string) {
 function HotScoreBadge({ hotScore }: { hotScore: number }) {
   if (hotScore >= 4) {
     return (
-      <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">
+      <span className="rounded-full bg-danger/10 px-2 py-0.5 text-badge text-danger">
         Çok Sıcak
       </span>
     );
   }
   if (hotScore >= 2) {
     return (
-      <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
+      <span className="rounded-full bg-warning/10 px-2 py-0.5 text-badge text-warning">
         Sıcak
       </span>
     );
   }
   return (
-    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+    <span className="rounded-full bg-muted px-2 py-0.5 text-badge text-muted-foreground">
       Normal
     </span>
   );
@@ -43,14 +43,14 @@ function EventCard({ event }: { event: CryptoCalendarEvent }) {
     <div className="flex flex-col gap-2 rounded-lg card-inner p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+          <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-badge text-primary">
             {formatEventDate(event.eventDate)}
           </span>
-          <p className="text-sm font-semibold text-foreground">{event.title}</p>
+          <p className="text-card-title-sm text-foreground">{event.title}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {event.isMock && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-badge text-muted-foreground">
               Örnek Veri
             </span>
           )}
@@ -58,14 +58,14 @@ function EventCard({ event }: { event: CryptoCalendarEvent }) {
         </div>
       </div>
       {event.description && (
-        <p className="line-clamp-2 text-xs text-muted-foreground">{event.description}</p>
+        <p className="line-clamp-2 text-body-xs text-muted-foreground">{event.description}</p>
       )}
       {event.coins.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {event.coins.map((coin) => (
             <span
               key={coin}
-              className="rounded-full bg-card-hover px-2 py-0.5 text-[11px] font-medium text-foreground/80"
+              className="rounded-full bg-card-hover px-2 py-0.5 text-badge text-foreground/80"
             >
               {coin}
             </span>
@@ -96,7 +96,7 @@ export function CryptoCalendarSection() {
             type="button"
             onClick={() => setDays(opt.days)}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-200",
+              "rounded-lg px-3 py-1.5 text-body-xs transition-colors duration-200",
               days === opt.days
                 ? "bg-primary/12 text-primary"
                 : "text-muted-foreground hover:bg-card-hover hover:text-foreground",
@@ -108,7 +108,7 @@ export function CryptoCalendarSection() {
       </div>
       <div className="space-y-2">
         {events.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">
+          <p className="py-6 text-center text-body-sm text-muted-foreground">
             Bu tarih aralığında etkinlik bulunmuyor.
           </p>
         )}

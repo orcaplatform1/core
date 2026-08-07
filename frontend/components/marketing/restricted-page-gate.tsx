@@ -39,10 +39,10 @@ export function RestrictedPageGate({ slug, heroImageSrc }: { slug: string; heroI
       <>
         <PageHero title="Kısıtlı Sayfa" heroImageSrc={heroImageSrc} />
         <div className="mx-auto flex max-w-[800px] flex-col items-center gap-3 px-4 py-24 text-center sm:px-6">
-          <p className="text-base text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Bu sayfayı görüntülemek için giriş yapmanız veya yetkili bir hesapla giriş yapmanız gerekiyor.
           </p>
-          <Link href="/login" className="text-sm font-semibold text-primary hover:underline">
+          <Link href="/login" className="text-btn-sm text-primary hover:underline">
             Giriş yap
           </Link>
         </div>

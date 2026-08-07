@@ -51,7 +51,7 @@ export function DashboardSidebar({
             <AvatarImage src={user?.avatarUrl ?? undefined} alt={user?.fullName} />
             <AvatarFallback>{user?.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <span className="text-xs font-medium text-sidebar-foreground/70">
+          <span className="text-body-xs text-sidebar-foreground/70">
             @{user?.username}
           </span>
         </div>
@@ -62,7 +62,7 @@ export function DashboardSidebar({
           <Link
             href="/manage"
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-200",
+              "text-nav-active flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-200",
               pathname?.startsWith("/manage") ? "ring-1 ring-[#EF4444]" : "",
               collapsed && "justify-center px-0"
             )}
@@ -78,7 +78,7 @@ export function DashboardSidebar({
         {sections.map((section, i) => (
           <div key={i} className="flex flex-col gap-1">
             {section.title && !collapsed && (
-              <span className="px-3 mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">
+              <span className="text-body-xs px-3 mb-1 uppercase tracking-wide text-text-muted">
                 {section.title}
               </span>
             )}
@@ -89,17 +89,17 @@ export function DashboardSidebar({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-200",
                     active
-                      ? "sidebar-active-item"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                      ? "text-nav-active sidebar-active-item"
+                      : "text-sidebar text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                     collapsed && "justify-center px-0"
                   )}
                 >
                   <item.icon className="size-5 shrink-0" />
                   {!collapsed && <span>{item.label}</span>}
                   {!collapsed && item.badge && (
-                    <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                    <span className="text-badge ml-auto rounded-full bg-primary px-2 py-0.5 text-primary-foreground">
                       {item.badge}
                     </span>
                   )}
@@ -126,10 +126,10 @@ export function DashboardSidebar({
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple/50 to-transparent" />
               <div className="flex items-center gap-2">
                 <Flame className="size-4 text-purple" />
-                <span className="text-sm font-semibold text-foreground">Günlük Çalışma Serisi</span>
+                <span className="text-widget-title text-foreground">Günlük Çalışma Serisi</span>
               </div>
-              <p className="mt-2 text-2xl font-bold text-foreground">
-                {stats?.currentStreak ?? 0} <span className="text-sm font-medium text-muted-foreground">gün</span>
+              <p className="text-num-md mt-2 text-foreground">
+                {stats?.currentStreak ?? 0} <span className="text-widget-desc text-muted-foreground">gün</span>
               </p>
               <div className="mt-2 h-1.5 w-full rounded-full bg-secondary">
                 <div

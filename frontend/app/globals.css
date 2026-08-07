@@ -7,7 +7,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-sans);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -235,6 +235,346 @@ body {
     animation: none;
     display: none;
   }
+}
+
+/* Premium dönen gradient çerçeve — sadece 4 özel CTA'da (Kayıt Ol, Satın Al/Eğitime
+   Başla, Dashboard, Ücretsiz İlk Dersi İzle) ve ana sayfadaki ORCA AI Mentor kutusunda
+   kullanılır (bkz. components/ui/premium-glow-button.tsx). Standart butonlara
+   (Kaydet/Devam Et/Gönder/İptal vb.) uygulanmaz. Halka transform:rotate ile GPU üzerinde
+   döner; render maliyeti sabit bir kaç piksellik pseudo-element'e sınırlı kalır. */
+@keyframes premium-glow-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.premium-glow-ring {
+  position: relative;
+  border-radius: var(--pg-radius, 999px);
+  padding: 2px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 18px -6px rgba(59, 91, 255, 0.35),
+    0 0 26px -10px rgba(139, 92, 246, 0.28);
+}
+.premium-glow-ring::before {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(from 0deg, #3B5BFF 0%, #5A7CFF 33%, #8B5CF6 66%, #3B5BFF 100%);
+  animation: premium-glow-spin 5s linear infinite;
+  will-change: transform;
+}
+.premium-glow-ring > :first-child {
+  position: relative;
+  z-index: 1;
+  border-radius: inherit;
+}
+/* Buton varyantı: pill-shape (999px) — global [data-slot="button"] 14px zorlamasını,
+   daha yüksek özgüllükteki bu seçici ile ezer (bkz. satır ~307 [data-slot="button"]). */
+.btn-premium-glow {
+  display: inline-flex;
+  --pg-radius: 999px;
+}
+.btn-premium-glow > [data-slot="button"] {
+  border-radius: 999px !important;
+}
+/* Kart varyantı: AI Mentor kutusu gibi arka planı TAMAMEN transparan kalması gereken
+   kartların çerçevesi için. @property ile açı animasyonu DOM'da doğru ilerliyor olsa da
+   görsel olarak fark edilmeyecek kadar yumuşak kalıyordu; bunun yerine butondaki gibi
+   gerçekten "dönen" bir görünüm için ayrı bir maskeleme katmanı + o katmanın İÇİNDE
+   transform:rotate ile dönen büyük bir conic-gradient kare kullanılıyor. Maskenin
+   kendisi hiç rotate edilmediği için halka her açıda karta birebir oturuyor; sadece
+   içindeki renk deseni dönüyor — merkez gerçekten boş (mask ile oyulmuş) olduğu için
+   backdrop-blur üzerinden hiçbir renk sızmıyor. Renk: mor yok, sadece elektrik mavisi
+   tonları (Primary Blue / Blue Glow / Primary Light). */
+/* Not: CSS mask (content-box/border-box XOR) ile "gerçek delik" denendi ama mask
+   uygulanmış bir eleman altında sadece transform ile dönen bir katman olduğunda
+   tarayıcı her karede yeniden boyamıyor — halka DOM'da doğru dönüyor ama ekranda
+   donuk kalıyor (test edilip doğrulandı). Bu yüzden butondaki KANITLANMIŞ teknik
+   kullanılıyor: overflow:hidden + padding + döner büyük conic-gradient. İçerik
+   (.premium-glow-card > :last-child, yani Card) sayfa arka planıyla birebir aynı
+   koyu tonda (bg-background) tutuluyor — mor/degrade dolgu yok, göz açısından
+   "transparan" hissi veriyor ama halka her zaman net dönüyor. */
+.premium-glow-card {
+  position: relative;
+  border-radius: var(--radius-2xl);
+  padding: 3px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 18px -6px rgba(59, 91, 255, 0.4),
+    0 0 28px -10px rgba(90, 124, 255, 0.32);
+}
+.premium-glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(from 0deg, #3B5BFF 0%, #3B5BFF 55%, #5A7CFF 68%, #FFFFFF 75%, #8FB8FF 82%, #3B5BFF 92%, #3B5BFF 100%);
+  animation: premium-glow-spin 5s linear infinite;
+}
+.premium-glow-card > :last-child {
+  position: relative;
+  z-index: 1;
+  border-radius: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .premium-glow-ring::before,
+  .premium-glow-card::before {
+    animation: none;
+  }
+}
+
+/* ================================================================
+   ORCA — TİPOGRAFİ SİSTEMİ (2026-08-07)
+   Ana font: Geist Sans (--font-sans). Sayısal/kod/finansal veri: Geist Mono
+   (--font-mono, bkz. app/layout.tsx). Her satır spesifikasyondaki boyut/
+   ağırlık/satır yüksekliği/harf aralığını tek class'ta birleştirir — renk bu
+   class'lara dahil değildir, text-foreground/text-muted-foreground vb. ile
+   birlikte kullanılır. Diğer düz CSS class'ları (.bg-card, .card-inner vb.)
+   ile aynı konvansiyon: Tailwind @utility değil, sade CSS class.
+   ================================================================ */
+
+/* Display (Hero) */
+.text-display-xl {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 80px;
+  letter-spacing: -0.04em;
+}
+.text-display-lg {
+  font-size: 60px;
+  font-weight: 700;
+  line-height: 68px;
+  letter-spacing: -0.035em;
+}
+.text-display-md {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 56px;
+  letter-spacing: -0.03em;
+}
+
+/* Sayfa Başlıkları */
+.text-h1 {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 48px;
+  letter-spacing: -0.025em;
+}
+.text-h2 {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+}
+.text-h3 {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -0.015em;
+}
+.text-h4 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.01em;
+}
+.text-h5 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+.text-h6 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: 0;
+}
+
+/* Kart Başlıkları */
+.text-card-title-lg {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 30px;
+}
+.text-card-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+}
+.text-card-title-sm {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+/* Dashboard */
+.text-widget-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+.text-widget-desc {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+}
+.text-num-lg {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 40px;
+}
+.text-num-md {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 600;
+}
+.text-num-sm {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Gövde Yazıları */
+.text-body-xl {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 32px;
+}
+.text-body-lg {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 30px;
+}
+.text-body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 28px;
+}
+.text-body-sm {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+.text-body-xs {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+/* Butonlar */
+.text-btn-lg {
+  font-size: 16px;
+  font-weight: 600;
+}
+.text-btn-md {
+  font-size: 15px;
+  font-weight: 600;
+}
+.text-btn-sm {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Input */
+.text-input {
+  font-size: 16px;
+  font-weight: 400;
+}
+.text-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.text-help {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Navigasyon */
+.text-navbar {
+  font-size: 15px;
+  font-weight: 500;
+}
+.text-sidebar {
+  font-size: 15px;
+  font-weight: 500;
+}
+.text-nav-active {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Rozetler */
+.text-badge {
+  font-size: 12px;
+  font-weight: 600;
+}
+.text-tag {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Tablolar */
+.text-table-header {
+  font-size: 14px;
+  font-weight: 600;
+}
+.text-table-cell {
+  font-size: 14px;
+  font-weight: 400;
+}
+.text-financial {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* AI Mentor */
+.text-ai-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+.text-ai-message {
+  font-size: 16px;
+  font-weight: 400;
+}
+.text-ai-code {
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+
+/* Kurs Sayfası */
+.text-lesson-title {
+  font-size: 32px;
+  font-weight: 700;
+}
+.text-module-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+.text-lesson-list {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Footer */
+.text-footer-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.text-footer-link {
+  font-size: 14px;
+  font-weight: 400;
+}
+.text-footer-copyright {
+  font-size: 13px;
+  font-weight: 400;
 }
 
 /* Dashboard arka planı (sidebar dışındaki içerik alanı) sidebar'dan biraz daha açık */

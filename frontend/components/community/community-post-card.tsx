@@ -50,10 +50,10 @@ function ReportDialog({ postId, onClose }: { postId: string; onClose: () => void
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
           <Flag className="size-4 text-danger" /> Paylaşımı Şikayet Et
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Bu paylaşımın topluluk kurallarını neden ihlal ettiğini kısaca açıklayın.
         </p>
         <textarea
@@ -61,16 +61,16 @@ function ReportDialog({ postId, onClose }: { postId: string; onClose: () => void
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Şikayet sebebi..."
-          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-input text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-body-xs text-muted-foreground hover:bg-accent">
             Vazgeç
           </button>
           <button
             onClick={submit}
             disabled={report.isPending || !reason.trim()}
-            className="rounded-lg bg-danger px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-danger px-3 py-1.5 text-body-xs text-white disabled:opacity-50"
           >
             Şikayet Et
           </button>
@@ -124,7 +124,7 @@ export function CommunityPostCard({
       } ${highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
     >
       {featured && (
-        <div className="absolute left-0 top-0 z-10 flex items-center gap-1 rounded-br-xl bg-purple px-3 py-1.5 text-xs font-semibold text-white">
+        <div className="absolute left-0 top-0 z-10 flex items-center gap-1 rounded-br-xl bg-purple px-3 py-1.5 text-badge text-white">
           <Trophy className="size-3.5" />
           Haftanın Setup&apos;ı
         </div>
@@ -146,27 +146,27 @@ export function CommunityPostCard({
               <div className="flex items-center gap-1.5">
                 <Link
                   href={`/profile/${post.user.id}`}
-                  className="block truncate text-sm font-semibold text-foreground hover:underline"
+                  className="block truncate text-card-title-sm text-foreground hover:underline"
                 >
                   @{post.user.username ?? post.user.fullName}
                 </Link>
                 {post.user.isFoundingMember && (
-                  <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-[9px] font-semibold text-warning">
+                  <span className="shrink-0 rounded-full bg-warning/15 px-1.5 py-0.5 text-badge text-warning">
                     Kurucu Üye
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground">{timeAgo(post.createdAt)}</p>
+              <p className="text-body-xs text-muted-foreground">{timeAgo(post.createdAt)}</p>
             </div>
           </div>
-          <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${direction.className}`}>
+          <span className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-badge ${direction.className}`}>
             <DirectionIcon className="size-3.5" />
             {direction.label}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">{post.symbol}</span>
+        <div className="flex flex-wrap items-center gap-1.5 text-badge">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">{post.symbol}</span>
           <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">{post.timeframe}</span>
           {post.ictTags.map((tag) => (
             <span key={tag} className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
@@ -176,11 +176,11 @@ export function CommunityPostCard({
         </div>
 
         <div>
-          <h3 className={featured ? "text-lg font-semibold text-foreground" : "text-base font-semibold text-foreground"}>
+          <h3 className={featured ? "text-card-title-md text-foreground" : "text-card-title-sm text-foreground"}>
             {post.title}
           </h3>
           {post.description && (
-            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.description}</p>
+            <p className="mt-1 whitespace-pre-wrap text-body-sm text-muted-foreground">{post.description}</p>
           )}
         </div>
 
@@ -188,7 +188,7 @@ export function CommunityPostCard({
           <button
             type="button"
             onClick={() => guarded(() => handleReact("LIKE"))}
-            className={`flex items-center gap-1 text-xs transition-colors duration-200 ${
+            className={`flex items-center gap-1 text-body-xs transition-colors duration-200 ${
               post.myReaction === "LIKE" ? "text-success" : "text-muted-foreground hover:text-success"
             }`}
           >
@@ -198,7 +198,7 @@ export function CommunityPostCard({
           <button
             type="button"
             onClick={() => guarded(() => handleReact("DISLIKE"))}
-            className={`flex items-center gap-1 text-xs transition-colors duration-200 ${
+            className={`flex items-center gap-1 text-body-xs transition-colors duration-200 ${
               post.myReaction === "DISLIKE" ? "text-danger" : "text-muted-foreground hover:text-danger"
             }`}
           >
@@ -208,7 +208,7 @@ export function CommunityPostCard({
           <button
             type="button"
             onClick={() => setShowComments((s) => !s)}
-            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            className="flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             <MessageSquare className="size-3.5" />
             {post.commentsCount}
@@ -216,14 +216,14 @@ export function CommunityPostCard({
           <button
             type="button"
             onClick={() => guarded(() => setReporting(true))}
-            className="ml-auto flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-danger"
+            className="ml-auto flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-danger"
           >
             {!canInteract ? <Lock className="size-3.5" /> : <Flag className="size-3.5" />}
             Şikayet Et
           </button>
         </div>
 
-        <p className="text-[11px] leading-relaxed text-muted-foreground">{COMMUNITY_POST_DISCLAIMER}</p>
+        <p className="text-body-xs text-muted-foreground">{COMMUNITY_POST_DISCLAIMER}</p>
 
         {showComments && <PostComments postId={post.id} canInteract={canInteract} />}
       </div>

@@ -50,8 +50,8 @@ export default function CourseDetailPage({
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-foreground">{program?.title ?? "Yükleniyor..."}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">{program?.title ?? "Yükleniyor..."}</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           Modülleri sırayla tamamlayarak sertifikaya bir adım daha yaklaş.
         </p>
       </div>
@@ -73,16 +73,16 @@ export default function CourseDetailPage({
               >
                 <AccordionTrigger className="py-4 hover:no-underline">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-badge text-primary">
                       {i + 1}
                     </div>
-                    <span className="text-sm font-semibold text-foreground">{mod.title}</span>
+                    <span className="text-module-title text-foreground">{mod.title}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="flex flex-col gap-1 pb-2 pl-11">
                     {lessons.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Bu modülde henüz ders yok.</p>
+                      <p className="text-body-xs text-muted-foreground">Bu modülde henüz ders yok.</p>
                     )}
                     {lessons.map((lesson) => {
                       const done = isCompleted(lesson.id);
@@ -90,7 +90,7 @@ export default function CourseDetailPage({
                         <Link
                           key={lesson.id}
                           href={`/courses/${programId}/lessons/${lesson.id}`}
-                          className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors duration-200 hover:bg-accent"
+                          className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-lesson-list transition-colors duration-200 hover:bg-accent"
                         >
                           {done ? (
                             <CheckCircle2 className="size-4 shrink-0 text-success" />
@@ -100,7 +100,7 @@ export default function CourseDetailPage({
                           <PlayCircle className="size-4 shrink-0 text-muted-foreground" />
                           <span className="text-foreground">{lesson.title}</span>
                           {lesson.durationSeconds && (
-                            <span className="ml-auto text-xs text-muted-foreground">
+                            <span className="ml-auto text-body-xs text-muted-foreground">
                               {Math.round(lesson.durationSeconds / 60)} dk
                             </span>
                           )}

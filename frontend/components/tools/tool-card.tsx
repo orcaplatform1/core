@@ -38,7 +38,7 @@ export function ToolCard({
         <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", a.badge)}>
           <Icon className="size-4" />
         </span>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-card-title-sm text-foreground">{title}</h3>
         {badge}
       </div>
       {children}

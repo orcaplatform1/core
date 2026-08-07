@@ -15,8 +15,8 @@ function ChangePill({ value }: { value: number }) {
     <span
       className={
         positive
-          ? "rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success"
-          : "rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger"
+          ? "rounded-full bg-success/10 px-2 py-0.5 text-badge text-success"
+          : "rounded-full bg-danger/10 px-2 py-0.5 text-badge text-danger"
       }
     >
       {positive ? "+" : ""}
@@ -30,10 +30,10 @@ function IndexHeroCard() {
   return (
     <ToolCard title="BIST 100 Endeksi" icon={Landmark} accent="primary" className="sm:col-span-2 lg:col-span-4">
       {!data ? (
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       ) : (
         <div className="flex items-baseline gap-4">
-          <span className="text-4xl font-bold text-foreground">{fmtPrice(data.price)}</span>
+          <span className="text-num-lg text-foreground">{fmtPrice(data.price)}</span>
           <ChangePill value={data.changePercent} />
         </div>
       )}
@@ -55,14 +55,14 @@ function StockTable({
   return (
     <ToolCard title={title} icon={icon} accent={accent}>
       <div className="space-y-1">
-        {rows.length === 0 && <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {rows.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {rows.map((r) => (
           <div
             key={r.symbol}
             className="flex items-center justify-between gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
           >
-            <span className="truncate text-sm font-semibold text-foreground/90">{r.symbol}</span>
-            <span className="text-xs text-muted-foreground">₺{fmtPrice(r.price)}</span>
+            <span className="truncate text-financial text-foreground/90">{r.symbol}</span>
+            <span className="text-financial text-muted-foreground">₺{fmtPrice(r.price)}</span>
             <ChangePill value={r.changePercent} />
           </div>
         ))}
@@ -88,7 +88,7 @@ export function BistToolsSection() {
       <ToolCard title="Popüler BIST Hisseleri" icon={LineChart} accent="primary">
         <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
           {(data?.stocks ?? []).length === 0 && (
-            <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+            <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
           )}
           {(data?.stocks ?? []).map((r) => (
             <div
@@ -96,11 +96,11 @@ export function BistToolsSection() {
               className="flex items-center justify-between gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground/90">{r.symbol}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{r.name}</p>
+                <p className="truncate text-financial text-foreground/90">{r.symbol}</p>
+                <p className="truncate text-body-xs text-muted-foreground">{r.name}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="text-xs text-muted-foreground">₺{fmtPrice(r.price)}</span>
+                <span className="text-financial text-muted-foreground">₺{fmtPrice(r.price)}</span>
                 <ChangePill value={r.changePercent} />
               </div>
             </div>

@@ -15,13 +15,13 @@ export function GoalCard({
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center gap-2">
         <Target className="size-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">{title}</span>
+        <span className="text-widget-title text-foreground">{title}</span>
       </div>
       <div className="mt-4 flex items-end justify-between">
-        <span className="text-2xl font-bold text-foreground">
+        <span className="text-num-md text-foreground">
           {completed}/{target}
         </span>
-        <span className="text-sm font-medium text-muted-foreground">%{pct}</span>
+        <span className="text-widget-desc text-muted-foreground">%{pct}</span>
       </div>
       <div className="mt-3 h-2 w-full rounded-full bg-secondary">
         <div

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import { HeroBackground } from "./hero-background";
 import { AiMentorPreviewCard } from "./ai-mentor-preview-card";
 
@@ -31,20 +31,19 @@ export function Hero({
       <div className="relative mx-auto grid max-w-[1440px] grid-cols-1 gap-12 px-4 py-20 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:items-end lg:px-8 lg:py-28">
         <div className="max-w-2xl">
           {badge && (
-            <span className="mb-6 inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium leading-snug text-primary">
+            <span className="mb-6 inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary/25 bg-primary/10 px-3 py-1.5 text-badge text-primary">
               {badge}
             </span>
           )}
-          <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+          <h1 className="text-display-md text-foreground">
             {title}
           </h1>
-          <p className="mt-5 max-w-xl text-sm text-muted-foreground sm:text-base">
+          <p className="mt-5 max-w-xl text-body text-muted-foreground">
             {description}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button
-              variant="gradient"
+            <PremiumGlowButton
               size="lg"
               render={
                 <Link href={primaryCta.href}>
@@ -53,8 +52,7 @@ export function Hero({
               }
             />
             {secondaryCta && (
-              <Button
-                variant="outline"
+              <PremiumGlowButton
                 size="lg"
                 render={
                   <Link href={secondaryCta.href}>
@@ -67,7 +65,7 @@ export function Hero({
         </div>
 
         <div className="flex justify-center md:justify-end">
-          <AiMentorPreviewCard size="compact" className="max-w-[300px]" />
+          <AiMentorPreviewCard premium size="compact" className="max-w-[300px]" />
         </div>
       </div>
     </section>

@@ -57,7 +57,7 @@ export function SuspendUserButton({
               onChange={(e) => setReasonText(e.target.value)}
               rows={2}
               placeholder="Neden yasaklandığını yazın (opsiyonel)..."
-              className="w-full resize-none rounded-lg border border-border bg-card-inner p-2 text-xs text-[#F5F1EA] placeholder:text-[#A8A6A0] focus:outline-none"
+              className="text-body-xs w-full resize-none rounded-lg border border-border bg-card-inner p-2 text-[#F5F1EA] placeholder:text-[#A8A6A0] focus:outline-none"
             />
             <div className="mt-1.5 flex flex-col gap-1">
               {DURATION_OPTIONS.map((opt) => (

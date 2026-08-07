@@ -40,12 +40,12 @@ export function CtaBanner({
               </span>
             )}
             <div>
-              <p className="text-xl font-semibold text-foreground sm:text-2xl">{title}</p>
-              {description && <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>}
+              <p className="text-h4 text-foreground">{title}</p>
+              {description && <p className="mt-2 max-w-md text-body-sm text-muted-foreground">{description}</p>}
               {checklist && checklist.length > 0 && (
                 <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {checklist.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-foreground/90">
+                    <li key={item} className="flex items-center gap-2 text-body-sm text-foreground/90">
                       <Check
                         className={cn(
                           "size-4 shrink-0",

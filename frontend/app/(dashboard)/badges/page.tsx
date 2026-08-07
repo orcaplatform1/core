@@ -60,8 +60,8 @@ export default function BadgesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Rozetler & Seri</h1>
-        <p className="text-sm text-[#A8A6A0]">
+        <h1 className="text-h1 text-[#F5F1EA]">Rozetler & Seri</h1>
+        <p className="text-body-sm text-[#A8A6A0]">
           Öğrenme serini takip et, hedeflerine ulaş ve rozetler kazan.
         </p>
       </div>
@@ -72,17 +72,17 @@ export default function BadgesPage() {
             <Flame size={28} color="#F39C3D" />
           </div>
           <div>
-            <p className="text-3xl font-semibold text-[#F5F1EA]">{currentStreak} gün</p>
-            <p className="text-sm text-[#A8A6A0]">Mevcut seri</p>
+            <p className="text-num-lg text-[#F5F1EA]">{currentStreak} gün</p>
+            <p className="text-body-sm text-[#A8A6A0]">Mevcut seri</p>
           </div>
           <div className="ml-auto text-right">
-            <p className="text-lg font-medium text-[#F5F1EA]">{longestStreak} gün</p>
-            <p className="text-xs text-[#A8A6A0]">En uzun seri</p>
+            <p className="text-num-sm text-[#F5F1EA]">{longestStreak} gün</p>
+            <p className="text-body-xs text-[#A8A6A0]">En uzun seri</p>
           </div>
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between text-xs text-[#A8A6A0]">
+          <div className="mb-1 flex items-center justify-between text-body-xs text-[#A8A6A0]">
             <span>Hedef: {streakGoalDays} gün</span>
             <span>{progressPct}%</span>
           </div>
@@ -101,7 +101,7 @@ export default function BadgesPage() {
               min={1}
               value={goalInput}
               onChange={(e) => setGoalInput(e.target.value)}
-              className="w-24 rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary"
+              className="w-24 rounded-xl border border-border bg-card-inner px-3 py-1.5 text-body-sm text-[#A8A6A0] outline-none focus:border-primary"
             />
             <Button size="sm" disabled={updateGoal.isPending} onClick={handleSaveGoal}>
               Kaydet
@@ -116,7 +116,7 @@ export default function BadgesPage() {
               setGoalInput(String(streakGoalDays));
               setEditingGoal(true);
             }}
-            className="text-xs text-primary hover:underline"
+            className="text-body-xs text-primary hover:underline"
           >
             Hedefi Düzenle
           </button>
@@ -125,16 +125,16 @@ export default function BadgesPage() {
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-medium text-[#F5F1EA]">Rozetler</h2>
-          <span className="text-sm text-[#A8A6A0]">
+          <h2 className="text-card-title-md text-[#F5F1EA]">Rozetler</h2>
+          <span className="text-num-sm text-[#A8A6A0]">
             {earnedCount}/{totalCount}
           </span>
         </div>
 
         {badgesLoading ? (
-          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !badges || badges.length === 0 ? (
-          <p className="text-sm text-[#A8A6A0]">Henüz rozet tanımlanmamış.</p>
+          <p className="text-body-sm text-[#A8A6A0]">Henüz rozet tanımlanmamış.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {badges.map((badge) => (
@@ -153,10 +153,10 @@ export default function BadgesPage() {
                     <Trophy size={20} color="#22C55E" />
                   )}
                 </div>
-                <p className="text-sm font-medium text-[#F5F1EA]">{badge.name}</p>
-                <p className="text-xs text-[#A8A6A0]">{badge.description}</p>
+                <p className="text-body-sm text-[#F5F1EA]">{badge.name}</p>
+                <p className="text-body-xs text-[#A8A6A0]">{badge.description}</p>
                 {!badge.locked && badge.earnedAt && (
-                  <p className="flex items-center gap-1 text-[10px] text-[#22C55E]">
+                  <p className="flex items-center gap-1 text-body-xs text-[#22C55E]">
                     <Check size={10} />
                     {new Date(badge.earnedAt).toLocaleDateString("tr-TR")}
                   </p>

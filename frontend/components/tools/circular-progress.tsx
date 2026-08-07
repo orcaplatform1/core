@@ -20,8 +20,8 @@ export function CircularProgress({
         }}
       >
         <div className="flex size-[72px] flex-col items-center justify-center rounded-full bg-card">
-          <span className="text-2xl font-bold text-foreground">{value}</span>
-          <span className="text-[10px] text-muted-foreground">{label}</span>
+          <span className="text-num-md text-foreground">{value}</span>
+          <span className="text-body-xs text-muted-foreground">{label}</span>
         </div>
       </div>
     </div>

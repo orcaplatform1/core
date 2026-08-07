@@ -79,10 +79,10 @@ export default function MentorCreditsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+        <h1 className="flex items-center gap-2 text-h1 text-foreground">
           <Sparkles className="size-6 text-purple" /> Mentor Kredi Satın Al
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-body-sm text-muted-foreground">
           Günlük ücretsiz hakkın bittiğinde AI Mentor'a devam etmek için kredi al.
           {quota ? ` Mevcut kredin: ${quota.mentorCredits}.` : ""}
         </p>
@@ -122,20 +122,20 @@ export default function MentorCreditsPage() {
       </div>
 
       {method === "BANK_TRANSFER" && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-body-xs text-muted-foreground">
           Havale seçersen talep oluştuktan sonra Ödeme Geçmişi&apos;nden dekont yükleme adımını
           takip edebilirsin.
         </p>
       )}
       {method === "CARD" && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-body-xs text-muted-foreground">
           Kart bilgin şu an alınmıyor — talep oluşturulduktan sonra ekibimiz seninle iletişime
           geçip ödemeni tamamlayacak (gerçek kart altyapısı yakında otomatikleşecek).
         </p>
       )}
       {method === "MOBILE" && (
         <div className="card-inner flex flex-col gap-4 rounded-xl p-4">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-body-xs text-muted-foreground">
             Tutar, seçtiğin operatörün faturana veya kontör bakiyene yansıtılır (altyapı
             entegrasyonu tamamlandığında otomatik işleyecek).
           </p>
@@ -175,13 +175,13 @@ export default function MentorCreditsPage() {
             className="relative flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6 text-center"
           >
             {pkg.badge && (
-              <span className="absolute -top-3 rounded-full bg-purple px-3 py-1 text-xs font-semibold text-white">
+              <span className="absolute -top-3 rounded-full bg-purple px-3 py-1 text-badge text-white">
                 {pkg.badge}
               </span>
             )}
-            <p className="text-3xl font-bold text-foreground">{pkg.amount}</p>
-            <p className="text-xs text-muted-foreground">kredi</p>
-            <p className="text-xl font-semibold text-primary">{pkg.price} ₺</p>
+            <p className="text-h2 text-foreground">{pkg.amount}</p>
+            <p className="text-body-xs text-muted-foreground">kredi</p>
+            <p className="text-h5 text-primary">{pkg.price} ₺</p>
             <Button
               className="mt-2 h-10 w-full"
               disabled={isPending}

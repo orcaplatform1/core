@@ -158,31 +158,31 @@ export default function SimulationPage() {
           <div className="flex rounded-xl border border-border overflow-hidden">
             <button
               onClick={() => setDirection("BUY")}
-              className={`px-4 py-2 text-sm font-medium ${direction === "BUY" ? "bg-[#22C55E] text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+              className={`px-4 py-2 text-body-sm font-medium ${direction === "BUY" ? "bg-[#22C55E] text-white" : "bg-card-inner text-[#A8A6A0]"}`}
             >
               Al (Long)
             </button>
             <button
               onClick={() => setDirection("SELL")}
-              className={`px-4 py-2 text-sm font-medium ${direction === "SELL" ? "bg-[#EF4444] text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+              className={`px-4 py-2 text-body-sm font-medium ${direction === "SELL" ? "bg-[#EF4444] text-white" : "bg-card-inner text-[#A8A6A0]"}`}
             >
               Sat (Short)
             </button>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-[#A8A6A0]">Miktar</label>
+            <label className="mb-1 block text-body-xs text-[#A8A6A0]">Miktar</label>
             <input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="0.00"
-              className="w-32 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A8A6A0] outline-none focus:border-primary"
+              className="w-32 rounded-xl border border-border bg-card-inner px-3 py-2 text-body-sm text-[#A8A6A0] outline-none focus:border-primary"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-[#A8A6A0]">Kaldıraç</label>
+            <label className="mb-1 block text-body-xs text-[#A8A6A0]">Kaldıraç</label>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -191,9 +191,9 @@ export default function SimulationPage() {
                 value={leverage}
                 onChange={(e) => setLeverage(e.target.value)}
                 placeholder="1"
-                className="w-20 rounded-xl border border-border bg-card-inner px-3 py-2 text-sm text-[#A8A6A0] outline-none focus:border-primary"
+                className="w-20 rounded-xl border border-border bg-card-inner px-3 py-2 text-body-sm text-[#A8A6A0] outline-none focus:border-primary"
               />
-              <span className="text-sm text-[#A8A6A0]">x</span>
+              <span className="text-body-sm text-[#A8A6A0]">x</span>
             </div>
           </div>
 

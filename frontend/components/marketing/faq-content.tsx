@@ -62,7 +62,7 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Sorularda ara..."
-          className="h-11 rounded-xl border-border bg-card pl-10 text-sm"
+          className="h-11 rounded-xl border-border bg-card pl-10 text-body-sm"
         />
       </div>
 
@@ -81,7 +81,7 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
                 type="button"
                 onClick={() => scrollToCategory(category.id)}
                 className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-btn-sm transition-colors",
                   activeCategory === category.id
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -107,7 +107,7 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
                   type="button"
                   onClick={() => scrollToCategory(category.id)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-navbar transition-colors",
                     activeCategory === category.id
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-card hover:text-foreground"
@@ -123,7 +123,7 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
 
         <div className="min-w-0 flex-1">
           {filteredCategories.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
+            <p className="py-16 text-center text-body-sm text-muted-foreground">
               &quot;{query}&quot; için sonuç bulunamadı.
             </p>
           ) : (
@@ -136,7 +136,7 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
                       <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="size-4.5" />
                       </div>
-                      <h2 className="text-xl font-bold text-foreground">{category.label}</h2>
+                      <h2 className="text-h2 text-foreground">{category.label}</h2>
                     </div>
 
                     <Accordion
@@ -146,10 +146,10 @@ export function FaqContent({ categories }: { categories: FaqCategory[] }) {
                     >
                       {category.items.map((item) => (
                         <AccordionItem key={item.id} value={item.id}>
-                          <AccordionTrigger className="py-4 text-sm font-semibold text-foreground hover:no-underline sm:text-[15px]">
+                          <AccordionTrigger className="py-4 text-card-title-sm text-foreground hover:no-underline">
                             {item.question}
                           </AccordionTrigger>
-                          <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                          <AccordionContent className="text-body-sm text-muted-foreground">
                             {item.answer}
                           </AccordionContent>
                         </AccordionItem>

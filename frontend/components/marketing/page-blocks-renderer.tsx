@@ -1,10 +1,10 @@
 import type { PageBlock, HeadingSize, TextSize } from "@/lib/marketing/page-blocks-types";
 
 const HEADING_CLASSES: Record<HeadingSize, string> = {
-  sm: "text-lg font-semibold text-foreground mt-6",
-  md: "text-xl font-semibold text-foreground mt-6",
-  lg: "text-2xl font-bold text-foreground mt-6",
-  xl: "text-3xl font-bold text-foreground mt-6",
+  sm: "text-h6 text-foreground mt-6",
+  md: "text-h5 text-foreground mt-6",
+  lg: "text-h4 text-foreground mt-6",
+  xl: "text-h2 text-foreground mt-6",
 };
 
 const HEADING_TAGS: Record<HeadingSize, "h2" | "h3"> = {
@@ -15,9 +15,9 @@ const HEADING_TAGS: Record<HeadingSize, "h2" | "h3"> = {
 };
 
 const TEXT_SIZE_CLASSES: Record<TextSize, string> = {
-  sm: "text-sm",
-  base: "text-base",
-  lg: "text-lg",
+  sm: "text-body-sm",
+  base: "text-body",
+  lg: "text-body-lg",
 };
 
 function renderInlineMarkdown(text: string) {
@@ -76,7 +76,7 @@ export function PageBlocksRenderer({ blocks }: { blocks: PageBlock[] }) {
                   className="rounded-xl border border-border w-full"
                 />
                 {block.caption && (
-                  <figcaption className="mt-2 text-center text-xs text-muted-foreground">
+                  <figcaption className="mt-2 text-center text-body-xs text-muted-foreground">
                     {block.caption}
                   </figcaption>
                 )}

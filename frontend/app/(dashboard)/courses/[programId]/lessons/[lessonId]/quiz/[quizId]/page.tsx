@@ -118,29 +118,29 @@ export default function QuizPage({
       <div className="mx-auto flex max-w-lg flex-col items-center gap-6 rounded-2xl border border-border bg-card p-10 text-center">
         <Trophy className={`size-12 ${result.grade ? gradeColors[result.grade] : "text-muted-foreground"}`} />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-h1 text-foreground">
             {result.grade ? gradeLabels[result.grade] : "Tamamlandı"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             {result.passed ? "Tebrikler, sınavı geçtin!" : "Bu sefer olmadı, tekrar deneyebilirsin."}
           </p>
         </div>
         <div className="grid w-full grid-cols-3 gap-3">
           <div className="rounded-xl border border-border p-4">
-            <p className="text-2xl font-bold text-foreground">%{result.percentage}</p>
-            <p className="text-xs text-muted-foreground">Puan</p>
+            <p className="text-h4 text-foreground">%{result.percentage}</p>
+            <p className="text-body-xs text-muted-foreground">Puan</p>
           </div>
           <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center justify-center gap-1 text-2xl font-bold text-success">
+            <p className="flex items-center justify-center gap-1 text-h4 text-success">
               <CheckCircle2 className="size-5" /> {result.correctAnswers}
             </p>
-            <p className="text-xs text-muted-foreground">Doğru</p>
+            <p className="text-body-xs text-muted-foreground">Doğru</p>
           </div>
           <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center justify-center gap-1 text-2xl font-bold text-danger">
+            <p className="flex items-center justify-center gap-1 text-h4 text-danger">
               <XCircle className="size-5" /> {result.wrongAnswers}
             </p>
-            <p className="text-xs text-muted-foreground">Yanlış</p>
+            <p className="text-body-xs text-muted-foreground">Yanlış</p>
           </div>
         </div>
         <Button
@@ -157,12 +157,12 @@ export default function QuizPage({
     <div onContextMenu={(e) => e.preventDefault()} className="flex flex-col gap-6 select-none">
       <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-6 py-4">
         <div>
-          <h1 className="text-lg font-bold text-foreground">{quiz.title}</h1>
+          <h1 className="text-card-title-md text-foreground">{quiz.title}</h1>
           {quiz.description && (
-            <p className="text-xs text-muted-foreground">{quiz.description}</p>
+            <p className="text-body-xs text-muted-foreground">{quiz.description}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+        <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-badge text-primary">
           <Clock className="size-4" />
           {remaining !== null ? formatTime(remaining) : "--:--"}
         </div>
@@ -171,11 +171,11 @@ export default function QuizPage({
       <div className="flex flex-col gap-4">
         {quiz.questions.map((q, i) => (
           <div key={q.id} className="rounded-2xl border border-border bg-card p-6">
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-card-title-sm text-foreground">
               {i + 1}. {q.title}
             </p>
             {q.description && (
-              <p className="mt-1 text-xs text-muted-foreground">{q.description}</p>
+              <p className="mt-1 text-body-xs text-muted-foreground">{q.description}</p>
             )}
             <div className="mt-4 flex flex-col gap-2">
               {q.answers.map((a) => {
@@ -185,7 +185,7 @@ export default function QuizPage({
                     key={a.id}
                     type="button"
                     onClick={() => handleSelect(q.id, a.id)}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition-colors duration-200 ${
+                    className={`flex items-center gap-3 rounded-xl border p-3 text-left text-body-sm transition-colors duration-200 ${
                       selected
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border text-foreground hover:bg-accent"

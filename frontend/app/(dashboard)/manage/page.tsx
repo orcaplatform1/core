@@ -7,7 +7,7 @@ export default function ManagePage() {
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       </div>
     );
   }
@@ -15,15 +15,15 @@ export default function ManagePage() {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F1EA]">M Dashboard</h1>
-        <p className="text-sm text-[#A8A6A0]">Platform yönetim paneli.</p>
+        <h1 className="text-h1 text-[#F5F1EA]">M Dashboard</h1>
+        <p className="text-body-sm text-[#A8A6A0]">Platform yönetim paneli.</p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Link
@@ -34,8 +34,8 @@ export default function ManagePage() {
             <Users size={20} color="#3B5BFF" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Kullanıcılar</p>
-            <p className="text-xs text-[#A8A6A0]">Rol, erişim, ban yönetimi</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Kullanıcılar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Rol, erişim, ban yönetimi</p>
           </div>
         </Link>
         <Link
@@ -46,8 +46,8 @@ export default function ManagePage() {
             <CreditCard size={20} color="#22C55E" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Ödemeler</p>
-            <p className="text-xs text-[#A8A6A0]">Dekont/kripto onayları</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Ödemeler</p>
+            <p className="text-body-xs text-[#A8A6A0]">Dekont/kripto onayları</p>
           </div>
         </Link>
         <Link
@@ -58,8 +58,8 @@ export default function ManagePage() {
             <Layers size={20} color="#8B5CF6" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Programlar</p>
-            <p className="text-xs text-[#A8A6A0]">Program / Modül / Ders yönetimi</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Programlar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Program / Modül / Ders yönetimi</p>
           </div>
         </Link>
         <Link
@@ -70,8 +70,8 @@ export default function ManagePage() {
             <Award size={20} color="#D9A441" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Rozetler</p>
-            <p className="text-xs text-[#A8A6A0]">Rozet tanımları ve manuel verme</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Rozetler</p>
+            <p className="text-body-xs text-[#A8A6A0]">Rozet tanımları ve manuel verme</p>
           </div>
         </Link>
         <Link
@@ -82,8 +82,8 @@ export default function ManagePage() {
             <Radio size={20} color="#EF4444" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Canlı Dersler</p>
-            <p className="text-xs text-[#A8A6A0]">Discord canlı ders planla</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Canlı Dersler</p>
+            <p className="text-body-xs text-[#A8A6A0]">Discord canlı ders planla</p>
           </div>
         </Link>
         <Link
@@ -94,8 +94,8 @@ export default function ManagePage() {
             <Megaphone size={20} color="#32D6C6" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Duyuru Gönder</p>
-            <p className="text-xs text-[#A8A6A0]">Tüm/ücretli/ücretsiz kullanıcılara bildirim</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Duyuru Gönder</p>
+            <p className="text-body-xs text-[#A8A6A0]">Tüm/ücretli/ücretsiz kullanıcılara bildirim</p>
           </div>
         </Link>
         <Link
@@ -106,8 +106,8 @@ export default function ManagePage() {
             <BarChart3 size={20} color="#F39C3D" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Staff Performans</p>
-            <p className="text-xs text-[#A8A6A0]">AVM personel test/satış/komisyon</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Staff Performans</p>
+            <p className="text-body-xs text-[#A8A6A0]">AVM personel test/satış/komisyon</p>
           </div>
         </Link>
         <Link
@@ -118,8 +118,8 @@ export default function ManagePage() {
             <UserPlus size={20} color="#8A5CFF" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Davetiye Sistemi</p>
-            <p className="text-xs text-[#A8A6A0]">Üye referansları, kazanç ve davet edilenler</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Davetiye Sistemi</p>
+            <p className="text-body-xs text-[#A8A6A0]">Üye referansları, kazanç ve davet edilenler</p>
           </div>
         </Link>
         <Link
@@ -130,8 +130,8 @@ export default function ManagePage() {
             <Zap size={20} color="#3B5BFF" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">AI Chart Scanner</p>
-            <p className="text-xs text-[#A8A6A0]">Kişisel kullanım — canlı sinyal taraması</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">AI Chart Scanner</p>
+            <p className="text-body-xs text-[#A8A6A0]">Kişisel kullanım — canlı sinyal taraması</p>
           </div>
         </Link>
         <Link
@@ -142,8 +142,8 @@ export default function ManagePage() {
             <Globe size={20} color="#32D6C6" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Site İçeriği</p>
-            <p className="text-xs text-[#A8A6A0]">Landing page, header, footer, logo ve favicon yönetimi</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Site İçeriği</p>
+            <p className="text-body-xs text-[#A8A6A0]">Landing page, header, footer, logo ve favicon yönetimi</p>
           </div>
         </Link>
         <Link
@@ -154,8 +154,8 @@ export default function ManagePage() {
             <FileText size={20} color="#EAB308" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Sayfalar</p>
-            <p className="text-xs text-[#A8A6A0]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Sayfalar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Yasal sayfalar ve özel içerik sayfaları oluştur/düzenle</p>
           </div>
         </Link>
         <Link
@@ -166,8 +166,8 @@ export default function ManagePage() {
             <MessageSquare size={20} color="#3B5BFF" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Yorumlar</p>
-            <p className="text-xs text-[#A8A6A0]">Ders yorumlarını onayla, reddet veya sil</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Yorumlar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Ders yorumlarını onayla, reddet veya sil</p>
           </div>
         </Link>
         <Link
@@ -178,8 +178,8 @@ export default function ManagePage() {
             <Flag size={20} color="#EF4444" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Topluluk Moderasyonu</p>
-            <p className="text-xs text-[#A8A6A0]">Şikayet eşiğini aşan paylaşımları incele, sil veya yayına al</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Topluluk Moderasyonu</p>
+            <p className="text-body-xs text-[#A8A6A0]">Şikayet eşiğini aşan paylaşımları incele, sil veya yayına al</p>
           </div>
         </Link>
         <Link
@@ -190,8 +190,8 @@ export default function ManagePage() {
             <Mail size={20} color="#EF4444" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Mesajlaşma Denetimi</p>
-            <p className="text-xs text-[#A8A6A0]">DM logu, engelleme hareketleri, şikayetler</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Mesajlaşma Denetimi</p>
+            <p className="text-body-xs text-[#A8A6A0]">DM logu, engelleme hareketleri, şikayetler</p>
           </div>
         </Link>
         <Link
@@ -202,8 +202,8 @@ export default function ManagePage() {
             <LifeBuoy size={20} color="#8B5CF6" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Destek Merkezi</p>
-            <p className="text-xs text-[#A8A6A0]">Gelen destek taleplerini yanıtla, durumunu yönet</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Destek Merkezi</p>
+            <p className="text-body-xs text-[#A8A6A0]">Gelen destek taleplerini yanıtla, durumunu yönet</p>
           </div>
         </Link>
         <Link
@@ -214,13 +214,13 @@ export default function ManagePage() {
             <Activity size={20} color="#22C55E" />
           </div>
           <div>
-            <p className="font-medium text-[#F5F1EA]">Trafik &amp; Aktif Kullanıcılar</p>
-            <p className="text-xs text-[#A8A6A0]">Ziyaretçi istatistikleri, rol dağılımı, şu an aktif olanlar</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Trafik &amp; Aktif Kullanıcılar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Ziyaretçi istatistikleri, rol dağılımı, şu an aktif olanlar</p>
           </div>
         </Link>
       </div>
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#A8A6A0]">
+        <p className="text-body-sm text-[#A8A6A0]">
           Tüm yönetim bölümleri tamamlandı.
         </p>
       </div>

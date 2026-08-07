@@ -71,7 +71,7 @@ export default async function SitemapPage() {
     <>
       <PageHero title="Site Haritası" heroImageSrc={siteContent.heroImageUrl ?? undefined} />
       <div className="mx-auto max-w-[800px] px-4 py-16 sm:px-6">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           ORCA platformundaki tüm bölümlere ve sayfalara buradan ulaşabilirsin.
         </p>
 
@@ -80,14 +80,14 @@ export default async function SitemapPage() {
             <div key={section.title}>
               <div className="mb-3 flex items-center gap-2">
                 <section.icon className="size-4 text-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">{section.title}</h2>
+                <h2 className="text-card-title-sm uppercase text-foreground">{section.title}</h2>
               </div>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {section.links.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-navbar text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                     >
                       {link.label}
                     </Link>
@@ -101,14 +101,14 @@ export default async function SitemapPage() {
             <div>
               <div className="mb-3 flex items-center gap-2">
                 <GraduationCap className="size-4 text-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Programlarımız</h2>
+                <h2 className="text-card-title-sm uppercase text-foreground">Programlarımız</h2>
               </div>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {programs.map((program) => (
                   <li key={program.id}>
                     <Link
                       href={`/programs/${program.id}`}
-                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-navbar text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                     >
                       {program.title}
                     </Link>
@@ -122,14 +122,14 @@ export default async function SitemapPage() {
             <div>
               <div className="mb-3 flex items-center gap-2">
                 <FileText className="size-4 text-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Yasal</h2>
+                <h2 className="text-card-title-sm uppercase text-foreground">Yasal</h2>
               </div>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {legalPages.map((page) => (
                   <li key={page.slug}>
                     <Link
                       href={`/${page.slug}`}
-                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                      className="block rounded-lg border border-border bg-card px-4 py-2.5 text-navbar text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                     >
                       {page.title}
                     </Link>

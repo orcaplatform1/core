@@ -149,14 +149,14 @@ export function ToolsShowcase({
       <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-3xl font-bold text-foreground">{title}</h2>
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <h2 className="text-h2 text-foreground">{title}</h2>
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-badge text-primary">
               Yeni Nesil
             </span>
           </div>
           <p className="mt-2 text-muted-foreground">{subtitle}</p>
         </div>
-        <Link href="/programs" className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+        <Link href="/programs" className="flex items-center gap-1.5 text-btn-sm text-primary hover:underline">
           Tüm Araçları Keşfet <ArrowRight className="size-4" />
         </Link>
       </div>
@@ -175,8 +175,8 @@ export function ToolsShowcase({
               </div>
               <div className="flex flex-1 flex-col gap-2 p-4">
                 <Icon className="size-4 text-primary" />
-                <h3 className="font-semibold text-foreground">{tool.title}</h3>
-                <p className="flex-1 text-sm text-muted-foreground">{tool.description}</p>
+                <h3 className="text-card-title-sm text-foreground">{tool.title}</h3>
+                <p className="flex-1 text-body-sm text-muted-foreground">{tool.description}</p>
                 <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
               </div>
             </Link>

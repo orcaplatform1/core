@@ -94,8 +94,8 @@ export function RegisterForm() {
   return (
     <AuthShell>
       <div className="mx-auto w-full max-w-md rounded-2xl border border-primary/15 bg-card p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground">Kayıt Ol</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h4 text-foreground">Kayıt Ol</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           {step === "basics"
             ? "Hemen başlamak için birkaç bilgi yeterli."
             : "Son bir adım kaldı."}
@@ -112,7 +112,7 @@ export function RegisterForm() {
               <Label htmlFor="fullName">Ad Soyad *</Label>
               <Input id="fullName" {...register("fullName")} />
               {errors.fullName && (
-                <span className="text-xs text-danger">{errors.fullName.message}</span>
+                <span className="text-body-xs text-danger">{errors.fullName.message}</span>
               )}
             </div>
 
@@ -155,7 +155,7 @@ export function RegisterForm() {
                 <Label htmlFor="email">Email *</Label>
                 <Input id="email" type="email" {...register("email")} />
                 {errors.email && (
-                  <span className="text-xs text-danger">{errors.email.message}</span>
+                  <span className="text-body-xs text-danger">{errors.email.message}</span>
                 )}
               </div>
             ) : (
@@ -198,10 +198,10 @@ export function RegisterForm() {
                   />
                 </div>
                 {errors.phoneNumber && (
-                  <span className="text-xs text-danger">{errors.phoneNumber.message}</span>
+                  <span className="text-body-xs text-danger">{errors.phoneNumber.message}</span>
                 )}
                 {errors.email && contactMethod === "phone" && (
-                  <span className="text-xs text-danger">{errors.email.message}</span>
+                  <span className="text-body-xs text-danger">{errors.email.message}</span>
                 )}
               </div>
             )}
@@ -210,7 +210,7 @@ export function RegisterForm() {
               <Label htmlFor="password">Şifre *</Label>
               <PasswordInput id="password" {...register("password")} />
               {errors.password && (
-                <span className="text-xs text-danger">{errors.password.message}</span>
+                <span className="text-body-xs text-danger">{errors.password.message}</span>
               )}
             </div>
 
@@ -218,7 +218,7 @@ export function RegisterForm() {
               <Label htmlFor="passwordConfirm">Şifre (Tekrar) *</Label>
               <PasswordInput id="passwordConfirm" {...register("passwordConfirm")} />
               {errors.passwordConfirm && (
-                <span className="text-xs text-danger">{errors.passwordConfirm.message}</span>
+                <span className="text-body-xs text-danger">{errors.passwordConfirm.message}</span>
               )}
             </div>
 
@@ -232,21 +232,21 @@ export function RegisterForm() {
               <Label htmlFor="username">Kullanıcı Adı *</Label>
               <Input id="username" {...register("username")} />
               {errors.username && (
-                <span className="text-xs text-danger">{errors.username.message}</span>
+                <span className="text-body-xs text-danger">{errors.username.message}</span>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="referralCode">Referans Kodu (opsiyonel)</Label>
               <Input id="referralCode" placeholder="Bir arkadaşının kullanıcı adı" {...register("referralCode")} />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-help text-muted-foreground">
                 Bir arkadaşın seni davet ettiyse kullanıcı adını buraya gir, ilk ödemende %15 indirim kazan.
               </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <Label>Cinsiyet *</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-help text-muted-foreground">
                 Bu bilgiye göre sana özel bir profil avatarı atanacak.
               </p>
               <Controller
@@ -276,7 +276,7 @@ export function RegisterForm() {
                 )}
               />
               {errors.gender && (
-                <span className="text-xs text-danger">{errors.gender.message}</span>
+                <span className="text-body-xs text-danger">{errors.gender.message}</span>
               )}
             </div>
 
@@ -291,7 +291,7 @@ export function RegisterForm() {
           </div>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-body-sm text-muted-foreground">
           Zaten hesabın var mı?{" "}
           <Link href="/login" className="text-primary hover:underline">
             Giriş Yap

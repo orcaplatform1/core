@@ -12,7 +12,7 @@ import {
 } from "@/lib/hooks/use-admin-live-lessons";
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-body-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 export default function AdminLiveLessonsPage() {
@@ -30,13 +30,13 @@ export default function AdminLiveLessonsPage() {
   });
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -79,10 +79,10 @@ export default function AdminLiveLessonsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Canlı Dersler</h1>
-          <p className="text-sm text-[#A8A6A0]">Discord üzerinden yapılacak canlı dersleri planla.</p>
+          <h1 className="text-h1 text-[#F5F1EA]">Canlı Dersler</h1>
+          <p className="text-body-sm text-[#A8A6A0]">Discord üzerinden yapılacak canlı dersleri planla.</p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← M Dashboard
         </Link>
       </div>
@@ -123,7 +123,7 @@ export default function AdminLiveLessonsPage() {
             value={form.discordLink}
             onChange={(e) => setForm((f) => ({ ...f, discordLink: e.target.value }))}
           />
-          <p className="text-xs text-[#A8A6A0]">
+          <p className="text-body-xs text-[#A8A6A0]">
             Oluşturunca tüm öğrencilere otomatik bildirim gönderilir. Ders sadece bu sayfadan
             duyurulur, site içinde canlı yayın olmaz — öğrenci geri sayımı görüp Discord'a yönlenir.
           </p>
@@ -140,9 +140,9 @@ export default function AdminLiveLessonsPage() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-[#A8A6A0]">Henüz canlı ders planlanmadı.</p>
+          <p className="text-body-sm text-[#A8A6A0]">Henüz canlı ders planlanmadı.</p>
         ) : (
           sorted.map((l) => {
             const isPast = new Date(l.scheduledAt).getTime() < Date.now();
@@ -156,10 +156,10 @@ export default function AdminLiveLessonsPage() {
                     <Radio size={18} color="#3B5BFF" />
                   </div>
                   <div>
-                    <p className={`font-medium ${isPast ? "text-[#A8A6A0]" : "text-[#F5F1EA]"}`}>
+                    <p className={`text-body-sm ${isPast ? "text-[#A8A6A0]" : "text-[#F5F1EA]"}`}>
                       {l.title}
                     </p>
-                    <p className="text-xs text-[#A8A6A0]">
+                    <p className="text-body-xs text-[#A8A6A0]">
                       {new Date(l.scheduledAt).toLocaleString("tr-TR")} · {l.durationMinutes} dk
                       {isPast && " · geçti"}
                     </p>

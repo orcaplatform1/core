@@ -22,7 +22,7 @@ function Pager({ page, totalPages, onChange }: { page: number; totalPages: numbe
           key={p}
           type="button"
           onClick={() => onChange(p)}
-          className={`size-8 rounded-lg text-xs font-medium ${
+          className={`size-8 rounded-lg text-body-xs ${
             p === page ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"
           }`}
         >
@@ -39,24 +39,24 @@ function MessageLogSection() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+      <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
         <MessageSquare size={16} className="text-primary" /> Mesaj Kayıtları {data && `(toplam ${data.pagination.total})`}
       </h2>
-      <p className="mt-1 text-xs text-[#A8A6A0]">
+      <p className="mt-1 text-body-xs text-[#A8A6A0]">
         Başarılı ve başarısız (spam/küfür/engel nedeniyle reddedilen) tüm mesaj denemeleri, en yeniden eskiye.
       </p>
       <div className="mt-4 divide-y divide-border">
         {isLoading ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !data || data.data.length === 0 ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Kayıt yok.</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Kayıt yok.</p>
         ) : (
           data.data.map((m) => {
             const statusInfo = STATUS_LABELS[m.status];
             return (
               <div key={m.id} className="py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm text-[#F5F1EA]">
+                  <p className="text-body-sm text-[#F5F1EA]">
                     <Link href={`/manage/users/${m.sender.id}`} className="font-medium hover:text-primary hover:underline">
                       {m.sender.fullName}
                     </Link>
@@ -67,20 +67,20 @@ function MessageLogSection() {
                   </p>
                   <div className="flex items-center gap-2">
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      className="rounded-full px-2 py-0.5 text-badge"
                       style={{ backgroundColor: `${statusInfo.color}22`, color: statusInfo.color }}
                     >
                       {statusInfo.label}
                     </span>
-                    <span className="text-[11px] text-[#A8A6A0]">{new Date(m.createdAt).toLocaleString("tr-TR")}</span>
+                    <span className="text-body-xs text-[#A8A6A0]">{new Date(m.createdAt).toLocaleString("tr-TR")}</span>
                   </div>
                 </div>
-                <p className="mt-1 rounded-lg border border-border bg-card-inner p-2 text-xs text-[#F5F1EA] whitespace-pre-wrap">
+                <p className="mt-1 rounded-lg border border-border bg-card-inner p-2 text-body-xs text-[#F5F1EA] whitespace-pre-wrap">
                   {m.content}
                 </p>
-                {m.blockedReason && <p className="mt-1 text-[11px] text-[#EF4444]">Neden: {m.blockedReason}</p>}
-                {m.deletedAt && <p className="mt-1 text-[11px] text-[#F39C3D]">SUPER_ADMIN tarafından silindi</p>}
-                {m.editedAt && <p className="mt-1 text-[11px] text-[#A8A6A0]">Düzenlendi · {new Date(m.editedAt).toLocaleString("tr-TR")}</p>}
+                {m.blockedReason && <p className="mt-1 text-body-xs text-[#EF4444]">Neden: {m.blockedReason}</p>}
+                {m.deletedAt && <p className="mt-1 text-body-xs text-[#F39C3D]">SUPER_ADMIN tarafından silindi</p>}
+                {m.editedAt && <p className="mt-1 text-body-xs text-[#A8A6A0]">Düzenlendi · {new Date(m.editedAt).toLocaleString("tr-TR")}</p>}
               </div>
             );
           })
@@ -97,19 +97,19 @@ function BlockActionsSection() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+      <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
         <UserX size={16} className="text-[#EF4444]" /> Engelleme Hareketleri {data && `(toplam ${data.pagination.total})`}
       </h2>
-      <p className="mt-1 text-xs text-[#A8A6A0]">Kim kimi ne zaman engellemiş, en yeniden eskiye.</p>
+      <p className="mt-1 text-body-xs text-[#A8A6A0]">Kim kimi ne zaman engellemiş, en yeniden eskiye.</p>
       <div className="mt-4 divide-y divide-border">
         {isLoading ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !data || data.data.length === 0 ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Kayıt yok.</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Kayıt yok.</p>
         ) : (
           data.data.map((b) => (
             <div key={b.id} className="flex items-center justify-between py-2.5">
-              <p className="text-sm text-[#F5F1EA]">
+              <p className="text-body-sm text-[#F5F1EA]">
                 <Link href={`/manage/users/${b.blocker.id}`} className="font-medium hover:text-primary hover:underline">
                   {b.blocker.fullName}
                 </Link>
@@ -118,7 +118,7 @@ function BlockActionsSection() {
                   {b.blocked.fullName}
                 </Link>
               </p>
-              <span className="text-[11px] text-[#A8A6A0]">{new Date(b.createdAt).toLocaleString("tr-TR")}</span>
+              <span className="text-body-xs text-[#A8A6A0]">{new Date(b.createdAt).toLocaleString("tr-TR")}</span>
             </div>
           ))
         )}
@@ -134,18 +134,18 @@ function ReportsSection() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+      <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
         <Flag size={16} className="text-[#F39C3D]" /> Şikayetler {data && `(toplam ${data.pagination.total})`}
       </h2>
       <div className="mt-4 divide-y divide-border">
         {isLoading ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !data || data.data.length === 0 ? (
-          <p className="py-6 text-sm text-[#A8A6A0]">Şikayet yok.</p>
+          <p className="py-6 text-body-sm text-[#A8A6A0]">Şikayet yok.</p>
         ) : (
           data.data.map((r) => (
             <div key={r.id} className="py-3">
-              <p className="text-sm text-[#F5F1EA]">
+              <p className="text-body-sm text-[#F5F1EA]">
                 <Link href={`/manage/users/${r.reporter.id}`} className="font-medium hover:text-primary hover:underline">
                   {r.reporter.fullName}
                 </Link>
@@ -158,11 +158,11 @@ function ReportsSection() {
                   {r.message.recipient.fullName}
                 </Link>
               </p>
-              <p className="mt-1 rounded-lg border border-[#F39C3D40] bg-[#F39C3D11] p-2 text-xs text-[#F5F1EA]">
+              <p className="mt-1 rounded-lg border border-[#F39C3D40] bg-[#F39C3D11] p-2 text-body-xs text-[#F5F1EA]">
                 "{r.message.content}"
               </p>
-              <p className="mt-1 text-xs text-[#A8A6A0]">Sebep: {r.reason}</p>
-              <p className="mt-0.5 text-[11px] text-[#A8A6A0]">{new Date(r.createdAt).toLocaleString("tr-TR")}</p>
+              <p className="mt-1 text-body-xs text-[#A8A6A0]">Sebep: {r.reason}</p>
+              <p className="mt-0.5 text-body-xs text-[#A8A6A0]">{new Date(r.createdAt).toLocaleString("tr-TR")}</p>
               <div className="mt-2 flex justify-end">
                 <SuspendUserButton
                   userId={r.message.sender.id}
@@ -184,13 +184,13 @@ export default function AdminMessagesPage() {
   const { user: me, isLoading: authLoading } = useAuth();
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -199,10 +199,10 @@ export default function AdminMessagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Mesajlaşma Denetimi</h1>
-          <p className="text-sm text-[#A8A6A0]">Tüm özel mesajlar, engelleme hareketleri ve şikayetler.</p>
+          <h1 className="text-h1 text-[#F5F1EA]">Mesajlaşma Denetimi</h1>
+          <p className="text-body-sm text-[#A8A6A0]">Tüm özel mesajlar, engelleme hareketleri ve şikayetler.</p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← Manage Dashboard
         </Link>
       </div>

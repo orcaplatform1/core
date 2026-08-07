@@ -37,13 +37,13 @@ export default function AdminAnnouncementsPage() {
   });
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -83,12 +83,12 @@ export default function AdminAnnouncementsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Duyuru Gönder</h1>
-          <p className="text-sm text-[#A8A6A0]">
+          <h1 className="text-h1 text-[#F5F1EA]">Duyuru Gönder</h1>
+          <p className="text-body-sm text-[#A8A6A0]">
             Seçtiğin gruba bildirim olarak gönderilir.
           </p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← M Dashboard
         </Link>
       </div>
@@ -98,13 +98,13 @@ export default function AdminAnnouncementsPage() {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#3B5BFF22]">
             <Megaphone size={18} color="#3B5BFF" />
           </div>
-          <p className="text-sm text-[#A8A6A0]">
+          <p className="text-body-sm text-[#A8A6A0]">
             Duyuru site içi bildirim (zil ikonu) olarak düşer. Email/SMS gönderimi yok.
           </p>
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-[#A8A6A0]">Hedef Kitle</label>
+          <label className="text-body-xs text-[#A8A6A0]">Hedef Kitle</label>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {TARGETS.map((t) => (
               <button
@@ -117,8 +117,8 @@ export default function AdminAnnouncementsPage() {
                     : "border-border bg-card-inner hover:border-primary/50"
                 }`}
               >
-                <p className="text-sm font-medium text-[#F5F1EA]">{t.label}</p>
-                <p className="mt-0.5 text-[11px] text-[#A8A6A0]">{t.desc}</p>
+                <p className="text-body-sm text-[#F5F1EA]">{t.label}</p>
+                <p className="mt-0.5 text-body-xs text-[#A8A6A0]">{t.desc}</p>
               </button>
             ))}
           </div>
@@ -150,19 +150,19 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Gönderilen Duyurular</h2>
+        <h2 className="text-h2 text-[#F5F1EA]">Gönderilen Duyurular</h2>
         {loadingSent ? (
-          <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !sentAnnouncements || sentAnnouncements.length === 0 ? (
-          <p className="text-sm text-[#A8A6A0]">Henüz duyuru gönderilmemiş.</p>
+          <p className="text-body-sm text-[#A8A6A0]">Henüz duyuru gönderilmemiş.</p>
         ) : (
           sentAnnouncements.map((a) => (
             <div key={a.id} className="rounded-2xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-medium text-[#F5F1EA]">{a.title}</p>
-                  <p className="mt-1 text-sm text-[#A8A6A0]">{a.message}</p>
-                  <p className="mt-2 text-xs text-[#A8A6A0]">
+                  <p className="text-card-title-sm text-[#F5F1EA]">{a.title}</p>
+                  <p className="mt-1 text-body-sm text-[#A8A6A0]">{a.message}</p>
+                  <p className="mt-2 text-body-xs text-[#A8A6A0]">
                     {TARGET_LABELS[a.target]} · {a.recipientCount} alıcı · {new Date(a.createdAt).toLocaleString("tr-TR")}
                     {a.createdByName ? ` · ${a.createdByName}` : ""}
                   </p>
@@ -170,7 +170,7 @@ export default function AdminAnnouncementsPage() {
                 <button
                   onClick={() => handleDelete(a.id, a.title)}
                   disabled={deleteAnnouncement.isPending}
-                  className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[#EF4444] hover:bg-[#EF444422]"
+                  className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-body-xs text-[#EF4444] hover:bg-[#EF444422]"
                 >
                   <Trash2 size={14} /> Sil
                 </button>

@@ -74,8 +74,8 @@ export function LoginForm() {
   return (
     <AuthShell>
       <div className="mx-auto w-full max-w-md rounded-2xl border border-primary/15 bg-card p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground">Giriş Yap</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h4 text-foreground">Giriş Yap</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           ORCA hesabınla devam et.
         </p>
 
@@ -111,7 +111,7 @@ export function LoginForm() {
               <Label htmlFor="username">Kullanıcı Adı *</Label>
               <Input id="username" {...register("username")} />
               {errors.username && (
-                <span className="text-xs text-danger">{errors.username.message}</span>
+                <span className="text-body-xs text-danger">{errors.username.message}</span>
               )}
             </div>
           )}
@@ -121,7 +121,7 @@ export function LoginForm() {
               <Label htmlFor="email">E-posta *</Label>
               <Input id="email" type="email" {...register("email")} />
               {errors.username && (
-                <span className="text-xs text-danger">{errors.username.message}</span>
+                <span className="text-body-xs text-danger">{errors.username.message}</span>
               )}
             </div>
           )}
@@ -165,10 +165,10 @@ export function LoginForm() {
                 />
               </div>
               {errors.phoneNumber && (
-                <span className="text-xs text-danger">{errors.phoneNumber.message}</span>
+                <span className="text-body-xs text-danger">{errors.phoneNumber.message}</span>
               )}
               {errors.username && (
-                <span className="text-xs text-danger">{errors.username.message}</span>
+                <span className="text-body-xs text-danger">{errors.username.message}</span>
               )}
             </div>
           )}
@@ -177,11 +177,11 @@ export function LoginForm() {
             <Label htmlFor="password">Şifre *</Label>
             <PasswordInput id="password" {...register("password")} />
             {errors.password && (
-              <span className="text-xs text-danger">{errors.password.message}</span>
+              <span className="text-body-xs text-danger">{errors.password.message}</span>
             )}
             <Link
               href="/reset-password"
-              className="self-end text-xs text-primary hover:underline"
+              className="self-end text-body-xs text-primary hover:underline"
             >
               Şifremi unuttum
             </Link>
@@ -194,7 +194,7 @@ export function LoginForm() {
 
         <div className="mt-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">veya</span>
+          <span className="text-body-xs text-muted-foreground">veya</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
@@ -224,7 +224,7 @@ export function LoginForm() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-body-sm text-muted-foreground">
           Hesabın yok mu?{" "}
           <Link href="/register" className="text-primary hover:underline">
             Kayıt Ol

@@ -80,14 +80,14 @@ function NewTicketForm({ onCreated }: { onCreated: (id: string) => void }) {
           <LifeBuoy className="size-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Yeni Destek Talebi</h2>
-          <p className="text-xs text-muted-foreground">Ekibimiz en kısa sürede sana dönüş yapacak.</p>
+          <h2 className="text-h6 text-foreground">Yeni Destek Talebi</h2>
+          <p className="text-body-xs text-muted-foreground">Ekibimiz en kısa sürede sana dönüş yapacak.</p>
         </div>
       </div>
 
       <div className="mt-5 flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-muted-foreground">Kategori</label>
+          <label className="text-label text-muted-foreground">Kategori</label>
           <Select value={category} onValueChange={(v) => setCategory(v as SupportTicketCategory)}>
             <SelectTrigger className="w-full sm:w-64">
               <SelectValue>
@@ -110,23 +110,23 @@ function NewTicketForm({ onCreated }: { onCreated: (id: string) => void }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-muted-foreground">Konu</label>
+          <label className="text-label text-muted-foreground">Konu</label>
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Talebini kısaca özetle"
-            className="rounded-xl border border-border bg-card-inner px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="rounded-xl border border-border bg-card-inner px-3.5 py-2.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-muted-foreground">Mesajın</label>
+          <label className="text-label text-muted-foreground">Mesajın</label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={4}
             placeholder="Yaşadığın sorunu veya sorunu detaylı şekilde anlat..."
-            className="resize-none rounded-xl border border-border bg-card-inner px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="resize-none rounded-xl border border-border bg-card-inner px-3.5 py-2.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
           />
         </div>
 
@@ -183,8 +183,8 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
           <ArrowLeft className="size-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{ticket.subject}</p>
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <p className="truncate text-card-title-sm text-foreground">{ticket.subject}</p>
+          <p className="flex items-center gap-1 text-body-xs text-muted-foreground">
             {categoryInfo?.label}
           </p>
         </div>
@@ -210,7 +210,7 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
                 {!isMe && isStaffMsg && (
                   <p className="mb-1 text-[10px] font-semibold text-primary">ORCA Destek Ekibi</p>
                 )}
-                <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                <p className="whitespace-pre-wrap text-body-sm">{m.content}</p>
               </div>
               <span className="mt-0.5 px-1 text-[10px] text-muted-foreground">{formatClock(m.createdAt)}</span>
             </div>
@@ -221,7 +221,7 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
 
       <div className="border-t border-border p-3">
         {ticket.status === "CLOSED" ? (
-          <p className="rounded-xl border border-border bg-card-inner p-3 text-center text-xs text-muted-foreground">
+          <p className="rounded-xl border border-border bg-card-inner p-3 text-center text-body-xs text-muted-foreground">
             Bu talep kapatıldı. Yazdığın an talep otomatik olarak yeniden açılır.
           </p>
         ) : null}
@@ -237,7 +237,7 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
             }}
             placeholder="Bir mesaj yazın..."
             rows={1}
-            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <button
             onClick={handleSend}
@@ -259,13 +259,13 @@ function TicketList({ onSelect }: { onSelect: (id: string) => void }) {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h3 className="text-sm font-semibold text-foreground">Taleplerim {data && `(${data.pagination.total})`}</h3>
+      <h3 className="text-card-title-sm text-foreground">Taleplerim {data && `(${data.pagination.total})`}</h3>
 
       <div className="mt-4 space-y-2">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+          <p className="text-body-sm text-muted-foreground">Yükleniyor...</p>
         ) : !data || data.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Henüz bir destek talebin yok.</p>
+          <p className="text-body-sm text-muted-foreground">Henüz bir destek talebin yok.</p>
         ) : (
           data.data.map((t) => {
             const statusInfo = STATUS_STYLES[t.status];
@@ -277,8 +277,8 @@ function TicketList({ onSelect }: { onSelect: (id: string) => void }) {
                 className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card-inner p-3 text-left transition-colors hover:border-primary/40"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{t.subject}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-card-title-sm text-foreground">{t.subject}</p>
+                  <p className="text-body-xs text-muted-foreground">
                     {categoryInfo?.label} · {new Date(t.updatedAt).toLocaleDateString("tr-TR")}
                   </p>
                 </div>
@@ -300,7 +300,7 @@ function TicketList({ onSelect }: { onSelect: (id: string) => void }) {
             <button
               key={p}
               onClick={() => setPage(p)}
-              className={`size-8 rounded-lg text-xs font-medium ${
+              className={`size-8 rounded-lg text-label ${
                 p === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
               }`}
             >
@@ -336,8 +336,8 @@ function SupportPageInner() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Destek Merkezi</h1>
-        <p className="text-sm text-muted-foreground">Sorularını ve sorunlarını bize ilet, ekibimiz sana yardımcı olsun.</p>
+        <h1 className="text-h1 text-foreground">Destek Merkezi</h1>
+        <p className="text-body-sm text-muted-foreground">Sorularını ve sorunlarını bize ilet, ekibimiz sana yardımcı olsun.</p>
       </div>
 
       {selected ? (

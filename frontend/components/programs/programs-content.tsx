@@ -8,7 +8,7 @@ export function ProgramsContent() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
-      <p className="mb-10 text-sm text-muted-foreground">
+      <p className="mb-10 text-body-sm text-muted-foreground">
         Finans ve trading dünyasında ustalaşmak için tasarlanmış eğitim programları.
       </p>
 
@@ -19,7 +19,7 @@ export function ProgramsContent() {
           ))}
         </div>
       ) : !programs || programs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Henüz yayınlanmış bir program yok.</p>
+        <p className="text-body-sm text-muted-foreground">Henüz yayınlanmış bir program yok.</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => (

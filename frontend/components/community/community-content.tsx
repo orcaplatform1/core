@@ -56,8 +56,8 @@ export function CommunityContent() {
     <div className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">Öğrenci Analizleri</p>
-          <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+          <p className="text-tag text-primary">Öğrenci Analizleri</p>
+          <p className="mt-2 max-w-lg text-body-sm text-muted-foreground">
             Grafik analizlerini paylaş, diğer öğrencilerin fikirlerini incele, geri bildirim ver.
           </p>
         </div>

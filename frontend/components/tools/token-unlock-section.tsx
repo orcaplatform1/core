@@ -14,9 +14,9 @@ export function TokenUnlockSection() {
           {data.map((event) => (
             <li
               key={event.id}
-              className="flex items-center justify-between py-3 text-sm"
+              className="flex items-center justify-between py-3 text-body-sm"
             >
-              <span className="font-medium text-foreground">
+              <span className="text-financial text-foreground">
                 {event.tokenSymbol}
               </span>
               <span className="text-muted-foreground">

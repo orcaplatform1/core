@@ -130,7 +130,7 @@ export function CreatePostSheet({
         <div className="flex flex-col gap-4 px-4 pb-4">
           <label className="card-inner flex cursor-pointer flex-col items-center gap-2 rounded-xl p-6 text-center transition-colors duration-200 hover:bg-[var(--card-hover)]">
             <Upload className="size-5 text-primary" />
-            <span className="text-xs text-muted-foreground">
+            <span className="text-help text-muted-foreground">
               {file ? file.name : "Grafik görseli seç (JPG, PNG, WEBP — maks. 10MB)"}
             </span>
             <input
@@ -142,18 +142,18 @@ export function CreatePostSheet({
           </label>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Başlık</label>
+            <label className="text-label text-muted-foreground">Başlık</label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn. BTCUSDT 4H Order Block Testi" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Açıklama (opsiyonel)</label>
+            <label className="text-label text-muted-foreground">Açıklama (opsiyonel)</label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Analizini açıkla..." />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Sembol</label>
+              <label className="text-label text-muted-foreground">Sembol</label>
               <Input
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value.toUpperCase())}
@@ -162,7 +162,7 @@ export function CreatePostSheet({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Zaman Dilimi</label>
+              <label className="text-label text-muted-foreground">Zaman Dilimi</label>
               <Select value={timeframe} onValueChange={(v) => setTimeframe(v as (typeof COMMUNITY_TIMEFRAMES)[number])}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -179,7 +179,7 @@ export function CreatePostSheet({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Yön</label>
+            <label className="text-label text-muted-foreground">Yön</label>
             <div className="flex gap-2">
               {DIRECTION_OPTIONS.map((opt) => (
                 <button
@@ -197,14 +197,14 @@ export function CreatePostSheet({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">ICT Etiketleri (opsiyonel)</label>
+            <label className="text-label text-muted-foreground">ICT Etiketleri (opsiyonel)</label>
             <div className="flex flex-wrap gap-1.5">
               {COMMUNITY_ICT_TAGS.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`rounded-full border px-2.5 py-1 text-tag transition-colors ${
                     ictTags.includes(tag)
                       ? "border-primary/40 bg-primary/10 text-primary"
                       : "border-border text-muted-foreground hover:text-foreground"
@@ -216,7 +216,7 @@ export function CreatePostSheet({
             </div>
           </div>
 
-          <label className="flex items-start gap-2 text-xs text-muted-foreground">
+          <label className="flex items-start gap-2 text-help text-muted-foreground">
             <input
               type="checkbox"
               checked={accepted}
@@ -232,7 +232,7 @@ export function CreatePostSheet({
             {createPost.isPending ? "Gönderiliyor..." : "Paylaş"}
           </Button>
           {limitReached && (
-            <p className="text-center text-xs text-warning">
+            <p className="text-center text-body-xs text-warning">
               Bugünkü paylaşım hakkınızı kullandınız, yarın tekrar deneyebilirsiniz.
             </p>
           )}

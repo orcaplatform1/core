@@ -50,23 +50,23 @@ export default function MentorPage() {
     <div className="mx-auto flex h-[calc(100vh-72px-4rem)] max-w-3xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <h1 className="flex items-center gap-2 text-ai-title text-foreground">
             <Bot className="size-6 text-purple" /> Yapay Zeka Mentor
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Finans ve trading sorularını sor, kişisel yol haritanı oluştur.
           </p>
         </div>
         {quota && (
           <div className="card-inner flex items-center gap-3 rounded-xl px-4 py-2 text-right">
             <div>
-              <p className="text-xs text-muted-foreground">Bugün Kalan</p>
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-body-xs text-muted-foreground">Bugün Kalan</p>
+              <p className="text-card-title-sm text-foreground">
                 {quota.freeRemaining}/{quota.dailyFreeLimit} ücretsiz
               </p>
             </div>
             {quota.mentorCredits > 0 && (
-              <span className="rounded-full bg-purple/15 px-2.5 py-1 text-xs font-medium text-purple">
+              <span className="rounded-full bg-purple/15 px-2.5 py-1 text-badge text-purple">
                 +{quota.mentorCredits} kredi
               </span>
             )}
@@ -85,7 +85,7 @@ export default function MentorPage() {
           ) : !history || history.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
               <Sparkles className="size-8 text-purple" />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 Merhaba! Finans, trading veya eğitim programınla ilgili aklına takılan
                 herhangi bir şeyi sorabilirsin.
               </p>
@@ -98,7 +98,7 @@ export default function MentorPage() {
                   className={`flex ${msg.role === "USER" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-ai-message ${
                       msg.role === "USER"
                         ? "bg-primary text-primary-foreground"
                         : "card-inner text-foreground"
@@ -125,7 +125,7 @@ export default function MentorPage() {
         <div className="border-t border-border p-4">
           {noQuota ? (
             <div className="flex items-center justify-between rounded-xl bg-warning/10 p-3">
-              <span className="text-sm text-foreground">
+              <span className="text-body-sm text-foreground">
                 Günlük ücretsiz hakkın doldu.
               </span>
               <Button size="sm" render={<Link href="/mentor/credits"><CreditCard className="size-4" /> Kredi Al</Link>} />

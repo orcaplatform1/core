@@ -99,7 +99,7 @@ function Composer({
         placeholder={placeholder}
         autoFocus={autoFocus}
         rows={compact ? 2 : 3}
-        className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+        className="w-full resize-none bg-transparent text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
       />
       <div className="mt-2 flex items-center justify-between">
         <EmojiPickerButton onPick={(e) => setValue((v) => v + e)} />
@@ -127,7 +127,7 @@ function ReactionButtons({
       <button
         type="button"
         onClick={() => onReact(comment.id, "LIKE")}
-        className="flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-[#22C55E]"
+        className="flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-[#22C55E]"
       >
         <ThumbsUp className="size-3.5" />
         {comment.likes}
@@ -135,7 +135,7 @@ function ReactionButtons({
       <button
         type="button"
         onClick={() => onReact(comment.id, "DISLIKE")}
-        className="flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-[#EF4444]"
+        className="flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-[#EF4444]"
       >
         <ThumbsDown className="size-3.5" />
         {comment.dislikes}
@@ -157,13 +157,13 @@ function CommentEditHistoryDialog({
         className="w-full max-w-sm rounded-2xl border border-border bg-card p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
           <Clock className="size-4 text-primary" /> Düzenleme Geçmişi
         </h3>
         <div className="mt-3 max-h-72 space-y-3 overflow-y-auto">
           {edits.map((e, i) => (
             <div key={i} className="rounded-lg border border-border bg-card-inner p-2.5">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-body-xs text-muted-foreground">
                 {new Date(e.editedAt).toLocaleString("tr-TR", {
                   day: "2-digit",
                   month: "long",
@@ -172,12 +172,12 @@ function CommentEditHistoryDialog({
                   minute: "2-digit",
                 })}
               </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{e.previousContent}</p>
+              <p className="mt-1 whitespace-pre-wrap text-body-sm text-foreground">{e.previousContent}</p>
             </div>
           ))}
         </div>
         <div className="mt-3 flex justify-end">
-          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-body-xs text-muted-foreground hover:bg-accent">
             Kapat
           </button>
         </div>
@@ -204,10 +204,10 @@ function CommentReportDialog({ commentId, onClose }: { commentId: string; onClos
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
           <Flag className="size-4 text-[#EF4444]" /> Yorumu Şikayet Et
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Bu yorumun topluluk kurallarını neden ihlal ettiğini kısaca açıklayın.
         </p>
         <textarea
@@ -215,10 +215,10 @@ function CommentReportDialog({ commentId, onClose }: { commentId: string; onClos
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Şikayet sebebi..."
-          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-body-xs text-muted-foreground hover:bg-accent">
             Vazgeç
           </button>
           <button
@@ -300,13 +300,13 @@ function CommentItem({
               <div className="flex flex-wrap items-center gap-1.5">
                 <Link
                   href={`/profile/${comment.user.id}`}
-                  className="text-sm font-semibold text-foreground hover:underline"
+                  className="text-body-sm font-semibold text-foreground hover:underline"
                 >
                   @{comment.user.username ?? comment.user.fullName}
                 </Link>
                 {roleBadge && (
                   <span
-                    className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                    className="rounded-full px-1.5 py-0.5 text-badge"
                     style={{ backgroundColor: `${roleBadge.color}22`, color: roleBadge.color }}
                   >
                     {roleBadge.label}
@@ -314,19 +314,19 @@ function CommentItem({
                 )}
                 {pinned && (
                   <span
-                    className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                    className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-badge"
                     style={{ backgroundColor: `${PINNED_COLOR}22`, color: PINNED_COLOR }}
                   >
                     <Star className="size-2.5" style={{ color: PINNED_STAR_COLOR }} /> Öne Çıkan
                   </span>
                 )}
                 {comment.status === "PENDING" && (
-                  <span className="flex items-center gap-0.5 rounded-full bg-[#F39C3D22] px-1.5 py-0.5 text-[9px] font-semibold text-[#F39C3D]">
+                  <span className="flex items-center gap-0.5 rounded-full bg-[#F39C3D22] px-1.5 py-0.5 text-badge text-[#F39C3D]">
                     <Clock className="size-2.5" /> ONAY BEKLİYOR
                   </span>
                 )}
               </div>
-              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <p className="flex items-center gap-1 text-body-xs text-muted-foreground">
                 {timeAgo(comment.createdAt)}
                 {comment.editedAt && (
                   <>
@@ -379,13 +379,13 @@ function CommentItem({
               onChange={(e) => setEditValue(e.target.value)}
               rows={3}
               autoFocus
-              className="w-full resize-none rounded-lg border border-border bg-card p-2.5 text-sm text-foreground focus:outline-none"
+              className="w-full resize-none rounded-lg border border-border bg-card p-2.5 text-body-sm text-foreground focus:outline-none"
             />
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+                className="rounded-lg px-3 py-1.5 text-body-xs text-muted-foreground hover:bg-accent"
               >
                 Vazgeç
               </button>
@@ -400,7 +400,7 @@ function CommentItem({
             </div>
           </div>
         ) : (
-          <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{renderContent(comment.content)}</p>
+          <p className="mt-2 whitespace-pre-wrap text-body-sm text-foreground">{renderContent(comment.content)}</p>
         )}
 
         <div className="mt-2 flex flex-wrap items-center gap-4">
@@ -409,7 +409,7 @@ function CommentItem({
             <button
               type="button"
               onClick={() => setReplying((r) => !r)}
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              className="flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               <CornerDownRight className="size-3.5" /> Cevapla
             </button>
@@ -418,7 +418,7 @@ function CommentItem({
             <button
               type="button"
               onClick={() => setReporting(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors duration-200 hover:text-[#EF4444]"
+              className="flex items-center gap-1 text-body-xs text-muted-foreground transition-colors duration-200 hover:text-[#EF4444]"
             >
               <Flag className="size-3.5" /> Şikayet Et
             </button>
@@ -455,7 +455,7 @@ function CommentItem({
             <button
               type="button"
               onClick={() => setShowAllReplies(true)}
-              className="text-xs font-medium text-primary hover:underline"
+              className="text-body-xs text-primary hover:underline"
             >
               Tüm cevapları görüntülemek için tıklayın ({comment.replies.length})
             </button>
@@ -495,13 +495,13 @@ export function CommentSection({ lessonId }: { lessonId: string }) {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+      <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
         <MessageSquare className="size-4" /> Yorumlar {data && `(${data.pagination.total})`}
       </h3>
 
       <div className="mt-4">
         {data?.suspendedMessage ? (
-          <div className="flex items-start gap-2 rounded-xl border border-[#EF444440] bg-[#EF444411] p-3 text-xs text-[#EF4444]">
+          <div className="flex items-start gap-2 rounded-xl border border-[#EF444440] bg-[#EF444411] p-3 text-body-xs text-[#EF4444]">
             <ShieldAlert className="size-4 shrink-0" />
             <span>
               {data.suspendedMessage}{" "}
@@ -523,7 +523,7 @@ export function CommentSection({ lessonId }: { lessonId: string }) {
         )}
       </div>
 
-      {isLoading && <p className="mt-4 text-sm text-muted-foreground">Yükleniyor...</p>}
+      {isLoading && <p className="mt-4 text-body-sm text-muted-foreground">Yükleniyor...</p>}
 
       {data && (
         <div className="mt-5 space-y-4">
@@ -559,7 +559,7 @@ export function CommentSection({ lessonId }: { lessonId: string }) {
           )}
 
           {data.comments.length === 0 && data.pinned.length === 0 && data.myPending.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Henüz yorum yok. İlk yorumu siz yazın.</p>
+            <p className="text-body-sm text-muted-foreground">Henüz yorum yok. İlk yorumu siz yazın.</p>
           ) : (
             <div className="space-y-2">
               {data.comments.map((c) => (

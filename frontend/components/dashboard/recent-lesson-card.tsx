@@ -13,7 +13,7 @@ export function RecentLessonCard() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-6 text-body-sm text-muted-foreground">
         Şu an için önerilen bir ders yok — bir programa kayıtlı değilsin.
       </div>
     );
@@ -23,7 +23,7 @@ export function RecentLessonCard() {
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center gap-2">
         <Sparkles className="size-4 text-purple" />
-        <h3 className="text-sm font-semibold text-foreground">AI Önerisi — Kaldığın Yerden</h3>
+        <h3 className="text-widget-title text-foreground">AI Önerisi — Kaldığın Yerden</h3>
       </div>
       <div className="mt-4 flex flex-col gap-3">
         {data.map((rec) => (
@@ -34,8 +34,8 @@ export function RecentLessonCard() {
           >
             <PlayCircle className="size-8 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{rec.lessonTitle}</p>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-widget-desc text-foreground">{rec.lessonTitle}</p>
+              <p className="truncate text-body-xs text-muted-foreground">
                 {rec.moduleTitle}
                 {rec.estimatedMinutes ? ` · ${rec.estimatedMinutes} dk` : ""}
               </p>

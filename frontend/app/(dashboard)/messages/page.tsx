@@ -77,10 +77,10 @@ function ReportDialog({ messageId, onClose }: { messageId: string; onClose: () =
         className="w-full max-w-sm rounded-2xl border border-border bg-card p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
           <Flag className="size-4 text-[#EF4444]" /> Mesajı Şikayet Et
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Bu mesajın topluluk kurallarını neden ihlal ettiğini kısaca açıklayın.
         </p>
         <textarea
@@ -88,16 +88,16 @@ function ReportDialog({ messageId, onClose }: { messageId: string; onClose: () =
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Şikayet sebebi..."
-          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="mt-3 w-full resize-none rounded-lg border border-border bg-card-inner p-2.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-body-xs text-muted-foreground hover:bg-accent">
             Vazgeç
           </button>
           <button
             onClick={submit}
             disabled={report.isPending || !reason.trim()}
-            className="rounded-lg bg-[#EF4444] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-[#EF4444] px-3 py-1.5 text-body-xs text-white disabled:opacity-50"
           >
             Şikayet Et
           </button>
@@ -158,9 +158,9 @@ function MessageBubble({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               rows={2}
-              className="w-56 resize-none rounded-lg bg-black/10 p-2 text-sm outline-none"
+              className="w-56 resize-none rounded-lg bg-black/10 p-2 text-body-sm outline-none"
             />
-            <div className="flex gap-2 text-xs">
+            <div className="flex gap-2 text-body-xs">
               <button onClick={handleEditSave} disabled={editDm.isPending} className="font-semibold underline">
                 Kaydet
               </button>
@@ -170,7 +170,7 @@ function MessageBubble({
             </div>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+          <p className="whitespace-pre-wrap text-body-sm">{message.content}</p>
         )}
 
         {!editing && (
@@ -195,11 +195,11 @@ function MessageBubble({
       </div>
 
       <div className="mt-0.5 flex items-center gap-1.5 px-1">
-        <span className="text-[10px] text-muted-foreground">{formatClock(message.createdAt)}</span>
+        <span className="text-body-xs text-muted-foreground">{formatClock(message.createdAt)}</span>
         {message.editedAt && (
           <button
             onClick={() => setShowHistory((s) => !s)}
-            className="flex items-center gap-0.5 text-[10px] text-muted-foreground underline"
+            className="flex items-center gap-0.5 text-body-xs text-muted-foreground underline"
           >
             <History className="size-2.5" /> düzenlendi
           </button>
@@ -213,7 +213,7 @@ function MessageBubble({
       </div>
 
       {showHistory && message.edits.length > 0 && (
-        <div className="mt-1 max-w-[75%] rounded-lg border border-border bg-card p-2 text-[11px] text-muted-foreground">
+        <div className="mt-1 max-w-[75%] rounded-lg border border-border bg-card p-2 text-body-xs text-muted-foreground">
           {message.edits.map((e, i) => (
             <p key={i} className="border-b border-border/50 py-1 last:border-0">
               <span className="opacity-60">{new Date(e.editedAt).toLocaleString("tr-TR")}:</span> {e.previousContent}
@@ -273,10 +273,10 @@ function ThreadView({ userId }: { userId: string }) {
           />
         </div>
         <div>
-          <Link href={`/profile/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
+          <Link href={`/profile/${userId}`} className="text-card-title-sm text-foreground hover:underline">
             {partnerProfile?.fullName ?? "..."}
           </Link>
-          {partnerProfile?.username && <p className="text-xs text-muted-foreground">@{partnerProfile.username}</p>}
+          {partnerProfile?.username && <p className="text-body-xs text-muted-foreground">@{partnerProfile.username}</p>}
         </div>
       </div>
 
@@ -285,16 +285,16 @@ function ThreadView({ userId }: { userId: string }) {
           <div className="flex justify-center">
             <button
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-lg border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-accent"
+              className="rounded-lg border border-border px-3 py-1 text-body-xs text-muted-foreground hover:bg-accent"
             >
               Daha eski mesajları yükle
             </button>
           </div>
         )}
         {isLoading ? (
-          <p className="text-center text-sm text-muted-foreground">Yükleniyor...</p>
+          <p className="text-center text-body-sm text-muted-foreground">Yükleniyor...</p>
         ) : !thread || thread.messages.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">Henüz mesaj yok, ilk mesajı siz gönderin.</p>
+          <p className="text-center text-body-sm text-muted-foreground">Henüz mesaj yok, ilk mesajı siz gönderin.</p>
         ) : (
           thread.messages.map((m) => (
             <MessageBubble key={m.id} message={m} isMe={m.senderId === me?.id} otherUserId={userId} />
@@ -305,7 +305,7 @@ function ThreadView({ userId }: { userId: string }) {
 
       <div className="border-t border-border p-3">
         {disabledReason ? (
-          <div className="flex items-start gap-2 rounded-xl border border-[#EF444440] bg-[#EF444411] p-3 text-xs text-[#EF4444]">
+          <div className="flex items-start gap-2 rounded-xl border border-[#EF444440] bg-[#EF444411] p-3 text-body-xs text-[#EF4444]">
             <ShieldAlert className="size-4 shrink-0" />
             <span>
               {disabledReason}
@@ -334,7 +334,7 @@ function ThreadView({ userId }: { userId: string }) {
                 placeholder="Bir mesaj yazın..."
                 rows={1}
                 disabled={cooldown.remaining > 0}
-                className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+                className="flex-1 resize-none bg-transparent px-2 py-1.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
               />
               <EmojiPickerButton onPick={(e) => setText((v) => v + e)} />
               <button
@@ -347,7 +347,7 @@ function ThreadView({ userId }: { userId: string }) {
               </button>
             </div>
             {cooldown.remaining > 0 && (
-              <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">
+              <p className="mt-1.5 px-1 text-body-xs text-muted-foreground">
                 Spam koruma filtresi nedeniyle {cooldown.remaining} saniye sonra mesaj yazabilirsiniz.
               </p>
             )}
@@ -372,14 +372,14 @@ function MessagesPageInner() {
     <div className="flex h-[calc(100vh-140px)] overflow-hidden rounded-2xl border border-border bg-card">
       <div className="w-full max-w-xs shrink-0 overflow-y-auto border-r border-border md:block" style={{ display: selected ? undefined : "block" }}>
         <div className="border-b border-border p-4">
-          <h1 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <h1 className="flex items-center gap-2 text-card-title-sm text-foreground">
             <MessagesSquare className="size-4" /> Mesajlar
           </h1>
         </div>
         {isLoading ? (
-          <p className="p-4 text-sm text-muted-foreground">Yükleniyor...</p>
+          <p className="p-4 text-body-sm text-muted-foreground">Yükleniyor...</p>
         ) : !conversations || conversations.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">Henüz bir sohbetiniz yok.</p>
+          <p className="p-4 text-body-sm text-muted-foreground">Henüz bir sohbetiniz yok.</p>
         ) : (
           <div className="divide-y divide-border">
             {conversations.map((c) => (
@@ -410,14 +410,14 @@ function MessagesPageInner() {
                   <Link
                     href={`/profile/${c.partner.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="block truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+                    className="block truncate text-body-sm text-foreground hover:text-primary hover:underline"
                   >
                     {c.partner.fullName}
                   </Link>
-                  <p className="truncate text-xs text-muted-foreground">{c.lastMessage.content}</p>
+                  <p className="truncate text-body-xs text-muted-foreground">{c.lastMessage.content}</p>
                 </div>
                 {c.unreadCount > 0 && (
-                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-primary text-badge text-primary-foreground">
                     {c.unreadCount > 9 ? "9+" : c.unreadCount}
                   </span>
                 )}
@@ -431,7 +431,7 @@ function MessagesPageInner() {
         {selected ? (
           <ThreadView userId={selected} />
         ) : (
-          <p className="text-sm text-muted-foreground">Bir sohbet seçin veya bir profilden mesaj gönderin.</p>
+          <p className="text-body-sm text-muted-foreground">Bir sohbet seçin veya bir profilden mesaj gönderin.</p>
         )}
       </div>
     </div>

@@ -61,8 +61,8 @@ export function ResetPasswordForm() {
   return (
     <AuthShell>
       <div className="auth-card mx-auto w-full max-w-md rounded-2xl border border-primary/15 bg-card p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-foreground">Şifremi Unuttum</h1>
-        <p className="auth-description mt-1 text-sm">
+        <h1 className="text-h4 text-foreground">Şifremi Unuttum</h1>
+        <p className="auth-description mt-1 text-body-sm">
           {step === "request"
             ? "Kayıtlı email adresini gir, sana bir sıfırlama kodu gönderelim."
             : "Email'ine gelen kodu ve yeni şifreni gir."}
@@ -74,7 +74,7 @@ export function ResetPasswordForm() {
               <Label htmlFor="email">Email *</Label>
               <Input id="email" type="email" {...requestForm.register("email")} />
               {requestForm.formState.errors.email && (
-                <span className="text-xs text-danger">
+                <span className="text-body-xs text-danger">
                   {requestForm.formState.errors.email.message}
                 </span>
               )}
@@ -89,7 +89,7 @@ export function ResetPasswordForm() {
               <Label htmlFor="token">Doğrulama Kodu *</Label>
               <Input id="token" {...confirmForm.register("token")} />
               {confirmForm.formState.errors.token && (
-                <span className="text-xs text-danger">
+                <span className="text-body-xs text-danger">
                   {confirmForm.formState.errors.token.message}
                 </span>
               )}
@@ -98,7 +98,7 @@ export function ResetPasswordForm() {
               <Label htmlFor="newPassword">Yeni Şifre *</Label>
               <PasswordInput id="newPassword" {...confirmForm.register("newPassword")} />
               {confirmForm.formState.errors.newPassword && (
-                <span className="text-xs text-danger">
+                <span className="text-body-xs text-danger">
                   {confirmForm.formState.errors.newPassword.message}
                 </span>
               )}
@@ -107,7 +107,7 @@ export function ResetPasswordForm() {
               <Label htmlFor="newPasswordConfirm">Yeni Şifre (Tekrar) *</Label>
               <PasswordInput id="newPasswordConfirm" {...confirmForm.register("newPasswordConfirm")} />
               {confirmForm.formState.errors.newPasswordConfirm && (
-                <span className="text-xs text-danger">
+                <span className="text-body-xs text-danger">
                   {confirmForm.formState.errors.newPasswordConfirm.message}
                 </span>
               )}
@@ -118,7 +118,7 @@ export function ResetPasswordForm() {
           </form>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-body-sm text-muted-foreground">
           <Link href="/login" className="text-primary hover:underline">
             Giriş sayfasına dön
           </Link>

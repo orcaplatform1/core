@@ -140,8 +140,8 @@ export default function SubscriptionPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Abonelik</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">Abonelik</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           ORCA eğitim paketine tek seferlik, ömür boyu erişim.
         </p>
       </div>
@@ -149,10 +149,10 @@ export default function SubscriptionPage() {
       {owned ? (
         <div className="rounded-2xl border border-success/30 bg-success/5 p-8 text-center">
           <Check className="mx-auto size-10 text-success" />
-          <h2 className="mt-3 text-lg font-semibold text-foreground">
+          <h2 className="mt-3 text-h6 text-foreground">
             Zaten tüm eğitim paketine sahipsin
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Eğitimlerim sayfasından derslerine devam edebilirsin.
           </p>
         </div>
@@ -160,14 +160,14 @@ export default function SubscriptionPage() {
         <div className="rounded-2xl border border-primary/20 bg-card p-8">
           <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">ORCA Eğitim Paketi</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Tek seferlik ödeme, ömür boyu erişim</p>
+              <h2 className="text-h6 text-foreground">ORCA Eğitim Paketi</h2>
+              <p className="mt-1 text-body-sm text-muted-foreground">Tek seferlik ödeme, ömür boyu erişim</p>
             </div>
             <div className="text-right">
               {loadingPrice ? (
                 <div className="h-9 w-28 animate-pulse rounded-lg bg-secondary" />
               ) : (
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-num-lg text-foreground">
                   {priceData?.programPriceTRY.toLocaleString("tr-TR")} ₺
                 </p>
               )}
@@ -176,7 +176,7 @@ export default function SubscriptionPage() {
 
           <div className="mt-6 flex flex-col gap-2.5 border-t border-border pt-6">
             {features.map((f) => (
-              <div key={f} className="flex items-start gap-2.5 text-sm text-foreground">
+              <div key={f} className="flex items-start gap-2.5 text-body-sm text-foreground">
                 <Check className="mt-0.5 size-4 shrink-0 text-success" />
                 {f}
               </div>
@@ -189,14 +189,14 @@ export default function SubscriptionPage() {
               className="card-inner flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-colors duration-200 hover:bg-[var(--card-hover)]"
             >
               <CreditCard className="size-6 text-primary" />
-              <span className="text-sm font-medium text-foreground">Kredi/Banka Kartı</span>
+              <span className="text-card-title-sm text-foreground">Kredi/Banka Kartı</span>
             </button>
             <button
               onClick={() => setCryptoNoticeOpen(true)}
               className="card-inner flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-colors duration-200 hover:bg-[var(--card-hover)]"
             >
               <Bitcoin className="size-6 text-warning" />
-              <span className="text-sm font-medium text-foreground">Kripto</span>
+              <span className="text-card-title-sm text-foreground">Kripto</span>
               <div className="flex gap-1">
                 <span className="rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
                   BTC
@@ -214,7 +214,7 @@ export default function SubscriptionPage() {
               className="card-inner flex flex-col items-center gap-2 rounded-xl p-4 text-center transition-colors duration-200 hover:bg-[var(--card-hover)]"
             >
               <Landmark className="size-6 text-success" />
-              <span className="text-sm font-medium text-foreground">Banka Havalesi / EFT</span>
+              <span className="text-card-title-sm text-foreground">Banka Havalesi / EFT</span>
             </button>
           </div>
         </div>
@@ -222,13 +222,13 @@ export default function SubscriptionPage() {
         <div className="rounded-2xl border border-primary/20 bg-card p-8">
           <button
             onClick={() => setView("package")}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-body-xs text-muted-foreground hover:text-foreground"
           >
             ← Geri
           </button>
 
-          <h2 className="mt-3 text-lg font-semibold text-foreground">Kredi/Banka Kartı</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <h2 className="mt-3 text-h6 text-foreground">Kredi/Banka Kartı</h2>
+          <p className="mt-1 flex items-center gap-1.5 text-body-xs text-muted-foreground">
             <Lock className="size-3.5" /> Kart bilgilerin sunucularımızda saklanmaz.
           </p>
 
@@ -273,8 +273,8 @@ export default function SubscriptionPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t border-border pt-6">
-            <span className="text-sm text-muted-foreground">Ödenecek Tutar</span>
-            <span className="text-xl font-bold text-foreground">
+            <span className="text-body-sm text-muted-foreground">Ödenecek Tutar</span>
+            <span className="text-num-md text-foreground">
               {priceData?.programPriceTRY.toLocaleString("tr-TR")} ₺
             </span>
           </div>
@@ -287,13 +287,13 @@ export default function SubscriptionPage() {
         <div className="rounded-2xl border border-primary/20 bg-card p-8">
           <button
             onClick={() => setView("package")}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-body-xs text-muted-foreground hover:text-foreground"
           >
             ← Geri
           </button>
 
-          <h2 className="mt-3 text-lg font-semibold text-foreground">Banka Havalesi / EFT</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="mt-3 text-h6 text-foreground">Banka Havalesi / EFT</h2>
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Aşağıdaki hesaba{" "}
             <strong className="text-foreground">
               {priceData?.programPriceTRY.toLocaleString("tr-TR")} ₺
@@ -303,17 +303,17 @@ export default function SubscriptionPage() {
 
           <div className="card-inner mt-5 flex flex-col gap-3 rounded-xl p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Banka</span>
-              <span className="text-sm font-medium text-foreground">{BANK_DETAILS.bankName}</span>
+              <span className="text-body-xs text-muted-foreground">Banka</span>
+              <span className="text-card-title-sm text-foreground">{BANK_DETAILS.bankName}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Hesap Sahibi</span>
-              <span className="text-sm font-medium text-foreground">{BANK_DETAILS.accountHolder}</span>
+              <span className="text-body-xs text-muted-foreground">Hesap Sahibi</span>
+              <span className="text-card-title-sm text-foreground">{BANK_DETAILS.accountHolder}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">IBAN</span>
+              <span className="text-body-xs text-muted-foreground">IBAN</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{BANK_DETAILS.iban}</span>
+                <span className="text-card-title-sm text-foreground">{BANK_DETAILS.iban}</span>
                 <button onClick={copyIban} aria-label="IBAN'ı kopyala">
                   <Copy className="size-3.5 text-muted-foreground hover:text-foreground" />
                 </button>
@@ -322,10 +322,10 @@ export default function SubscriptionPage() {
           </div>
 
           <div className="mt-5 flex flex-col gap-2">
-            <label className="text-xs font-medium text-muted-foreground">Dekont (PDF veya görsel)</label>
+            <label className="text-label text-muted-foreground">Dekont (PDF veya görsel)</label>
             <label className="card-inner flex cursor-pointer flex-col items-center gap-2 rounded-xl p-6 text-center transition-colors duration-200 hover:bg-[var(--card-hover)]">
               <Upload className="size-5 text-primary" />
-              <span className="text-xs text-muted-foreground">
+              <span className="text-body-xs text-muted-foreground">
                 {receiptFile ? receiptFile.name : "Dosya seçmek için tıkla"}
               </span>
               <input
@@ -348,29 +348,29 @@ export default function SubscriptionPage() {
       )}
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground">Ödeme Geçmişi</h3>
+        <h3 className="text-card-title-sm text-foreground">Ödeme Geçmişi</h3>
         <div className="mt-4 flex flex-col gap-2">
           {loadingPayments ? (
             <div className="h-16 animate-pulse rounded-xl bg-secondary" />
           ) : !payments || payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Henüz bir ödeme kaydın yok.</p>
+            <p className="text-body-sm text-muted-foreground">Henüz bir ödeme kaydın yok.</p>
           ) : (
             payments.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between rounded-xl border border-border p-3 text-sm"
+                className="flex items-center justify-between rounded-xl border border-border p-3 text-body-sm"
               >
                 <div>
                   <p className="font-medium text-foreground">
                     {p.amount.toLocaleString("tr-TR")} {p.currency}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-body-xs text-muted-foreground">
                     {new Date(p.createdAt).toLocaleDateString("tr-TR")} ·{" "}
                     {p.method === "CARD" ? "Kart" : p.method === "CRYPTO" ? "Kripto" : "Havale/EFT"}
                   </p>
                 </div>
                 <span
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-label ${
                     p.status === "APPROVED"
                       ? "bg-success/15 text-success"
                       : p.status === "REJECTED"

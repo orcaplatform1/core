@@ -48,13 +48,13 @@ function relativeTime(iso: string): string {
 function SummaryStrip({ addresses }: { addresses: WhaleAddressActivity[] }) {
   const totalSat = addresses.reduce((sum, a) => sum + (a.latestBalanceSat ?? 0), 0);
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg card-inner p-3 text-sm">
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg card-inner p-3 text-body-sm">
       <span className="text-muted-foreground">
-        İzlenen Adresler: <span className="font-semibold text-foreground">{addresses.length}</span>
+        İzlenen Adresler: <span className="text-financial text-foreground">{addresses.length}</span>
       </span>
       <span className="text-muted-foreground">
         Toplam Bakiye:{" "}
-        <span className="font-semibold text-foreground">
+        <span className="text-financial text-foreground">
           {satToBtc(totalSat).toLocaleString("en-US", { maximumFractionDigits: 2 })} BTC
         </span>
       </span>
@@ -70,18 +70,18 @@ function MovementCard({ movement }: { movement: WhaleMovementActivity }) {
       <div className="flex min-w-0 items-center gap-3">
         <Icon className={`size-6 shrink-0 ${isIn ? "text-success" : "text-danger"}`} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground/90">{movement.addressLabel}</p>
-          <p className="text-xs text-muted-foreground">{relativeTime(movement.detectedAt)}</p>
+          <p className="truncate text-card-title-sm text-foreground/90">{movement.addressLabel}</p>
+          <p className="text-body-xs text-muted-foreground">{relativeTime(movement.detectedAt)}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <span className={`text-sm font-semibold ${isIn ? "text-success" : "text-danger"}`}>
+        <span className={`text-financial ${isIn ? "text-success" : "text-danger"}`}>
           {isIn ? "+" : "-"}
           {fmtBtc(movement.amountSat)} BTC
         </span>
         <ExternalLinkConfirm
           href={`https://mempool.space/tx/${movement.txid}`}
-          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="flex items-center gap-1 text-body-xs font-medium text-primary hover:underline"
         >
           İşlem <ExternalLink className="size-3" />
         </ExternalLinkConfirm>
@@ -93,7 +93,7 @@ function MovementCard({ movement }: { movement: WhaleMovementActivity }) {
 function WhaleEmptyState() {
   return (
     <div className="rounded-lg card-inner p-8 text-center">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body-sm text-muted-foreground">
         Henüz eşik değerini aşan bir hareket tespit edilmedi. İzleme her 7 dakikada bir güncellenir.
       </p>
     </div>
@@ -115,7 +115,7 @@ export function WhaleTrackerSection() {
             <span
               key={a.id}
               title={a.address}
-              className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${CATEGORY_BADGE_CLASS[a.category]}`}
+              className={`rounded-full px-2 py-0.5 text-badge ${CATEGORY_BADGE_CLASS[a.category]}`}
             >
               {a.rank != null && <span className="text-muted-foreground">#{a.rank} · </span>}
               {a.label} · {CATEGORY_LABEL[a.category]}
@@ -126,7 +126,7 @@ export function WhaleTrackerSection() {
           ))}
         </div>
 
-        <p className="text-xs leading-relaxed text-muted-foreground">
+        <p className="text-body-xs text-muted-foreground">
           Liste bitinfocharts rich-list verisiyle günde bir güncellenen ilk 30 en yüksek bakiyeli Bitcoin adresini
           gösterir. Bazı kurumsal saklama (custody) adresleri — örn. Coinbase Custody — birden fazla ETF&apos;in
           (BlackRock IBIT dahil) varlıklarını aynı havuzda tutabilir; bu adresler genel &quot;Coinbase Custody&quot;

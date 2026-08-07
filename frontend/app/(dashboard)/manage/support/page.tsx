@@ -114,8 +114,8 @@ function AdminTicketThread({ ticketId, isSuperAdmin, onBack, onDeleted }: { tick
           <ArrowLeft className="size-4" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{ticket.subject}</p>
-          <Link href={`/manage/users/${ticket.user.id}`} className="text-xs text-muted-foreground hover:text-primary hover:underline">
+          <p className="truncate text-card-title-sm text-foreground">{ticket.subject}</p>
+          <Link href={`/manage/users/${ticket.user.id}`} className="text-body-xs text-muted-foreground hover:text-primary hover:underline">
             {ticket.user.fullName} · @{ticket.user.username ?? "—"} · {CATEGORY_LABELS[ticket.category]}
           </Link>
         </div>
@@ -161,7 +161,7 @@ function AdminTicketThread({ ticketId, isSuperAdmin, onBack, onDeleted }: { tick
                     {isStaffMsg ? "Destek Ekibi" : m.sender.fullName}
                   </p>
                 )}
-                <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                <p className="whitespace-pre-wrap text-body-sm">{m.content}</p>
               </div>
               <span className="mt-0.5 px-1 text-[10px] text-muted-foreground">{formatClock(m.createdAt)}</span>
             </div>
@@ -183,7 +183,7 @@ function AdminTicketThread({ ticketId, isSuperAdmin, onBack, onDeleted }: { tick
             }}
             placeholder="Yanıtınızı yazın..."
             rows={1}
-            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <button
             onClick={handleSend}
@@ -214,13 +214,13 @@ function AdminSupportInner() {
   }, [ticketParam]);
 
   if (authLoading) {
-    return <p className="text-sm text-muted-foreground">Yükleniyor...</p>;
+    return <p className="text-body-sm text-muted-foreground">Yükleniyor...</p>;
   }
   if (me?.role !== "STAFF" && me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-muted-foreground">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-muted-foreground">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -239,12 +239,12 @@ function AdminSupportInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold text-foreground">
+          <h1 className="flex items-center gap-2 text-h1 text-foreground">
             <LifeBuoy className="size-6 text-primary" /> Destek Merkezi
           </h1>
-          <p className="text-sm text-muted-foreground">Kullanıcılardan gelen destek taleplerini yanıtla ve yönet.</p>
+          <p className="text-body-sm text-muted-foreground">Kullanıcılardan gelen destek taleplerini yanıtla ve yönet.</p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← M Dashboard
         </Link>
       </div>
@@ -266,7 +266,7 @@ function AdminSupportInner() {
                   setStatus(tab.value);
                   setPage(1);
                 }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-lg px-3 py-1.5 text-label transition-colors ${
                   status === tab.value ? "bg-primary text-primary-foreground" : "bg-card-inner text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -277,9 +277,9 @@ function AdminSupportInner() {
 
           <div className="mt-4 divide-y divide-border">
             {isLoading ? (
-              <p className="py-6 text-sm text-muted-foreground">Yükleniyor...</p>
+              <p className="py-6 text-body-sm text-muted-foreground">Yükleniyor...</p>
             ) : !data || data.data.length === 0 ? (
-              <p className="py-6 text-sm text-muted-foreground">Kayıt yok.</p>
+              <p className="py-6 text-body-sm text-muted-foreground">Kayıt yok.</p>
             ) : (
               data.data.map((t) => {
                 const statusInfo = STATUS_STYLES[t.status];
@@ -290,8 +290,8 @@ function AdminSupportInner() {
                     className="flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-accent"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{t.subject}</p>
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="truncate text-card-title-sm text-foreground">{t.subject}</p>
+                      <p className="truncate text-body-xs text-muted-foreground">
                         {t.user.fullName} · {CATEGORY_LABELS[t.category]} · {new Date(t.updatedAt).toLocaleString("tr-TR")}
                       </p>
                     </div>
@@ -313,7 +313,7 @@ function AdminSupportInner() {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`size-8 rounded-lg text-xs font-medium ${
+                  className={`size-8 rounded-lg text-label ${
                     p === page ? "bg-primary text-white" : "bg-card-inner text-muted-foreground"
                   }`}
                 >

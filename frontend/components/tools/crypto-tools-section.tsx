@@ -40,8 +40,8 @@ function ChangePill({ value }: { value: number }) {
     <span
       className={
         positive
-          ? "rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success"
-          : "rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger"
+          ? "rounded-full bg-success/10 px-2 py-0.5 text-badge text-success"
+          : "rounded-full bg-danger/10 px-2 py-0.5 text-badge text-danger"
       }
     >
       {positive ? "+" : ""}
@@ -64,17 +64,17 @@ function TickerTable({
   return (
     <ToolCard title={title} icon={icon} accent={accent}>
       <div className="space-y-1">
-        {rows.length === 0 && <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {rows.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {rows.map((r) => (
           <div
             key={r.symbol}
             className="flex items-center justify-between gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
           >
-            <span className="w-16 shrink-0 truncate text-sm font-semibold text-foreground/90">
+            <span className="w-16 shrink-0 truncate text-financial text-foreground/90">
               {r.symbol.replace("USDT", "")}
             </span>
             <Sparkline data={r.sparkline} positive={r.changePercent >= 0} />
-            <span className="w-20 shrink-0 text-right text-xs text-muted-foreground">${fmtPrice(r.price)}</span>
+            <span className="w-20 shrink-0 text-right text-financial text-muted-foreground">${fmtPrice(r.price)}</span>
             <span className="w-16 shrink-0 text-right">
               <ChangePill value={r.changePercent} />
             </span>
@@ -90,7 +90,7 @@ function FearGreedCard() {
   if (!data) {
     return (
       <ToolCard title="Korku & Açgözlülük Endeksi" icon={Gauge} accent="purple">
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       </ToolCard>
     );
   }
@@ -100,9 +100,9 @@ function FearGreedCard() {
       <div className="flex items-center gap-5">
         <CircularProgress value={data.value} color={color} label={data.classification} />
         <div>
-          <p className="text-lg font-bold text-foreground">{data.classification}</p>
-          <p className="text-xs text-muted-foreground">Günlük endeks</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Kaynak: alternative.me</p>
+          <p className="text-card-title-md text-foreground">{data.classification}</p>
+          <p className="text-body-xs text-muted-foreground">Günlük endeks</p>
+          <p className="mt-1 text-body-xs text-muted-foreground">Kaynak: alternative.me</p>
         </div>
       </div>
     </ToolCard>
@@ -116,16 +116,16 @@ function DominanceCard() {
   return (
     <ToolCard title="BTC / ETH Dominansı" icon={PieChart} accent="purple">
       {btcDom == null || ethDom == null ? (
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       ) : (
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <CircularProgress value={Math.round(btcDom)} color="var(--purple)" label="BTC" />
-            <p className="text-lg font-bold text-foreground">%{btcDom.toFixed(1)}</p>
+            <p className="text-num-sm text-foreground">%{btcDom.toFixed(1)}</p>
           </div>
           <div className="flex items-center gap-3">
             <CircularProgress value={Math.round(ethDom)} color="var(--primary)" label="ETH" />
-            <p className="text-lg font-bold text-foreground">%{ethDom.toFixed(1)}</p>
+            <p className="text-num-sm text-foreground">%{ethDom.toFixed(1)}</p>
           </div>
         </div>
       )}
@@ -139,11 +139,11 @@ function TrendingCard() {
   return (
     <ToolCard title="Trend Olan Coinler" icon={Sparkles} accent="warning">
       <div className="flex flex-wrap gap-2">
-        {coins.length === 0 && <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {coins.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {coins.map((c, i) => (
           <span
             key={c.symbol + i}
-            className="flex items-center gap-1.5 rounded-full card-inner px-3 py-1.5 text-xs font-medium text-foreground/90"
+            className="flex items-center gap-1.5 rounded-full card-inner px-3 py-1.5 text-tag text-foreground/90"
           >
             <Flame className="size-3 text-warning" />
             {c.symbol}
@@ -160,19 +160,19 @@ function StablecoinFlowCard() {
   return (
     <ToolCard title="Stablecoin Piyasa Değeri" icon={Coins} accent="primary">
       {!data ? (
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       ) : (
         <>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-num-md text-foreground">
             ${(data.totalMarketCap / 1e9).toLocaleString("en-US", { maximumFractionDigits: 1 })}B
           </p>
-          <p className={`mt-1 text-xs font-medium ${data.change24h >= 0 ? "text-success" : "text-danger"}`}>
+          <p className={`mt-1 text-financial ${data.change24h >= 0 ? "text-success" : "text-danger"}`}>
             {data.change24h >= 0 ? "+" : ""}
             ${(data.change24h / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 })}M (24s akış)
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {data.topStablecoins.map((s) => (
-              <span key={s.symbol} className="rounded-md card-inner px-2 py-1 text-[10px] text-muted-foreground">
+              <span key={s.symbol} className="rounded-md card-inner px-2 py-1 text-badge text-muted-foreground">
                 {s.symbol}
               </span>
             ))}
@@ -188,7 +188,7 @@ function AltcoinSeasonCard() {
   if (!data) {
     return (
       <ToolCard title="Altcoin Season Endeksi" icon={Gauge} accent="success">
-        <p className="text-xs text-muted-foreground">Veri yükleniyor... (günlük hesaplanır)</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor... (günlük hesaplanır)</p>
       </ToolCard>
     );
   }
@@ -203,8 +203,8 @@ function AltcoinSeasonCard() {
       <div className="flex items-center gap-5">
         <CircularProgress value={Math.round(data.percentage)} color={color} label={data.classification} />
         <div>
-          <p className="text-lg font-bold text-foreground">{data.classification}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-card-title-md text-foreground">{data.classification}</p>
+          <p className="text-body-xs text-muted-foreground">
             Top {data.totalCount} coinin {data.outperformingCount} tanesi son 90 günde BTC&apos;yi geçti
           </p>
         </div>
@@ -220,21 +220,21 @@ function EtfFlowCard() {
   return (
     <ToolCard title="BTC / ETH Spot ETF Net Akışları" icon={Landmark} accent="purple">
       {!btcLatest && !ethLatest ? (
-        <p className="text-xs text-muted-foreground">Veri yok (SoSoValue API anahtarı gerekli).</p>
+        <p className="text-body-xs text-muted-foreground">Veri yok (SoSoValue API anahtarı gerekli).</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {btcLatest && (
-            <div className="rounded-lg card-inner p-3 text-xs">
+            <div className="rounded-lg card-inner p-3 text-body-xs">
               <p className="text-muted-foreground">BTC ETF ({btcLatest.date})</p>
-              <p className={`mt-1 text-lg font-bold ${btcLatest.netFlow >= 0 ? "text-success" : "text-danger"}`}>
+              <p className={`mt-1 text-num-sm ${btcLatest.netFlow >= 0 ? "text-success" : "text-danger"}`}>
                 {btcLatest.netFlow >= 0 ? "+" : ""}${(btcLatest.netFlow / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 })}M
               </p>
             </div>
           )}
           {ethLatest && (
-            <div className="rounded-lg card-inner p-3 text-xs">
+            <div className="rounded-lg card-inner p-3 text-body-xs">
               <p className="text-muted-foreground">ETH ETF ({ethLatest.date})</p>
-              <p className={`mt-1 text-lg font-bold ${ethLatest.netFlow >= 0 ? "text-success" : "text-danger"}`}>
+              <p className={`mt-1 text-num-sm ${ethLatest.netFlow >= 0 ? "text-success" : "text-danger"}`}>
                 {ethLatest.netFlow >= 0 ? "+" : ""}${(ethLatest.netFlow / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 })}M
               </p>
             </div>
@@ -251,7 +251,7 @@ function HeatmapCard() {
   if (coins.length === 0) {
     return (
       <ToolCard title="Piyasa Heatmap'i (Top 24, market cap)" icon={PieChart} accent="primary" className="sm:col-span-2">
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       </ToolCard>
     );
   }
@@ -274,11 +274,11 @@ function HeatmapCard() {
           return (
             <div
               key={c.symbol}
-              className={`flex flex-col items-center justify-center rounded-lg text-[11px] font-medium text-white transition-transform duration-200 hover:scale-[1.03] hover:z-10 ${spanClass}`}
+              className={`flex flex-col items-center justify-center rounded-lg text-body-xs text-white transition-transform duration-200 hover:scale-[1.03] hover:z-10 ${spanClass}`}
               style={{ backgroundColor: `rgba(${rgb},${alpha})` }}
               title={c.name}
             >
-              <span className={normalized > 0.82 ? "text-base font-bold" : ""}>{c.symbol}</span>
+              <span className={normalized > 0.82 ? "text-card-title-sm" : ""}>{c.symbol}</span>
               <span className="opacity-90">
                 {c.changePercent24h > 0 ? "+" : ""}
                 {c.changePercent24h.toFixed(1)}%
@@ -297,10 +297,10 @@ function FundingRateTable() {
   return (
     <ToolCard title="Funding Rate Tablosu" icon={Percent} accent="primary">
       <div className="space-y-1">
-        {rows.length === 0 && <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {rows.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {rows.map((r) => (
           <div key={r.symbol} className="flex items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-card-hover">
-            <span className="text-sm font-semibold text-foreground/90">{r.symbol.replace("USDT", "")}</span>
+            <span className="text-financial text-foreground/90">{r.symbol.replace("USDT", "")}</span>
             <ChangePill value={r.fundingRatePercent} />
           </div>
         ))}
@@ -319,26 +319,26 @@ function LiquidationZonesCard() {
       accent="warning"
       className="sm:col-span-2"
       badge={
-        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">TAHMİNİ</span>
+        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-badge text-warning">TAHMİNİ</span>
       }
     >
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-body-xs text-muted-foreground">
         Yaygın kaldıraç oranlarına göre hesaplanan yaklaşık seviyelerdir; gerçek likidasyon verisi değildir.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {zones.length === 0 && <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {zones.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {zones.map((z) => (
-          <div key={z.symbol} className="rounded-lg card-inner p-3 text-xs">
+          <div key={z.symbol} className="rounded-lg card-inner p-3 text-body-xs">
             <div className="mb-2 flex items-center justify-between">
-              <span className="font-semibold text-foreground/90">{z.symbol.replace("USDT", "")}</span>
-              <span className="text-muted-foreground">${fmtPrice(z.price)}</span>
+              <span className="text-financial text-foreground/90">{z.symbol.replace("USDT", "")}</span>
+              <span className="text-financial text-muted-foreground">${fmtPrice(z.price)}</span>
             </div>
             <div className="space-y-1">
               {z.estimatedZones.map((ez) => (
-                <div key={ez.leverage} className="flex items-center justify-between text-[11px]">
+                <div key={ez.leverage} className="flex items-center justify-between text-body-xs">
                   <span className="text-muted-foreground">{ez.leverage}x</span>
-                  <span className="text-danger">${fmtPrice(ez.shortLiqPrice)}</span>
-                  <span className="text-success">${fmtPrice(ez.longLiqPrice)}</span>
+                  <span className="text-financial text-danger">${fmtPrice(ez.shortLiqPrice)}</span>
+                  <span className="text-financial text-success">${fmtPrice(ez.longLiqPrice)}</span>
                 </div>
               ))}
             </div>

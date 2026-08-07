@@ -46,7 +46,7 @@ export default function PublicProfilePage({
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <UserX size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-muted-foreground">Bu kullanıcı sizi engellediği için profiline erişemezsiniz.</p>
+        <p className="text-body-sm text-muted-foreground">Bu kullanıcı sizi engellediği için profiline erişemezsiniz.</p>
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function PublicProfilePage({
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-muted-foreground">Bu kullanıcı bulunamadı.</p>
+        <p className="text-body-sm text-muted-foreground">Bu kullanıcı bulunamadı.</p>
       </div>
     );
   }
@@ -99,18 +99,18 @@ export default function PublicProfilePage({
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">{profile.fullName}</h1>
-              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              <h1 className="text-h4 text-foreground">{profile.fullName}</h1>
+              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-badge text-primary">
                 {ROLE_LABELS[profile.role] ?? profile.role}
               </span>
             </div>
-            {profile.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">
+            {profile.username && <p className="text-body-sm text-muted-foreground">@{profile.username}</p>}
+            <p className="mt-1 text-body-xs text-muted-foreground">
               {new Date(profile.createdAt).toLocaleDateString("tr-TR", { year: "numeric", month: "long" })}
               'den beri üye
             </p>
             {profile.occupation && (
-              <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap gap-3 text-body-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Briefcase className="size-3" /> {OCCUPATION_LABELS[profile.occupation] ?? profile.occupation}
                 </span>
@@ -151,12 +151,12 @@ export default function PublicProfilePage({
         </div>
 
         {profile.hasBlockedMe && (
-          <p className="mt-4 rounded-lg border border-[#EF444440] bg-[#EF444411] p-3 text-xs text-[#EF4444]">
+          <p className="mt-4 rounded-lg border border-[#EF444440] bg-[#EF444411] p-3 text-body-xs text-[#EF4444]">
             Bu kullanıcı sizi engellemiş, kendisine mesaj gönderemezsiniz.
           </p>
         )}
         {profile.isBlockedByMe && (
-          <p className="mt-4 rounded-lg border border-[#EF444440] bg-[#EF444411] p-3 text-xs text-[#EF4444]">
+          <p className="mt-4 rounded-lg border border-[#EF444440] bg-[#EF444411] p-3 text-body-xs text-[#EF4444]">
             Bu kullanıcıyı engellediniz, kendisine mesaj gönderemezsiniz. Mesajlaşmak için engeli kaldırın.
           </p>
         )}
@@ -167,18 +167,18 @@ export default function PublicProfilePage({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-card p-4 text-center">
               <Flame className="mx-auto size-5 text-[#F39C3D]" />
-              <p className="mt-1 text-lg font-bold text-foreground">{profile.currentStreak}</p>
-              <p className="text-[11px] text-muted-foreground">Güncel Seri</p>
+              <p className="mt-1 text-num-sm text-foreground">{profile.currentStreak}</p>
+              <p className="text-body-xs text-muted-foreground">Güncel Seri</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 text-center">
               <Flame className="mx-auto size-5 text-[#EF4444]" />
-              <p className="mt-1 text-lg font-bold text-foreground">{profile.longestStreak}</p>
-              <p className="text-[11px] text-muted-foreground">En Uzun Seri</p>
+              <p className="mt-1 text-num-sm text-foreground">{profile.longestStreak}</p>
+              <p className="text-body-xs text-muted-foreground">En Uzun Seri</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 text-center">
               <Award className="mx-auto size-5 text-primary" />
-              <p className="mt-1 text-lg font-bold text-foreground">{profile.userBadges.length}</p>
-              <p className="text-[11px] text-muted-foreground">Rozet</p>
+              <p className="mt-1 text-num-sm text-foreground">{profile.userBadges.length}</p>
+              <p className="text-body-xs text-muted-foreground">Rozet</p>
             </div>
           </div>
 
@@ -202,21 +202,21 @@ export default function PublicProfilePage({
           )}
 
           {profile.communityStats && (
-            <p className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{profile.communityStats.postsCount}</span> Paylaşım
+            <p className="text-body-xs text-muted-foreground">
+              <span className="text-num-sm text-foreground">{profile.communityStats.postsCount}</span> Paylaşım
               {" · "}
-              <span className="font-medium text-foreground">{profile.communityStats.likesReceived}</span> Toplam Beğeni
+              <span className="text-num-sm text-foreground">{profile.communityStats.likesReceived}</span> Toplam Beğeni
             </p>
           )}
 
           {profile.userBadges.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-6">
-              <h3 className="text-sm font-semibold text-foreground">Rozetler</h3>
+              <h3 className="text-card-title-sm text-foreground">Rozetler</h3>
               <div className="mt-3 flex flex-wrap gap-3">
                 {profile.userBadges.map((ub, i) => (
                   <div key={i} className="flex items-center gap-2 rounded-xl border border-border bg-card-inner px-3 py-2">
                     {ub.badge.iconUrl && <img src={ub.badge.iconUrl} alt="" className="size-6" />}
-                    <span className="text-xs font-medium text-foreground">{ub.badge.name}</span>
+                    <span className="text-badge text-foreground">{ub.badge.name}</span>
                   </div>
                 ))}
               </div>

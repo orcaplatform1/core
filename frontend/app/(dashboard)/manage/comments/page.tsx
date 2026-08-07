@@ -40,15 +40,15 @@ function ReportsView() {
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
       {isLoading ? (
-        <p className="p-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        <p className="p-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : !data || data.data.length === 0 ? (
-        <p className="p-6 text-sm text-[#A8A6A0]">Şikayet yok.</p>
+        <p className="p-6 text-body-sm text-[#A8A6A0]">Şikayet yok.</p>
       ) : (
         <div className="divide-y divide-border">
           {data.data.map((r) => (
             <div key={r.id} className="p-4 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-[#F5F1EA]">
+                <p className="text-body-sm text-[#F5F1EA]">
                   <Link href={`/profile/${r.reporter.id}`} className="font-medium hover:underline">
                     {r.reporter.fullName}
                   </Link>
@@ -56,17 +56,17 @@ function ReportsView() {
                   <Link href={`/profile/${r.comment.user.id}`} className="font-medium hover:underline">
                     {r.comment.user.fullName}
                   </Link>
-                  <span className="text-xs text-[#A8A6A0]"> @{r.comment.user.username}</span>
+                  <span className="text-body-xs text-[#A8A6A0]"> @{r.comment.user.username}</span>
                 </p>
-                <p className="text-xs text-[#A8A6A0]">{new Date(r.createdAt).toLocaleString("tr-TR")}</p>
+                <p className="text-body-xs text-[#A8A6A0]">{new Date(r.createdAt).toLocaleString("tr-TR")}</p>
               </div>
-              <p className="flex items-center gap-1 text-xs text-[#A8A6A0]">
+              <p className="flex items-center gap-1 text-body-xs text-[#A8A6A0]">
                 <MessageSquare size={12} /> {r.comment.lesson.title}
               </p>
-              <p className="rounded-lg border border-[#F39C3D40] bg-[#F39C3D11] p-2 text-xs text-[#F5F1EA] whitespace-pre-wrap">
+              <p className="rounded-lg border border-[#F39C3D40] bg-[#F39C3D11] p-2 text-body-xs text-[#F5F1EA] whitespace-pre-wrap">
                 {r.comment.content}
               </p>
-              <p className="text-xs text-[#A8A6A0]">Sebep: {r.reason}</p>
+              <p className="text-body-xs text-[#A8A6A0]">Sebep: {r.reason}</p>
               <div className="flex justify-end gap-2">
                 <Button
                   size="sm"
@@ -96,7 +96,7 @@ function ReportsView() {
               key={p}
               type="button"
               onClick={() => setPage(p)}
-              className={`size-8 rounded-lg text-xs font-medium ${p === page ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+              className={`size-8 rounded-lg text-body-xs ${p === page ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
             >
               {p}
             </button>
@@ -116,13 +116,13 @@ export default function AdminCommentsPage() {
   const remove = useAdminDeleteComment();
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN" && me?.role !== "STAFF") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -150,10 +150,10 @@ export default function AdminCommentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Yorum Moderasyonu</h1>
-          <p className="text-sm text-[#A8A6A0]">Öğrenci yorumlarını onayla, reddet, sil veya şikayetleri değerlendir.</p>
+          <h1 className="text-h1 text-[#F5F1EA]">Yorum Moderasyonu</h1>
+          <p className="text-body-sm text-[#A8A6A0]">Öğrenci yorumlarını onayla, reddet, sil veya şikayetleri değerlendir.</p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← Manage Dashboard
         </Link>
       </div>
@@ -163,7 +163,7 @@ export default function AdminCommentsPage() {
           <button
             key={tab.value}
             onClick={() => setView(tab.value)}
-            className={`flex items-center gap-1 px-4 py-1.5 text-sm ${view === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+            className={`flex items-center gap-1 px-4 py-1.5 text-body-sm ${view === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
           >
             {tab.value === "REPORTS" && <Flag size={12} />}
             {tab.label}
@@ -176,30 +176,30 @@ export default function AdminCommentsPage() {
       ) : (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           {isLoading ? (
-            <p className="p-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+            <p className="p-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
           ) : !comments || comments.length === 0 ? (
-            <p className="p-6 text-sm text-[#A8A6A0]">Bu durumda yorum yok.</p>
+            <p className="p-6 text-body-sm text-[#A8A6A0]">Bu durumda yorum yok.</p>
           ) : (
             <div className="divide-y divide-border">
               {comments.map((c) => (
                 <div key={c.id} className="p-4 space-y-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <Link href={`/profile/${c.user.id}`} className="font-medium text-[#F5F1EA] hover:underline">
+                      <Link href={`/profile/${c.user.id}`} className="text-card-title-sm text-[#F5F1EA] hover:underline">
                         {c.user.fullName}{" "}
-                        <span className="text-xs font-normal text-[#A8A6A0]">@{c.user.username}</span>
+                        <span className="text-body-xs text-[#A8A6A0]">@{c.user.username}</span>
                       </Link>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-[#A8A6A0]">
+                      <p className="mt-0.5 flex items-center gap-1 text-body-xs text-[#A8A6A0]">
                         <MessageSquare size={12} />
                         {c.lesson.module.program.title} · {c.lesson.module.title} · {c.lesson.title}
                       </p>
                     </div>
-                    <p className="text-xs text-[#A8A6A0]">
+                    <p className="text-body-xs text-[#A8A6A0]">
                       {new Date(c.createdAt).toLocaleString("tr-TR")}
                     </p>
                   </div>
 
-                  <p className="rounded-lg border border-border bg-card-inner p-3 text-sm text-[#F5F1EA] whitespace-pre-wrap">
+                  <p className="rounded-lg border border-border bg-card-inner p-3 text-body-sm text-[#F5F1EA] whitespace-pre-wrap">
                     {c.content}
                   </p>
 

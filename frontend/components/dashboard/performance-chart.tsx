@@ -32,10 +32,10 @@ export function PerformanceChart({
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-widget-title text-foreground">{title}</h3>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">{totalLabel}</p>
-          <p className={`text-lg font-bold ${total >= 0 ? "text-success" : "text-danger"}`}>
+          <p className="text-body-xs text-muted-foreground">{totalLabel}</p>
+          <p className={`text-num-sm ${total >= 0 ? "text-success" : "text-danger"}`}>
             {total >= 0 ? "+" : ""}
             {total.toFixed(1)}
           </p>
@@ -43,7 +43,7 @@ export function PerformanceChart({
       </div>
 
       {!data || data.length === 0 ? (
-        <div className="mt-6 flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+        <div className="mt-6 flex h-[200px] items-center justify-center text-body-sm text-muted-foreground">
           Henüz işlem verisi yok
         </div>
       ) : (

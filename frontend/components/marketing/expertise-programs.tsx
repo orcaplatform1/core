@@ -27,10 +27,10 @@ export function ExpertisePrograms({
     <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">Uzman Kadro, Sistematik Eğitim</p>
-          <h2 className="mt-2 text-3xl font-bold text-foreground">Uzmanlık Programlarımız</h2>
+          <p className="text-tag text-primary">Uzman Kadro, Sistematik Eğitim</p>
+          <h2 className="mt-2 text-h2 text-foreground">Uzmanlık Programlarımız</h2>
         </div>
-        <Link href="/programs" className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+        <Link href="/programs" className="flex items-center gap-1.5 text-btn-sm text-primary hover:underline">
           Tüm Programları Gör <ArrowRight className="size-4" />
         </Link>
       </div>

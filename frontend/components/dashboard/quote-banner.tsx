@@ -15,8 +15,8 @@ export function QuoteBanner() {
       <div className="flex items-start gap-3">
         <Quote className="mt-0.5 size-5 shrink-0 text-primary" />
         <div>
-          <p className="text-sm font-medium text-foreground">“{data.text}”</p>
-          <p className="mt-1.5 text-xs text-muted-foreground">
+          <p className="text-body-sm text-foreground">“{data.text}”</p>
+          <p className="mt-1.5 text-body-xs text-muted-foreground">
             {data.author} · {data.profession}
           </p>
         </div>

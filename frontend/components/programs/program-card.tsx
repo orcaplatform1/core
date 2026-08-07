@@ -24,15 +24,15 @@ export function ProgramCard({ program }: { program: Program }) {
         <div className="flex items-center justify-between">
           <LevelBadge level={program.level} />
           {program.durationHours && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="text-body-xs flex items-center gap-1 text-muted-foreground">
               <Clock className="size-3.5" />
               {program.durationHours} saat
             </span>
           )}
         </div>
-        <h3 className="text-base font-semibold text-foreground">{program.title}</h3>
+        <h3 className="text-card-title-sm text-foreground">{program.title}</h3>
         {program.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">{program.description}</p>
+          <p className="line-clamp-2 text-body-sm text-muted-foreground">{program.description}</p>
         )}
       </div>
     </Link>

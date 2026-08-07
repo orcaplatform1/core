@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Menu, X, LayoutDashboard, LogOut, Bot } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
+import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import {
   Sheet,
   SheetContent,
@@ -38,7 +39,7 @@ export function SiteNavbar({
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-secondary-foreground/80 hover:text-foreground transition-colors duration-200"
+              className="text-navbar text-secondary-foreground/80 hover:text-foreground transition-colors duration-200"
             >
               {link.label}
             </Link>
@@ -49,8 +50,7 @@ export function SiteNavbar({
           {isLoading ? (
             <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />
           ) : user ? (
-            <Button
-              className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
+            <PremiumGlowButton
               render={
                 <Link href="/dashboard">
                   <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
@@ -60,10 +60,7 @@ export function SiteNavbar({
           ) : (
             <>
               <Button variant="outline" render={<Link href="/login">Giriş</Link>} />
-              <Button
-                className="shadow-[0_0_20px_-4px_var(--glow-blue)]"
-                render={<Link href="/register">Kayıt Ol</Link>}
-              />
+              <PremiumGlowButton render={<Link href="/register">Kayıt Ol</Link>} />
             </>
           )}
           <div className="group relative hidden lg:block">
@@ -113,7 +110,7 @@ export function SiteNavbar({
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-3.5 py-3 text-[15px] font-medium text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
+                  className="text-navbar rounded-lg px-3.5 py-3 text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
                 >
                   {link.label}
                 </Link>
@@ -122,8 +119,9 @@ export function SiteNavbar({
               <Separator className="my-1" />
               {user ? (
                 <>
-                  <Button
-                    className="h-11 mt-1 text-[15px]"
+                  <PremiumGlowButton
+                    wrapperClassName="w-full mt-1"
+                    className="h-11 w-full text-[15px]"
                     onClick={() => setOpen(false)}
                     render={
                       <Link href="/dashboard">
@@ -150,8 +148,9 @@ export function SiteNavbar({
                     onClick={() => setOpen(false)}
                     render={<Link href="/login">Giriş</Link>}
                   />
-                  <Button
-                    className="h-11 mt-2 text-[15px]"
+                  <PremiumGlowButton
+                    wrapperClassName="w-full mt-2"
+                    className="h-11 w-full text-[15px]"
                     onClick={() => setOpen(false)}
                     render={<Link href="/register">Kayıt Ol</Link>}
                   />

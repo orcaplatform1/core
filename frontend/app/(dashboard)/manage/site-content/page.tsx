@@ -29,13 +29,13 @@ const SOCIAL_KEYS = ["X", "YouTube", "Instagram", "Discord"];
 const MIN_FEATURED_PROGRAMS = 6;
 
 function inputClass() {
-  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
+  return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-body-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-medium text-[#A8A6A0]">{label}</span>
+      <span className="text-label text-[#A8A6A0]">{label}</span>
       {children}
     </label>
   );
@@ -79,7 +79,7 @@ function ImagePreviewInput({
         )}
         <input className={inputClass()} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
       </div>
-      {hint && <p className="text-xs text-[#A8A6A0]">{hint}</p>}
+      {hint && <p className="text-body-xs text-[#A8A6A0]">{hint}</p>}
     </div>
   );
 }
@@ -116,13 +116,13 @@ export default function SiteContentPage() {
   }, [footerData]);
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -157,16 +157,16 @@ export default function SiteContentPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">Site İçeriği</h1>
-          <p className="text-sm text-[#A8A6A0]">Landing page header, hero, bölümler, footer, logo ve favicon yönetimi.</p>
+          <h1 className="text-h1 text-[#F5F1EA]">Site İçeriği</h1>
+          <p className="text-body-sm text-[#A8A6A0]">Landing page header, hero, bölümler, footer, logo ve favicon yönetimi.</p>
         </div>
-        <Link href="/manage" className="text-sm text-primary hover:underline">
+        <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← M Dashboard
         </Link>
       </div>
 
       {loading ? (
-        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : (
         <Tabs defaultValue="header">
           <TabsList variant="line" className="flex-wrap">
@@ -204,7 +204,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A8A6A0]">Navigasyon linkleri</p>
+                <p className="text-label text-[#A8A6A0]">Navigasyon linkleri</p>
                 {form.navLinks.map((link, i) => (
                   <RowCard
                     key={i}
@@ -397,7 +397,7 @@ export default function SiteContentPage() {
 
           <TabsContent value="showcase" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              <p className="text-xs text-[#A8A6A0]">
+              <p className="text-body-xs text-[#A8A6A0]">
                 Partnerler ile Uzmanlık Programları arasındaki, MacBook + iPhone mockup&apos;lı &quot;Gerçek Platform
                 Deneyimi&quot; bölümü. Soldaki metinler ile laptop ve telefon ekranındaki içerikler buradan
                 düzenlenir.
@@ -474,8 +474,8 @@ export default function SiteContentPage() {
           <TabsContent value="programs" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
               <div>
-                <p className="text-sm font-medium text-[#F5F1EA]">Uzmanlık Programlarımız (landing page)</p>
-                <p className="text-xs text-[#A8A6A0]">
+                <p className="text-card-title-sm text-[#F5F1EA]">Uzmanlık Programlarımız (landing page)</p>
+                <p className="text-body-xs text-[#A8A6A0]">
                   Landing page&apos;de öne çıkarılacak programları seç. En az {MIN_FEATURED_PROGRAMS} program
                   seçilmesi önerilir; sıralama seçim sırana göre landing page&apos;e yansır.
                 </p>
@@ -484,8 +484,8 @@ export default function SiteContentPage() {
               <p
                 className={
                   form.featuredProgramIds.length < MIN_FEATURED_PROGRAMS
-                    ? "text-xs font-medium text-danger"
-                    : "text-xs font-medium text-success"
+                    ? "text-label text-danger"
+                    : "text-label text-success"
                 }
               >
                 {form.featuredProgramIds.length} program seçili
@@ -494,7 +494,7 @@ export default function SiteContentPage() {
               </p>
 
               {loadingPrograms ? (
-                <p className="text-sm text-[#A8A6A0]">Programlar yükleniyor...</p>
+                <p className="text-body-sm text-[#A8A6A0]">Programlar yükleniyor...</p>
               ) : (
                 <div className="space-y-2">
                   {(allPrograms ?? []).map((program) => {
@@ -522,13 +522,13 @@ export default function SiteContentPage() {
                         >
                           {selected && <Check size={12} />}
                         </span>
-                        <span className="flex-1 text-sm text-[#F5F1EA]">{program.title}</span>
+                        <span className="flex-1 text-body-sm text-[#F5F1EA]">{program.title}</span>
                         <LevelBadge level={program.level} />
                       </button>
                     );
                   })}
                   {allPrograms?.length === 0 && (
-                    <p className="text-sm text-[#A8A6A0]">Henüz hiç program oluşturulmamış.</p>
+                    <p className="text-body-sm text-[#A8A6A0]">Henüz hiç program oluşturulmamış.</p>
                   )}
                 </div>
               )}
@@ -639,7 +639,7 @@ export default function SiteContentPage() {
 
           <TabsContent value="community" className="mt-4">
             <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-              <label className="flex items-center gap-2 text-sm text-foreground">
+              <label className="flex items-center gap-2 text-body-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={form.communityEnabled}
@@ -762,7 +762,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A8A6A0]">Kontrol listesi (opsiyonel)</p>
+                <p className="text-label text-[#A8A6A0]">Kontrol listesi (opsiyonel)</p>
                 {form.ctaChecklist.map((item, i) => (
                   <RowCard
                     key={i}
@@ -837,7 +837,7 @@ export default function SiteContentPage() {
               </Field>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A8A6A0]">Platform linkleri (footer)</p>
+                <p className="text-label text-[#A8A6A0]">Platform linkleri (footer)</p>
                 {(footerForm.platformLinks ?? []).map((link, i) => (
                   <RowCard
                     key={i}
@@ -888,7 +888,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A8A6A0]">Destek linkleri (footer)</p>
+                <p className="text-label text-[#A8A6A0]">Destek linkleri (footer)</p>
                 {(footerForm.supportLinks ?? []).map((link, i) => (
                   <RowCard
                     key={i}
@@ -939,7 +939,7 @@ export default function SiteContentPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[#A8A6A0]">Sosyal medya linkleri</p>
+                <p className="text-label text-[#A8A6A0]">Sosyal medya linkleri</p>
                 <div className="grid grid-cols-2 gap-2">
                   {SOCIAL_KEYS.map((key) => (
                     <input

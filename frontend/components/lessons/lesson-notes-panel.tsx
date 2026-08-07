@@ -61,10 +61,10 @@ export function LessonNotesPanel({ lessonId }: { lessonId: string }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <p className="flex items-center gap-1.5 text-body-xs text-muted-foreground">
           <BookOpen className="size-3.5" /> Bu derse özel notların — sadece sen görebilirsin
         </p>
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1 text-body-xs text-muted-foreground">
           {isPending ? (
             <>
               <Loader2 className="size-3 animate-spin" /> Kaydediliyor...
@@ -84,7 +84,7 @@ export function LessonNotesPanel({ lessonId }: { lessonId: string }) {
         onBlur={handleBlur}
         placeholder="Bu ders hakkında notlarını buraya yaz..."
         rows={8}
-        className="w-full resize-y rounded-xl border border-border bg-card-inner p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+        className="w-full resize-y rounded-xl border border-border bg-card-inner p-3 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
       />
     </div>
   );

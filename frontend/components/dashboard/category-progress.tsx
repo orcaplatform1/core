@@ -21,7 +21,7 @@ export function CategoryProgress() {
 
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-card p-6 text-body-sm text-muted-foreground">
         Henüz kategori bazlı ilerleme verisi yok.
       </div>
     );
@@ -29,7 +29,7 @@ export function CategoryProgress() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h3 className="text-sm font-semibold text-foreground">Ders İlerleme Durumu</h3>
+      <h3 className="text-widget-title text-foreground">Ders İlerleme Durumu</h3>
       <div className="mt-5 flex flex-col gap-4">
         {data.map((cat, i) => {
           const style = rotation[i % rotation.length];
@@ -43,9 +43,9 @@ export function CategoryProgress() {
                 <Icon className="size-4.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="truncate font-medium text-foreground">{cat.categoryName}</span>
-                  <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="truncate text-widget-desc text-foreground">{cat.categoryName}</span>
+                  <span className="ml-2 shrink-0 text-num-sm text-muted-foreground">
                     {cat.completedLessons}/{cat.totalLessons} Ders
                   </span>
                 </div>
@@ -56,7 +56,7 @@ export function CategoryProgress() {
                       style={{ width: `${cat.percentage}%`, backgroundColor: style.bar }}
                     />
                   </div>
-                  <span className="w-9 shrink-0 text-right text-xs font-semibold text-foreground">
+                  <span className="w-9 shrink-0 text-right text-num-sm text-foreground">
                     %{cat.percentage}
                   </span>
                 </div>

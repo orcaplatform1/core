@@ -93,7 +93,7 @@ function GuestListPanel() {
               key={p}
               type="button"
               onClick={() => setPage(p)}
-              className={`size-8 rounded-lg text-xs font-medium ${
+              className={`size-8 rounded-lg text-body-xs ${
                 p === page ? "bg-primary text-white" : "bg-card text-[#A8A6A0]"
               }`}
             >
@@ -116,7 +116,7 @@ export default function AnalyticsPage() {
   if (authLoading) {
     return (
       <div className="rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <ShieldAlert size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -132,15 +132,15 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Trafik &amp; Aktif Kullanıcılar</h1>
-        <p className="text-sm text-[#A8A6A0]">Ziyaretçi istatistikleri, kayıtlı rol dağılımı ve şu an aktif olanlar.</p>
+        <h1 className="text-h1 text-[#F5F1EA]">Trafik &amp; Aktif Kullanıcılar</h1>
+        <p className="text-body-sm text-[#A8A6A0]">Ziyaretçi istatistikleri, kayıtlı rol dağılımı ve şu an aktif olanlar.</p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+        <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
           <Eye size={16} /> Giriş Yapmamış Ziyaretçiler
         </h2>
-        <p className="mt-1 text-xs text-[#A8A6A0]">
+        <p className="mt-1 text-body-sm text-[#A8A6A0]">
           Sadece hesapsız/giriş yapmamış tarayıcı ziyaretlerini sayar — giriş yapmış hiçbir rol (Guest dahil) dahil değildir.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+        <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
           <Users size={16} /> Kayıtlı Kullanıcı Dağılımı
         </h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -160,29 +160,29 @@ export default function AnalyticsPage() {
           <StatBox label="Yönetici" value={rolesLoading ? undefined : roleCounts?.SUPER_ADMIN} />
           <button type="button" onClick={() => setShowGuests((s) => !s)} className="text-left">
             <div className="rounded-xl border border-border bg-card-inner p-4 hover:border-primary transition-colors">
-              <p className="text-2xl font-semibold text-[#F5F1EA]">{rolesLoading ? "—" : roleCounts?.GUEST}</p>
-              <p className="text-xs text-[#A8A6A0]">Guest (satın almamış)</p>
+              <p className="text-num-md text-[#F5F1EA]">{rolesLoading ? "—" : roleCounts?.GUEST}</p>
+              <p className="text-body-xs text-[#A8A6A0]">Guest (satın almamış)</p>
             </div>
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-[#A8A6A0]">
+        <p className="mt-2 text-body-xs text-[#A8A6A0]">
           Guest sayısına tıklayarak tam listeyi görüntüleyip duyuru/e-posta/SMS ile satın almaya davet için kullanabilirsiniz.
         </p>
         {showGuests && <GuestListPanel />}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-[#F5F1EA]">
+        <h2 className="flex items-center gap-2 text-h2 text-[#F5F1EA]">
           <Radio size={16} className="text-[#22C55E]" /> Şu An Aktif Olanlar {activeUsers && `(${activeUsers.length})`}
         </h2>
-        <p className="mt-1 text-xs text-[#A8A6A0]">
+        <p className="mt-1 text-body-sm text-[#A8A6A0]">
           Sıralama: önce staff/yönetici, sonra kadın öğrenciler, sonra erkek öğrenciler, en altta guest rollü kullanıcılar.
         </p>
         <div className="mt-4 space-y-1.5">
           {activeLoading ? (
-            <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>
+            <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
           ) : !activeUsers || activeUsers.length === 0 ? (
-            <p className="text-sm text-[#A8A6A0]">Şu an aktif kullanıcı yok.</p>
+            <p className="text-body-sm text-[#A8A6A0]">Şu an aktif kullanıcı yok.</p>
           ) : (
             activeUsers.map((u) => <ActiveUserRow key={u.id} u={u} />)
           )}

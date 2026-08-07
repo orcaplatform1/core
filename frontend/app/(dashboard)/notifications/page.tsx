@@ -66,9 +66,9 @@ function NotificationRow({
         <Icon className="size-4.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">{notification.title}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{notification.message}</p>
-        <p className="mt-1.5 text-xs text-muted-foreground">
+        <p className="text-body-sm text-foreground">{notification.title}</p>
+        <p className="mt-0.5 text-body-sm text-muted-foreground">{notification.message}</p>
+        <p className="mt-1.5 text-body-xs text-muted-foreground">
           {new Date(notification.createdAt).toLocaleDateString("tr-TR", {
             day: "2-digit",
             month: "long",
@@ -111,10 +111,10 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+        <h1 className="flex items-center gap-2 text-h1 text-foreground">
           <Bell className="size-6 text-primary" /> Bildirimler
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-body-sm text-muted-foreground">
           Ders, quiz, sertifika ve duyuru bildirimlerini buradan takip et.
         </p>
       </div>
@@ -149,7 +149,7 @@ export default function NotificationsPage() {
           ) : !notifications || notifications.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-10 text-center">
               <Bell className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">Henüz bildirimin yok.</p>
+              <p className="mt-3 text-body-sm text-muted-foreground">Henüz bildirimin yok.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -184,7 +184,7 @@ export default function NotificationsPage() {
           ) : !announcements || announcements.length === 0 ? (
             <div className="rounded-2xl border border-border bg-card p-10 text-center">
               <Megaphone className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">Henüz bir duyuru yok.</p>
+              <p className="mt-3 text-body-sm text-muted-foreground">Henüz bir duyuru yok.</p>
             </div>
           ) : (
             <>
@@ -203,7 +203,7 @@ export default function NotificationsPage() {
                   >
                     Önceki
                   </Button>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-body-sm text-muted-foreground">
                     {annPage} / {announcementList.pagination.totalPages}
                   </span>
                   <Button

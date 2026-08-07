@@ -14,7 +14,7 @@ function fieldClass() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-body-xs text-muted-foreground">{label}</span>
       {children}
     </label>
   );
@@ -38,19 +38,19 @@ function QuotesGrid() {
       icon={LineChart}
       accent="primary"
       badge={
-        <span className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="ml-auto flex items-center gap-1 text-body-xs text-muted-foreground">
           <Clock className="size-3" /> ~15 dk gecikmeli
         </span>
       }
     >
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {pairs.length === 0 && <p className="col-span-full text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {pairs.length === 0 && <p className="col-span-full text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {pairs.map((r: ForexQuote) => {
           const isBiggestMover = r.symbol === biggestMoverSymbol;
           return (
             <div
               key={r.symbol}
-              className={`rounded-lg border-l-2 card-inner p-3 text-xs transition-colors hover:bg-card-hover ${
+              className={`rounded-lg border-l-2 card-inner p-3 text-body-xs transition-colors hover:bg-card-hover ${
                 r.changePercent >= 0 ? "border-l-success/60" : "border-l-danger/60"
               } ${
                 isBiggestMover
@@ -59,15 +59,15 @@ function QuotesGrid() {
               }`}
             >
               <div className="flex items-center gap-1.5">
-                <p className="font-semibold text-foreground/90">{r.symbol}</p>
+                <p className="text-financial text-foreground/90">{r.symbol}</p>
                 {isBiggestMover && (
-                  <span className="rounded-full bg-warning/15 px-1.5 py-0.5 text-[9px] font-medium text-warning">
+                  <span className="rounded-full bg-warning/15 px-1.5 py-0.5 text-badge text-warning">
                     EN HAREKETLİ
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-muted-foreground">{r.price.toFixed(isJpyPair(r.symbol) ? 3 : 5)}</p>
-              <p className={`mt-1 font-medium ${r.changePercent >= 0 ? "text-success" : "text-danger"}`}>
+              <p className="mt-1 text-financial text-muted-foreground">{r.price.toFixed(isJpyPair(r.symbol) ? 3 : 5)}</p>
+              <p className={`mt-1 text-financial ${r.changePercent >= 0 ? "text-success" : "text-danger"}`}>
                 {r.changePercent >= 0 ? "+" : ""}
                 {r.changePercent.toFixed(2)}%
               </p>
@@ -77,10 +77,10 @@ function QuotesGrid() {
       </div>
       {dxy && (
         <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/10 px-4 py-3">
-          <span className="text-sm font-semibold text-foreground">USD Endeksi (DXY)</span>
+          <span className="text-card-title-sm text-foreground">USD Endeksi (DXY)</span>
           <div className="text-right">
-            <p className="text-base font-bold text-foreground">{dxy.price.toFixed(2)}</p>
-            <p className={`text-xs font-medium ${dxy.changePercent >= 0 ? "text-success" : "text-danger"}`}>
+            <p className="text-num-sm text-foreground">{dxy.price.toFixed(2)}</p>
+            <p className={`text-financial ${dxy.changePercent >= 0 ? "text-success" : "text-danger"}`}>
               {dxy.changePercent >= 0 ? "+" : ""}
               {dxy.changePercent.toFixed(2)}%
             </p>
@@ -96,33 +96,33 @@ function GoldAndTlCard() {
   return (
     <ToolCard title="Emtia & TL Pariteleri" icon={Coins} accent="warning">
       {!data ? (
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div className="rounded-lg card-inner p-3 text-xs">
+          <div className="rounded-lg card-inner p-3 text-body-xs">
             <p className="text-muted-foreground">Gram Altın</p>
-            <p className="mt-1 text-base font-bold text-foreground">
+            <p className="mt-1 text-num-sm text-foreground">
               ₺{data.gramAltinTry.toLocaleString("en-US", { maximumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="rounded-lg card-inner p-3 text-xs">
+          <div className="rounded-lg card-inner p-3 text-body-xs">
             <p className="text-muted-foreground">Ons Altın</p>
-            <p className="mt-1 text-base font-bold text-foreground">
+            <p className="mt-1 text-num-sm text-foreground">
               ${data.onsAltinUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="rounded-lg card-inner p-3 text-xs">
+          <div className="rounded-lg card-inner p-3 text-body-xs">
             <p className="text-muted-foreground">USD/TRY</p>
-            <p className="mt-1 text-base font-bold text-foreground">{data.usdTry.price.toFixed(4)}</p>
-            <p className={`font-medium ${data.usdTry.changePercent >= 0 ? "text-success" : "text-danger"}`}>
+            <p className="mt-1 text-num-sm text-foreground">{data.usdTry.price.toFixed(4)}</p>
+            <p className={`text-financial ${data.usdTry.changePercent >= 0 ? "text-success" : "text-danger"}`}>
               {data.usdTry.changePercent >= 0 ? "+" : ""}
               {data.usdTry.changePercent.toFixed(2)}%
             </p>
           </div>
-          <div className="rounded-lg card-inner p-3 text-xs">
+          <div className="rounded-lg card-inner p-3 text-body-xs">
             <p className="text-muted-foreground">EUR/TRY</p>
-            <p className="mt-1 text-base font-bold text-foreground">{data.eurTry.price.toFixed(4)}</p>
-            <p className={`font-medium ${data.eurTry.changePercent >= 0 ? "text-success" : "text-danger"}`}>
+            <p className="mt-1 text-num-sm text-foreground">{data.eurTry.price.toFixed(4)}</p>
+            <p className={`text-financial ${data.eurTry.changePercent >= 0 ? "text-success" : "text-danger"}`}>
               {data.eurTry.changePercent >= 0 ? "+" : ""}
               {data.eurTry.changePercent.toFixed(2)}%
             </p>
@@ -142,28 +142,28 @@ function CotReportCard() {
       icon={Scale}
       accent="purple"
       badge={
-        <span className="ml-auto text-[11px] text-muted-foreground">Kaynak: CFTC, haftalık</span>
+        <span className="ml-auto text-body-xs text-muted-foreground">Kaynak: CFTC, haftalık</span>
       }
     >
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-body-xs text-muted-foreground">
         Büyük kurumsal fonların (Leveraged Money) net pozisyonu — pozitif net = net uzun, negatif = net kısa.
       </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        {rows.length === 0 && <p className="col-span-full text-xs text-muted-foreground">Veri yükleniyor...</p>}
+        {rows.length === 0 && <p className="col-span-full text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {rows.map((r) => (
-          <div key={r.currency} className="rounded-lg card-inner p-3 text-xs">
-            <p className="font-semibold text-foreground/90">{r.currency}</p>
-            <p className={`mt-1 text-sm font-bold ${r.netPosition >= 0 ? "text-success" : "text-danger"}`}>
+          <div key={r.currency} className="rounded-lg card-inner p-3 text-body-xs">
+            <p className="text-financial text-foreground/90">{r.currency}</p>
+            <p className={`mt-1 text-financial ${r.netPosition >= 0 ? "text-success" : "text-danger"}`}>
               {r.netPosition >= 0 ? "+" : ""}
               {r.netPosition.toLocaleString("en-US")}
             </p>
             {r.netPositionChange != null && (
-              <p className={`text-[10px] ${r.netPositionChange >= 0 ? "text-success" : "text-danger"}`}>
+              <p className={`text-financial ${r.netPositionChange >= 0 ? "text-success" : "text-danger"}`}>
                 {r.netPositionChange >= 0 ? "+" : ""}
                 {r.netPositionChange.toLocaleString("en-US")} (haftalık)
               </p>
             )}
-            <p className="mt-1 text-[10px] text-muted-foreground">{r.reportDate}</p>
+            <p className="mt-1 text-body-xs text-muted-foreground">{r.reportDate}</p>
           </div>
         ))}
       </div>
@@ -176,7 +176,7 @@ function CorrelationMatrixCard() {
   if (!data) {
     return (
       <ToolCard title="Korelasyon Matrisi" icon={Grid3x3} accent="primary">
-        <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+        <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       </ToolCard>
     );
   }
@@ -262,10 +262,10 @@ function PipCalculator() {
           />
         </Field>
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">
-        1 pip değeri: <span className="text-lg font-bold text-purple">${result.toFixed(2)}</span>
+      <p className="mt-4 text-body-sm text-muted-foreground">
+        1 pip değeri: <span className="text-num-sm text-purple">${result.toFixed(2)}</span>
       </p>
-      <p className="mt-1 text-[11px] text-muted-foreground">
+      <p className="mt-1 text-body-xs text-muted-foreground">
         Hesap para birimi karşı para birimiyle (çoğunlukla USD) aynı kabul edilir.
       </p>
     </PremiumGlowCard>
@@ -310,16 +310,16 @@ function LeverageMarginCalculator() {
           />
         </Field>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 gap-3 text-body-sm">
         <p className="text-muted-foreground">
           Nominal değer:{" "}
-          <span className="text-lg font-bold text-foreground">
+          <span className="text-num-sm text-foreground">
             ${result.notional.toLocaleString("en-US", { maximumFractionDigits: 2 })}
           </span>
         </p>
         <p className="text-muted-foreground">
           Gerekli marj:{" "}
-          <span className="text-lg font-bold text-purple">
+          <span className="text-num-sm text-purple">
             ${result.margin.toLocaleString("en-US", { maximumFractionDigits: 2 })}
           </span>
         </p>
@@ -379,12 +379,12 @@ function PositionSizeCalculator() {
           </select>
         </Field>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 gap-3 text-body-sm">
         <p className="text-muted-foreground">
-          Riske edilen tutar: <span className="text-lg font-bold text-foreground">${result.riskAmount.toFixed(2)}</span>
+          Riske edilen tutar: <span className="text-num-sm text-foreground">${result.riskAmount.toFixed(2)}</span>
         </p>
         <p className="text-muted-foreground">
-          Önerilen pozisyon: <span className="text-lg font-bold text-purple">{result.lots.toFixed(2)} lot</span>
+          Önerilen pozisyon: <span className="text-num-sm text-purple">{result.lots.toFixed(2)} lot</span>
         </p>
       </div>
     </PremiumGlowCard>
@@ -399,7 +399,7 @@ export function ForexToolsSection() {
 
       <div className="flex items-center gap-2 pt-2">
         <Calculator className="size-4 text-purple" />
-        <h3 className="text-sm font-semibold text-foreground">Hesaplayıcılar</h3>
+        <h3 className="text-h6 text-foreground">Hesaplayıcılar</h3>
       </div>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <PipCalculator />

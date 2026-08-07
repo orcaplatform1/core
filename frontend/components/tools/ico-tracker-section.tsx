@@ -34,7 +34,7 @@ function StatusBadge({ status }: { status: IcoStatus }) {
         ? "bg-success/12 text-success"
         : "bg-muted/30 text-muted-foreground";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{STATUS_LABEL[status]}</span>
+    <span className={`rounded-full px-2 py-0.5 text-badge ${cls}`}>{STATUS_LABEL[status]}</span>
   );
 }
 
@@ -47,18 +47,18 @@ function IcoCard({ project }: { project: IcoProject }) {
     <div className="rounded-lg card-inner p-3">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground/90">{project.name}</p>
+          <p className="truncate text-card-title-sm text-foreground/90">{project.name}</p>
           {project.tokenSymbol && (
-            <p className="text-xs text-muted-foreground">{project.tokenSymbol}</p>
+            <p className="text-body-xs text-muted-foreground">{project.tokenSymbol}</p>
           )}
         </div>
         <StatusBadge status={project.status} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-xs text-muted-foreground">
         {raised && (
           <span className="font-medium text-foreground/80">
-            Toplanan: <span className="text-success">{raised}</span>
+            Toplanan: <span className="text-financial text-success">{raised}</span>
           </span>
         )}
         {project.ratingScore != null && (
@@ -70,7 +70,7 @@ function IcoCard({ project }: { project: IcoProject }) {
       </div>
 
       {(startDate || endDate) && (
-        <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <div className="mt-1.5 flex items-center gap-1 text-body-xs text-muted-foreground">
           <Calendar className="size-3" />
           <span>
             {startDate ?? "?"} {endDate ? `– ${endDate}` : ""}
@@ -81,7 +81,7 @@ function IcoCard({ project }: { project: IcoProject }) {
       {project.websiteUrl && (
         <ExternalLinkConfirm
           href={project.websiteUrl}
-          className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          className="mt-2 inline-flex items-center gap-1 text-body-xs font-medium text-primary hover:underline"
         >
           Web sitesi <ExternalLink className="size-3" />
         </ExternalLinkConfirm>
@@ -96,8 +96,8 @@ function IcoEmptyState() {
       <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/12 text-primary">
         <Rocket className="size-5" />
       </span>
-      <h3 className="text-sm font-semibold text-foreground">Henüz ICO verisi yok</h3>
-      <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+      <h3 className="text-card-title-sm text-foreground">Henüz ICO verisi yok</h3>
+      <p className="mx-auto mt-1 max-w-sm text-body-xs text-muted-foreground">
         ICObench API anahtarları bağlandığında yaklaşan ve aktif ICO&apos;lar burada listelenecek.
       </p>
     </div>

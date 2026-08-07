@@ -60,18 +60,18 @@ export default function AdminUserDetailPage() {
     setFormInit(true);
   }
   if (authLoading || isLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
   if (!u) {
-    return <p className="text-sm text-[#A8A6A0]">Kullanıcı bulunamadı.</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Kullanıcı bulunamadı.</p>;
   }
   async function saveIdentity() {
     try {
@@ -165,19 +165,19 @@ export default function AdminUserDetailPage() {
           <ArrowLeft size={16} />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-[#F5F1EA]">{u.fullName}</h1>
-          <p className="text-sm text-[#A8A6A0]">@{u.username} · {u.role}</p>
+          <h1 className="text-h1 text-[#F5F1EA]">{u.fullName}</h1>
+          <p className="text-body-sm text-[#A8A6A0]">@{u.username} · {u.role}</p>
         </div>
         <Link
           href={`/profile/${u.id}`}
-          className="flex items-center gap-1 text-xs text-primary hover:underline"
+          className="flex items-center gap-1 text-body-xs text-primary hover:underline"
         >
           Genel profili görüntüle <ExternalLink size={12} />
         </Link>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Kimlik Bilgileri</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Kimlik Bilgileri</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Ad Soyad</Label>
@@ -192,7 +192,7 @@ export default function AdminUserDetailPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">İletişim &amp; Profil</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">İletişim &amp; Profil</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Email</Label>
@@ -208,33 +208,33 @@ export default function AdminUserDetailPage() {
           </div>
           <div className="space-y-1.5">
             <Label>Cinsiyet</Label>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
+            <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-body-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {GENDER.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label>Eğitim</Label>
-            <select value={education} onChange={(e) => setEducation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
+            <select value={education} onChange={(e) => setEducation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-body-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {EDUCATION.map((x) => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label>Meslek</Label>
-            <select value={occupation} onChange={(e) => setOccupation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-sm text-[#A8A6A0] outline-none">
+            <select value={occupation} onChange={(e) => setOccupation(e.target.value)} className="h-8 w-full rounded-lg border border-border bg-card-inner px-2.5 text-body-sm text-[#A8A6A0] outline-none">
               <option value="">Seç</option>
               {OCCUPATION.map((x) => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
         </div>
-        <p className="text-xs text-[#A8A6A0]">Not: email/telefon burada değiştirilirse doğrulanmış sayılır (verification bypass).</p>
+        <p className="text-body-xs text-[#A8A6A0]">Not: email/telefon burada değiştirilirse doğrulanmış sayılır (verification bypass).</p>
         <Button size="sm" disabled={updateProfile.isPending} onClick={saveProfile}>Kaydet</Button>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Mentor Kredisi</h2>
-        <p className="text-sm text-[#A8A6A0]">Bakiye: <span className="font-semibold">{u.mentorCredits}</span></p>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Mentor Kredisi</h2>
+        <p className="text-body-sm text-[#A8A6A0]">Bakiye: <span className="text-num-sm">{u.mentorCredits}</span></p>
         <div className="flex items-center gap-2">
           <Input type="number" value={creditDelta} onChange={(e) => setCreditDelta(e.target.value)} className="w-24" />
           <Button size="sm" variant="outline" disabled={adjustCredits.isPending} onClick={() => handleAdjustCredits(1)}>Ekle</Button>
@@ -243,8 +243,8 @@ export default function AdminUserDetailPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Ban Durumu</h2>
-        <p className="text-sm text-[#A8A6A0]">
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Ban Durumu</h2>
+        <p className="text-body-sm text-[#A8A6A0]">
           Durum: {isBanned ? <span className="text-[#EF4444]">Banlı ({new Date(u.bannedUntil).toLocaleDateString("tr-TR")}'e kadar)</span> : <span className="text-[#22C55E]">Banlı değil</span>}
           {" · "}Toplam ban sayısı: {u.banCount}
         </p>
@@ -257,73 +257,73 @@ export default function AdminUserDetailPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Program Erişimleri</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Program Erişimleri</h2>
         {data?.enrollments?.length ? (
           <div className="space-y-2">
             {data.enrollments.map((e: any) => (
-              <div key={e.id} className="flex items-center justify-between text-sm">
+              <div key={e.id} className="flex items-center justify-between text-body-sm">
                 <span className="text-[#A8A6A0]">{e.programId}</span>
                 <Button size="sm" variant="outline" onClick={() => handleRevokeEnrollment(e.programId)}>İptal Et</Button>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A8A6A0]">Erişim yok.</p>}
+        ) : <p className="text-body-sm text-[#A8A6A0]">Erişim yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Ödeme Geçmişi</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Ödeme Geçmişi</h2>
         {data?.payments?.length ? (
           <div className="space-y-2">
             {data.payments.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between text-sm text-[#A8A6A0]">
+              <div key={p.id} className="flex items-center justify-between text-body-sm text-[#A8A6A0]">
                 <span>{p.amount} {p.currency} · {p.method}</span>
-                <span className="text-xs text-[#A8A6A0]">{p.status}</span>
+                <span className="text-body-xs text-[#A8A6A0]">{p.status}</span>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A8A6A0]">Ödeme kaydı yok.</p>}
+        ) : <p className="text-body-sm text-[#A8A6A0]">Ödeme kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Quiz Sonuçları</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Quiz Sonuçları</h2>
         {data?.quizAttempts?.length ? (
           <div className="space-y-2">
             {data.quizAttempts.map((q: any) => (
-              <div key={q.id} className="flex items-center justify-between text-sm text-[#A8A6A0]">
+              <div key={q.id} className="flex items-center justify-between text-body-sm text-[#A8A6A0]">
                 <span>%{q.percentage} · {q.grade ?? "-"}</span>
-                <span className="text-xs text-[#A8A6A0]">{q.passed ? "Geçti" : "Kaldı"}</span>
+                <span className="text-body-xs text-[#A8A6A0]">{q.passed ? "Geçti" : "Kaldı"}</span>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A8A6A0]">Quiz kaydı yok.</p>}
+        ) : <p className="text-body-sm text-[#A8A6A0]">Quiz kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Sertifikalar</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Sertifikalar</h2>
         {data?.certificates?.length ? (
           <div className="space-y-2">
             {data.certificates.map((c: any) => (
-              <div key={c.id} className="text-sm text-[#A8A6A0]">#{c.number} · {c.code}</div>
+              <div key={c.id} className="text-body-sm text-[#A8A6A0]">#{c.number} · {c.code}</div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A8A6A0]">Sertifika yok.</p>}
+        ) : <p className="text-body-sm text-[#A8A6A0]">Sertifika yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Giriş Logları</h2>
+        <h2 className="text-card-title-sm text-[#F5F1EA]">Giriş Logları</h2>
         {data?.loginLogs?.length ? (
           <div className="space-y-2">
             {data.loginLogs.map((l: any) => (
-              <div key={l.id} className="text-xs text-[#A8A6A0]">
+              <div key={l.id} className="text-body-xs text-[#A8A6A0]">
                 {new Date(l.loggedInAt).toLocaleString("tr-TR")} · {l.userAgent ?? "bilinmiyor"}
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-[#A8A6A0]">Giriş kaydı yok.</p>}
+        ) : <p className="text-body-sm text-[#A8A6A0]">Giriş kaydı yok.</p>}
       </div>
 
       <div className="rounded-2xl border border-[#EF4444]/40 bg-card p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-[#EF4444]">Tehlikeli Bölge</h2>
+        <h2 className="text-card-title-sm text-[#EF4444]">Tehlikeli Bölge</h2>
         <Button size="sm" variant="outline" className="border-[#EF4444] text-[#EF4444]" disabled={deleteUser.isPending} onClick={handleDelete}>
           Kullanıcıyı Sil (Anonimleştir)
         </Button>

@@ -52,11 +52,11 @@ const occupationLabels: Record<string, string> = {
 
 function VerifyBadge({ verified }: { verified: boolean }) {
   return verified ? (
-    <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+    <span className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-badge text-success">
       <ShieldCheck className="size-3" /> Doğrulanmış
     </span>
   ) : (
-    <span className="flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-medium text-danger">
+    <span className="flex items-center gap-1 rounded-full bg-danger/15 px-2 py-0.5 text-badge text-danger">
       <ShieldX className="size-3" /> Doğrulanmamış
     </span>
   );
@@ -78,26 +78,26 @@ function BlockedUsersSection() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+      <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
         <UserX className="size-4" /> Engellenenler
       </h3>
-      <p className="mt-1 text-xs text-muted-foreground">Engellediğiniz kullanıcılar sizinle mesajlaşamaz, yorumlarınızı göremez.</p>
+      <p className="mt-1 text-body-xs text-muted-foreground">Engellediğiniz kullanıcılar sizinle mesajlaşamaz, yorumlarınızı göremez.</p>
 
       <div className="mt-4 space-y-2">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+          <p className="text-body-sm text-muted-foreground">Yükleniyor...</p>
         ) : !data || data.data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Henüz kimseyi engellemediniz.</p>
+          <p className="text-body-sm text-muted-foreground">Henüz kimseyi engellemediniz.</p>
         ) : (
           data.data.map((row) => (
             <div
               key={row.id}
               className="flex items-center justify-between rounded-xl border border-border bg-card-inner p-3"
             >
-              <Link href={`/profile/${row.blocked.id}`} className="text-sm font-medium text-foreground hover:underline">
+              <Link href={`/profile/${row.blocked.id}`} className="text-body-sm text-foreground hover:underline">
                 {row.blocked.fullName}
                 {row.blocked.username && (
-                  <span className="ml-1 text-xs font-normal text-muted-foreground">@{row.blocked.username}</span>
+                  <span className="ml-1 text-body-xs text-muted-foreground">@{row.blocked.username}</span>
                 )}
               </Link>
               <Button
@@ -120,7 +120,7 @@ function BlockedUsersSection() {
               key={p}
               type="button"
               onClick={() => setPage(p)}
-              className={`size-8 rounded-lg text-xs font-medium transition-colors duration-200 ${
+              className={`size-8 rounded-lg text-body-xs transition-colors duration-200 ${
                 p === page ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
               }`}
             >
@@ -247,8 +247,8 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Profil</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">Profil</h1>
+        <p className="mt-1 text-body-sm text-muted-foreground">
           Hesap bilgilerini görüntüle, düzenlenebilir alanları güncelle.
         </p>
       </div>
@@ -262,7 +262,7 @@ export default function ProfilePage() {
               {user?.fullName?.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm text-muted-foreground">@{user?.username}</span>
+          <span className="text-body-sm text-muted-foreground">@{user?.username}</span>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -288,7 +288,7 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">
+        <p className="mt-4 text-body-xs text-muted-foreground">
           Yukarıdaki alanlar yalnızca yöneticiye talepte bulunmanız halinde değiştirilebilir.
         </p>
       </div>
@@ -297,17 +297,17 @@ export default function ProfilePage() {
       <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent p-6">
         <div className="flex items-center gap-2">
           <Gift className="size-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Sadakat Programı</h3>
+          <h3 className="text-card-title-sm text-foreground">Sadakat Programı</h3>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Referans kodun kullanıcı adın — arkadaşların kayıt olurken bu kodu girerse %15 indirim
           kazanır, ödemesini tamamladığında sana 50 Mentor Kredisi hediye edilir.
         </p>
 
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3">
-            <span className="text-xs text-muted-foreground">Referans kodun:</span>
-            <span className="font-mono text-sm font-bold text-primary">
+            <span className="text-body-xs text-muted-foreground">Referans kodun:</span>
+            <span className="text-financial text-primary">
               {referralStats?.code ?? user?.username}
             </span>
             <Button
@@ -322,12 +322,12 @@ export default function ProfilePage() {
           </div>
           <div className="flex gap-6">
             <div className="text-center">
-              <p className="text-xl font-bold text-foreground">{referralStats?.invitedCount ?? 0}</p>
-              <p className="text-[11px] text-muted-foreground">davet edilen</p>
+              <p className="text-num-md text-foreground">{referralStats?.invitedCount ?? 0}</p>
+              <p className="text-body-xs text-muted-foreground">davet edilen</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-success">{referralStats?.creditsEarned ?? 0}</p>
-              <p className="text-[11px] text-muted-foreground">kredi kazanıldı</p>
+              <p className="text-num-md text-success">{referralStats?.creditsEarned ?? 0}</p>
+              <p className="text-body-xs text-muted-foreground">kredi kazanıldı</p>
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
 
       {/* İletişim — doğrulama durumuna göre kilitli/editable */}
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground">İletişim Bilgileri</h3>
+        <h3 className="text-card-title-sm text-foreground">İletişim Bilgileri</h3>
 
         <div className="mt-5 flex flex-col gap-5">
           <div className="flex flex-col gap-2">
@@ -345,7 +345,7 @@ export default function ProfilePage() {
             </div>
             <Input value={user?.email ?? "—"} disabled />
             {user?.email && !user?.emailVerified && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-body-xs text-muted-foreground">
                 Kayıt sırasında gönderilen doğrulama bağlantısına tıklayarak email'ini doğrula.
               </span>
             )}
@@ -432,8 +432,8 @@ export default function ProfilePage() {
 
       {/* Kişisel Bilgiler — her zaman düzenlenebilir */}
       <form onSubmit={handleSubmit(onSubmit)} className="rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground">Kişisel Bilgiler</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <h3 className="text-card-title-sm text-foreground">Kişisel Bilgiler</h3>
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Bu alanlar dilediğin zaman güncellenebilir.
         </p>
 
@@ -488,8 +488,8 @@ export default function ProfilePage() {
       </form>
 
       <div className="rounded-2xl border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground">Veri ve Gizlilik (KVKK)</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <h3 className="text-card-title-sm text-foreground">Veri ve Gizlilik (KVKK)</h3>
+        <p className="mt-1 text-body-xs text-muted-foreground">
           Kişisel verilerinle ilgili haklarını buradan kullanabilirsin.
         </p>
 
@@ -503,7 +503,7 @@ export default function ProfilePage() {
           </Button>
         </div>
         {confirmDelete && (
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-danger">
+          <p className="mt-3 flex items-center gap-1.5 text-body-xs text-danger">
             <ShieldAlert className="size-3.5" /> Bu işlem geri alınamaz, emin olduğunda tekrar tıkla.
           </p>
         )}

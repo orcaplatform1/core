@@ -25,49 +25,49 @@ export function AiAnalysisWidget() {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-widget-title text-foreground">
           <TrendingUp className="size-4 text-primary" /> AI Analiz: Güçlü ve Geliştirmen Gereken Alanlar
         </h3>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-success">
+          <p className="mb-3 flex items-center gap-1.5 text-body-xs text-success">
             <CheckCircle2 className="size-3.5" /> Güçlü Yönlerin
           </p>
           <div className="flex flex-col gap-2.5">
             {strengths.length === 0 && (
-              <p className="text-xs text-muted-foreground">Henüz güçlü bir alan tespit edilmedi.</p>
+              <p className="text-body-xs text-muted-foreground">Henüz güçlü bir alan tespit edilmedi.</p>
             )}
             {strengths.map((c) => (
               <div key={c.categoryId} className="flex items-center gap-2">
                 <CheckCircle2 className="size-3.5 shrink-0 text-success" />
-                <span className="flex-1 truncate text-xs text-foreground">{c.categoryName}</span>
+                <span className="flex-1 truncate text-body-xs text-foreground">{c.categoryName}</span>
                 <div className="h-1.5 w-16 rounded-full bg-secondary">
                   <div className="h-1.5 rounded-full bg-success" style={{ width: `${c.percentage}%` }} />
                 </div>
-                <span className="w-8 text-right text-xs font-semibold text-success">%{c.percentage}</span>
+                <span className="w-8 text-right text-num-sm text-success">%{c.percentage}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-danger">
+          <p className="mb-3 flex items-center gap-1.5 text-body-xs text-danger">
             <XCircle className="size-3.5" /> Geliştirmen Gereken Alanlar
           </p>
           <div className="flex flex-col gap-2.5">
             {weaknesses.length === 0 && (
-              <p className="text-xs text-muted-foreground">Harika, zayıf alan görünmüyor!</p>
+              <p className="text-body-xs text-muted-foreground">Harika, zayıf alan görünmüyor!</p>
             )}
             {weaknesses.map((c) => (
               <div key={c.categoryId} className="flex items-center gap-2">
                 <XCircle className="size-3.5 shrink-0 text-danger" />
-                <span className="flex-1 truncate text-xs text-foreground">{c.categoryName}</span>
+                <span className="flex-1 truncate text-body-xs text-foreground">{c.categoryName}</span>
                 <div className="h-1.5 w-16 rounded-full bg-secondary">
                   <div className="h-1.5 rounded-full bg-danger" style={{ width: `${c.percentage}%` }} />
                 </div>
-                <span className="w-8 text-right text-xs font-semibold text-danger">%{c.percentage}</span>
+                <span className="w-8 text-right text-num-sm text-danger">%{c.percentage}</span>
               </div>
             ))}
           </div>
@@ -76,7 +76,7 @@ export function AiAnalysisWidget() {
 
       {weakest && (
         <div className="ai-suggestion-box mt-5 flex flex-col items-start justify-between gap-3 rounded-xl p-4 sm:flex-row sm:items-center">
-          <p className="flex items-start gap-2 text-xs text-foreground">
+          <p className="flex items-start gap-2 text-body-xs text-foreground">
             <Sparkles className="mt-0.5 size-3.5 shrink-0 text-purple" />
             <span>
               <strong className="text-purple">AI Önerisi:</strong> {weakest.categoryName} konusuna

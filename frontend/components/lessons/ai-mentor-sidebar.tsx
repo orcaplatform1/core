@@ -15,7 +15,7 @@ export function AiMentorSidebar({ lessonTitle }: { lessonTitle: string }) {
           <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
             <Bot className="size-4 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground">Yapay Zeka Mentoru</span>
+          <span className="text-card-title-sm text-foreground">Yapay Zeka Mentoru</span>
         </div>
         <Badge variant="secondary" className="text-[10px]">
           Beta
@@ -24,11 +24,11 @@ export function AiMentorSidebar({ lessonTitle }: { lessonTitle: string }) {
 
       <ScrollArea className="flex-1 px-4 py-4">
         <div className="flex flex-col gap-3">
-          <div className="rounded-xl border border-dashed border-border bg-card-inner px-3 py-2 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border bg-card-inner px-3 py-2 text-body-xs text-muted-foreground">
             Konuştuğun modül: <span className="font-medium text-foreground">{lessonTitle}</span>
           </div>
           <div className="flex justify-start">
-            <div className="max-w-[85%] rounded-2xl bg-card-inner px-3.5 py-2.5 text-sm text-foreground">
+            <div className="max-w-[85%] rounded-2xl bg-card-inner px-3.5 py-2.5 text-ai-message text-foreground">
               Merhaba! Bu ders hakkında sorularını yanıtlayabilmek için burada olacağım. Bu özellik çok
               yakında aktif olacak — hazır olduğunda buradan sorularını sorabileceksin. 🙂
             </div>
@@ -41,7 +41,7 @@ export function AiMentorSidebar({ lessonTitle }: { lessonTitle: string }) {
           <input
             disabled
             placeholder="Yakında aktif olacak..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="flex-1 bg-transparent text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
           <Send className="size-4 shrink-0 text-muted-foreground" />
         </div>

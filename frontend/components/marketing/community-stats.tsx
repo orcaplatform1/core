@@ -23,7 +23,7 @@ export function CommunityStats({
     <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-8 rounded-3xl border border-border bg-card p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+          <h2 className="flex items-center gap-2 text-h2 text-foreground">
             {title}
             <span className="size-2 animate-pulse rounded-full bg-success" />
           </h2>
@@ -34,8 +34,8 @@ export function CommunityStats({
                   <stat.icon className="size-4.5" />
                 </span>
                 <div>
-                  <p className="text-lg font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="text-card-title-md text-foreground">{stat.value}</p>
+                  <p className="text-body-xs text-muted-foreground">{stat.label}</p>
                 </div>
               </div>
             ))}
@@ -43,20 +43,20 @@ export function CommunityStats({
         </div>
 
         <div className="shrink-0">
-          <p className="mb-2 text-xs text-muted-foreground">{membersLabel}</p>
+          <p className="mb-2 text-body-xs text-muted-foreground">{membersLabel}</p>
           <div className="flex items-center">
             <div className="flex -space-x-2.5">
               {Array.from({ length: avatarCount }).map((_, i) => (
                 <span
                   key={i}
-                  className="flex size-9 items-center justify-center rounded-full border-2 border-card bg-primary/20 text-[11px] font-semibold text-primary"
+                  className="flex size-9 items-center justify-center rounded-full border-2 border-card bg-primary/20 text-badge text-primary"
                 >
                   {String.fromCharCode(65 + i)}
                 </span>
               ))}
             </div>
             {extraCount && (
-              <span className="ml-2 flex size-9 items-center justify-center rounded-full border-2 border-card bg-secondary text-[11px] font-semibold text-muted-foreground">
+              <span className="ml-2 flex size-9 items-center justify-center rounded-full border-2 border-card bg-secondary text-badge text-muted-foreground">
                 +{extraCount}
               </span>
             )}

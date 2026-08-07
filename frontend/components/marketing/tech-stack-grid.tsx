@@ -18,7 +18,7 @@ function TechIcon({ item }: { item: TechStackItem }) {
 export function TechStackGrid() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
-      <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{TECH_STACK_INTRO}</p>
+      <p className="max-w-3xl text-body text-muted-foreground">{TECH_STACK_INTRO}</p>
 
       <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {TECH_STACK.map((item) => (
@@ -28,16 +28,16 @@ export function TechStackGrid() {
           >
             <TechIcon item={item} />
             <div>
-              <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{item.description}</p>
+              <h3 className="text-card-title-sm text-foreground">{item.name}</h3>
+              <p className="mt-1.5 text-body-sm text-muted-foreground">{item.description}</p>
             </div>
           </div>
         ))}
       </div>
 
       <div className="mt-10 rounded-2xl border border-primary/25 bg-primary/5 p-6 sm:p-8">
-        <h2 className="text-xl font-bold text-foreground sm:text-2xl">{TECH_STACK_CLOSING.title}</h2>
-        <p className="mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">{TECH_STACK_CLOSING.description}</p>
+        <h2 className="text-h2 text-foreground">{TECH_STACK_CLOSING.title}</h2>
+        <p className="mt-3 max-w-3xl text-body text-muted-foreground">{TECH_STACK_CLOSING.description}</p>
       </div>
     </div>
   );

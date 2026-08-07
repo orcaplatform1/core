@@ -34,7 +34,7 @@ export function NewsSentimentSection() {
     <div className="space-y-4">
       <ToolCard title="Haber Sentiment Trendi" icon={Newspaper} accent="purple">
         {!data || data.trend.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-body-xs text-muted-foreground">
             Henüz yeterli veri yok. Haberler işlendikçe trend burada görünecek.
           </p>
         ) : (
@@ -76,7 +76,7 @@ export function NewsSentimentSection() {
       <ToolCard title="Son Haberler" icon={Newspaper} accent="primary">
         <div className="space-y-1">
           {(!data || data.articles.length === 0) && (
-            <p className="text-xs text-muted-foreground">Veri yükleniyor...</p>
+            <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
           )}
           {data?.articles.map((article) => (
             <ExternalLink
@@ -85,13 +85,13 @@ export function NewsSentimentSection() {
               className="flex items-start justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground/90">{article.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <p className="truncate text-card-title-sm text-foreground/90">{article.title}</p>
+                <p className="mt-0.5 text-body-xs text-muted-foreground">
                   {article.source} · {relativeTime(article.publishedAt)}
                 </p>
               </div>
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${LABEL_STYLES[article.sentimentLabel]}`}
+                className={`shrink-0 rounded-full px-2 py-0.5 text-badge ${LABEL_STYLES[article.sentimentLabel]}`}
               >
                 {LABEL_TEXT[article.sentimentLabel]}
               </span>

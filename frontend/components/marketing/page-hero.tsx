@@ -14,7 +14,7 @@ export function PageHero({
     <section className="relative overflow-hidden border-b border-border">
       <HeroBackground imageSrc={heroImageSrc} fill />
       <div className="relative mx-auto max-w-[1440px] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <h1 className="text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+        <h1 className="text-display-md text-foreground">
           {title}
         </h1>
       </div>

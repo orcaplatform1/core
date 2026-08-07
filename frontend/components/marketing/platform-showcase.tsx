@@ -26,8 +26,8 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
     <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-[0.85fr_1.15fr]">
         <div className="max-w-xl">
-          <p className="text-sm font-medium text-primary">{eyebrow}</p>
-          <h2 className="mt-2 text-3xl font-bold leading-tight text-foreground sm:text-4xl">{title}</h2>
+          <p className="text-tag text-primary">{eyebrow}</p>
+          <h2 className="mt-2 text-h2 text-foreground">{title}</h2>
           <p className="mt-4 text-muted-foreground">{description}</p>
           <Button
             variant="gradient"
@@ -57,7 +57,7 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={imageUrl} alt="ORCA Dashboard" className="h-full w-full object-cover object-top" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] text-xs text-muted-foreground">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] text-body-xs text-muted-foreground">
                   Dashboard görseli henüz eklenmedi
                 </div>
               )}
@@ -100,7 +100,7 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
                       className="h-full w-full bg-[#05070f] object-contain object-top"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] p-1 text-center text-[9px] text-muted-foreground">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] p-1 text-center text-body-xs text-muted-foreground">
                       Mobil görsel eklenmedi
                     </div>
                   )}

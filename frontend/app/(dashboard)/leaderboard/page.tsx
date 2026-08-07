@@ -19,8 +19,8 @@ export default function LeaderboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Liderlik Tablosu</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-h1 text-foreground">Liderlik Tablosu</h1>
+        <p className="text-body-sm text-muted-foreground">
           Bu haftaki puan sıralaması — her Pazartesi 00:00'da sıfırlanır. Puan kazanmak için ders
           tamamla, quiz geç, rozet kazan ve serini sürdür.
         </p>
@@ -28,9 +28,9 @@ export default function LeaderboardPage() {
 
       <div className="rounded-2xl border border-border bg-card p-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+          <p className="text-body-sm text-muted-foreground">Yükleniyor...</p>
         ) : !leaderboard || leaderboard.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Bu hafta henüz kimse puan kazanmadı — ilk sırayı sen al!
           </p>
         ) : (
@@ -48,7 +48,7 @@ export default function LeaderboardPage() {
                     {entry.rank <= 3 ? (
                       <Medal className="size-5" style={{ color: RANK_COLORS[entry.rank] }} />
                     ) : (
-                      <span className="text-sm font-semibold text-muted-foreground">{entry.rank}</span>
+                      <span className="text-num-sm text-muted-foreground">{entry.rank}</span>
                     )}
                   </div>
                   <Avatar className="size-9">
@@ -58,13 +58,13 @@ export default function LeaderboardPage() {
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/profile/${entry.id}`}
-                      className="truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+                      className="truncate text-body-sm text-foreground hover:text-primary hover:underline"
                     >
-                      {entry.fullName} {isMe && <span className="text-xs text-primary">(sen)</span>}
+                      {entry.fullName} {isMe && <span className="text-body-xs text-primary">(sen)</span>}
                     </Link>
-                    <p className="truncate text-xs text-muted-foreground">@{entry.username}</p>
+                    <p className="truncate text-body-xs text-muted-foreground">@{entry.username}</p>
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-primary">
+                  <div className="flex items-center gap-1.5 text-num-sm text-primary">
                     <Trophy className="size-3.5" />
                     {entry.periodPoints}
                   </div>

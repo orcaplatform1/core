@@ -72,9 +72,9 @@ function ProgramPriceEditor() {
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="flex items-center gap-2">
         <Tag size={16} className="text-primary" />
-        <h2 className="text-sm font-semibold text-[#F5F1EA]">Eğitim Paketi Fiyatı</h2>
+        <h2 className="text-h2 text-[#F5F1EA]">Eğitim Paketi Fiyatı</h2>
       </div>
-      <p className="mt-1 text-xs text-[#A8A6A0]">
+      <p className="mt-1 text-body-xs text-[#A8A6A0]">
         Satın alındığında tüm programların açıldığı tek fiyat (TRY). Bu fiyat kayıt/ödeme sayfalarında gösterilir.
       </p>
       <div className="mt-3 flex items-center gap-2">
@@ -83,9 +83,9 @@ function ProgramPriceEditor() {
           min={0}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="w-40 rounded-lg border border-border bg-card-inner px-3 py-2 text-sm text-[#F5F1EA] outline-none focus:border-primary"
+          className="w-40 rounded-lg border border-border bg-card-inner px-3 py-2 text-body-sm text-[#F5F1EA] outline-none focus:border-primary"
         />
-        <span className="text-sm text-[#A8A6A0]">TRY</span>
+        <span className="text-body-sm text-[#A8A6A0]">TRY</span>
         <Button size="sm" disabled={updatePrice.isPending} onClick={handleSave}>
           Kaydet
         </Button>
@@ -106,14 +106,14 @@ function PackageSalesStatsSection() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <TrendingUp size={16} className="text-primary" />
-          <h2 className="text-sm font-semibold text-[#F5F1EA]">Eğitim Paketi Satış İstatistikleri</h2>
+          <h2 className="text-h2 text-[#F5F1EA]">Eğitim Paketi Satış İstatistikleri</h2>
         </div>
         <div className="flex rounded-lg border border-border overflow-hidden">
           {PERIOD_TABS.map((t) => (
             <button
               key={t.value}
               onClick={() => setTab(t.value)}
-              className={`px-3 py-1 text-xs ${tab === t.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+              className={`px-3 py-1 text-body-xs ${tab === t.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
             >
               {t.label}
             </button>
@@ -122,36 +122,36 @@ function PackageSalesStatsSection() {
       </div>
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+        <p className="mt-4 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-[#A8A6A0]">Bu dönemde satış yok.</p>
+        <p className="mt-4 text-body-sm text-[#A8A6A0]">Bu dönemde satış yok.</p>
       ) : (
         <>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:w-72">
             <div className="rounded-xl bg-card-inner p-3">
-              <p className="text-xs text-[#A8A6A0]">Toplam Ciro</p>
-              <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{formatMoney(totalRevenue, "TRY")}</p>
+              <p className="text-body-xs text-[#A8A6A0]">Toplam Ciro</p>
+              <p className="mt-1 text-num-md text-[#F5F1EA]">{formatMoney(totalRevenue, "TRY")}</p>
             </div>
             <div className="rounded-xl bg-card-inner p-3">
-              <p className="text-xs text-[#A8A6A0]">Toplam Satış</p>
-              <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{totalCount}</p>
+              <p className="text-body-xs text-[#A8A6A0]">Toplam Satış</p>
+              <p className="mt-1 text-num-md text-[#F5F1EA]">{totalCount}</p>
             </div>
           </div>
           <div className="mt-4 max-h-64 overflow-y-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
+            <table className="w-full text-table-cell">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-[#A8A6A0]">
-                  <th className="px-3 py-2 font-medium">Dönem</th>
-                  <th className="px-3 py-2 font-medium">Satış</th>
-                  <th className="px-3 py-2 font-medium">Ciro</th>
+                <tr className="border-b border-border text-left text-table-header text-[#A8A6A0]">
+                  <th className="px-3 py-2">Dönem</th>
+                  <th className="px-3 py-2">Satış</th>
+                  <th className="px-3 py-2">Ciro</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {[...rows].reverse().map((r) => (
                   <tr key={r.period}>
                     <td className="px-3 py-2 text-[#F5F1EA]">{formatPeriodLabel(r.period, tab)}</td>
-                    <td className="px-3 py-2 text-[#F5F1EA]">{r.count}</td>
-                    <td className="px-3 py-2 text-[#F5F1EA]">{formatMoney(r.revenue, "TRY")}</td>
+                    <td className="px-3 py-2 text-financial text-[#F5F1EA]">{r.count}</td>
+                    <td className="px-3 py-2 text-financial text-[#F5F1EA]">{formatMoney(r.revenue, "TRY")}</td>
                   </tr>
                 ))}
               </tbody>
@@ -173,13 +173,13 @@ export default function AdminPaymentsPage() {
   const reject = useRejectPayment();
 
   if (authLoading) {
-    return <p className="text-sm text-[#A8A6A0]">Yükleniyor...</p>;
+    return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
   if (me?.role !== "SUPER_ADMIN") {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
         <Lock size={32} color="#EF4444" className="mx-auto" />
-        <p className="text-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
+        <p className="text-body-sm text-[#A8A6A0]">Bu sayfaya erişim yetkin yok.</p>
       </div>
     );
   }
@@ -205,8 +205,8 @@ export default function AdminPaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#F5F1EA]">Ödemeler</h1>
-        <p className="text-sm text-[#A8A6A0]">Dekont/kripto ödemelerini onayla veya reddet.</p>
+        <h1 className="text-h1 text-[#F5F1EA]">Ödemeler</h1>
+        <p className="text-body-sm text-[#A8A6A0]">Dekont/kripto ödemelerini onayla veya reddet.</p>
       </div>
 
       <ProgramPriceEditor />
@@ -220,7 +220,7 @@ export default function AdminPaymentsPage() {
               setStatus(tab.value);
               setPage(1);
             }}
-            className={`px-4 py-1.5 text-sm ${status === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
+            className={`px-4 py-1.5 text-body-sm ${status === tab.value ? "bg-primary text-white" : "bg-card-inner text-[#A8A6A0]"}`}
           >
             {tab.label}
           </button>
@@ -229,25 +229,25 @@ export default function AdminPaymentsPage() {
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         {isLoading ? (
-          <p className="p-6 text-sm text-[#A8A6A0]">Yükleniyor...</p>
+          <p className="p-6 text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
         ) : !paymentList || paymentList.data.length === 0 ? (
-          <p className="p-6 text-sm text-[#A8A6A0]">Bu durumda ödeme yok.</p>
+          <p className="p-6 text-body-sm text-[#A8A6A0]">Bu durumda ödeme yok.</p>
         ) : (
           <div className="divide-y divide-border">
             {paymentList.data.map((p) => (
               <div key={p.id} className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <Link href={`/manage/users/${p.user.id}`} className="font-medium text-[#F5F1EA] hover:text-primary hover:underline">
+                    <Link href={`/manage/users/${p.user.id}`} className="text-card-title-sm text-[#F5F1EA] hover:text-primary hover:underline">
                       {p.user.fullName}
                     </Link>
-                    <p className="text-xs text-[#A8A6A0]">
+                    <p className="text-body-xs text-[#A8A6A0]">
                       @{p.user.username} · {p.user.email ?? "email yok"}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-[#F5F1EA]">{formatMoney(p.amount, p.currency)}</p>
-                    <p className="text-xs text-[#A8A6A0]">
+                    <p className="text-financial text-[#F5F1EA]">{formatMoney(p.amount, p.currency)}</p>
+                    <p className="text-body-xs text-[#A8A6A0]">
                       {METHOD_LABELS[p.method]} · {p.purpose === "PROGRAM" ? "Program" : "Mentor Kredi"}
                     </p>
                   </div>
@@ -257,7 +257,7 @@ export default function AdminPaymentsPage() {
                   {p.receiptUrl && (
                     <ExternalLink
                       href={p.receiptUrl}
-                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      className="flex items-center gap-1 text-body-xs text-primary hover:underline"
                     >
                       <FileText size={14} />
                       Dekont/Kanıt
@@ -296,7 +296,7 @@ export default function AdminPaymentsPage() {
           <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Önceki
           </Button>
-          <span className="text-sm text-[#A8A6A0]">
+          <span className="text-body-sm text-[#A8A6A0]">
             {page} / {paymentList.pagination.totalPages}
           </span>
           <Button

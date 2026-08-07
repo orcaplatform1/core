@@ -7,6 +7,7 @@ import { useProgram, useAllModules, useAllLessons, useMyEnrollments } from "@/li
 import { useAuth } from "@/context/auth-context";
 import { LevelBadge } from "@/components/programs/level-badge";
 import { Button } from "@/components/ui/button";
+import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function ProgramDetailPage({
@@ -49,11 +50,11 @@ export default function ProgramDetailPage({
       )}
       <div className="flex flex-col gap-4">
         <LevelBadge level={program.level} />
-        <h1 className="text-3xl font-bold text-foreground">{program.title}</h1>
+        <h1 className="text-h1 text-foreground">{program.title}</h1>
         {program.description && (
-          <p className="text-base text-muted-foreground">{program.description}</p>
+          <p className="text-body text-muted-foreground">{program.description}</p>
         )}
-        <div className="flex items-center gap-5 text-sm text-muted-foreground">
+        <div className="flex items-center gap-5 text-body-sm text-muted-foreground">
           {program.durationHours && (
             <span className="flex items-center gap-1.5">
               <Clock className="size-4" /> {program.durationHours} saat
@@ -70,16 +71,20 @@ export default function ProgramDetailPage({
             render={<Link href={`/courses/${program.id}`}>Eğitime Devam Et</Link>}
           />
         ) : user ? (
-          <Button className="mt-2 h-12 w-fit" render={<Link href="/subscription">Programı Satın Al</Link>} />
+          <PremiumGlowButton
+            wrapperClassName="mt-2"
+            className="h-12 w-fit"
+            render={<Link href="/subscription">Programı Satın Al</Link>}
+          />
         ) : (
           <Button className="mt-2 h-12 w-fit" render={<Link href="/login">Satın Almak İçin Giriş Yap</Link>} />
         )}
       </div>
 
       <div className="mt-12">
-        <h2 className="text-lg font-semibold text-foreground">Müfredat</h2>
+        <h2 className="text-h2 text-foreground">Müfredat</h2>
         {modules.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">Müfredat yakında eklenecek.</p>
+          <p className="mt-4 text-body-sm text-muted-foreground">Müfredat yakında eklenecek.</p>
         ) : (
           <Accordion multiple={false} className="mt-4 flex flex-col gap-3">
             {modules.map((mod, i) => {
@@ -94,13 +99,13 @@ export default function ProgramDetailPage({
                 >
                   <AccordionTrigger className="py-4 hover:no-underline">
                     <div className="flex flex-1 items-center gap-4">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-card-title-sm text-primary">
                         {i + 1}
                       </div>
                       <div className="min-w-0 flex-1 text-left">
-                        <p className="text-sm font-medium text-foreground">{mod.title}</p>
+                        <p className="text-card-title-sm text-foreground">{mod.title}</p>
                         {mod.description && (
-                          <p className="truncate text-xs text-muted-foreground">{mod.description}</p>
+                          <p className="truncate text-body-xs text-muted-foreground">{mod.description}</p>
                         )}
                       </div>
                       {!isEnrolled && <Lock className="size-4 shrink-0 text-muted-foreground" />}
@@ -109,14 +114,14 @@ export default function ProgramDetailPage({
                   <AccordionContent>
                     <div className="flex flex-col gap-1 pb-2 pl-13">
                       {moduleLessons.length === 0 && (
-                        <p className="text-xs text-muted-foreground">Bu modülde henüz ders yok.</p>
+                        <p className="text-body-xs text-muted-foreground">Bu modülde henüz ders yok.</p>
                       )}
                       {moduleLessons.map((lesson) =>
                         user ? (
                           <Link
                             key={lesson.id}
                             href={`/courses/${id}/lessons/${lesson.id}`}
-                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
+                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-body-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                           >
                             <PlayCircle className="size-4 shrink-0" />
                             {lesson.title}
@@ -124,7 +129,7 @@ export default function ProgramDetailPage({
                         ) : (
                           <span
                             key={lesson.id}
-                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground"
+                            className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-body-sm text-muted-foreground"
                           >
                             <PlayCircle className="size-4 shrink-0" />
                             {lesson.title}

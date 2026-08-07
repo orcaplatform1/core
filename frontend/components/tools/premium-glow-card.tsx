@@ -22,7 +22,7 @@ export function PremiumGlowCard({
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple/12 text-purple">
             <Icon className="size-4" />
           </span>
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <h3 className="text-card-title-sm text-foreground">{title}</h3>
         </div>
         {children}
       </div>

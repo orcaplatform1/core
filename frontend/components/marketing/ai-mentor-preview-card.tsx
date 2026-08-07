@@ -13,9 +13,14 @@ type ChatEntry = { role: "user" | "assistant"; content: string };
 
 export function AiMentorPreviewCard({
   size = "compact",
+  premium = false,
   className,
 }: {
   size?: "compact" | "expanded";
+  /** Ana sayfa hero'sundaki kutu için: dönen premium gradient çerçeve, transparan
+   *  arka plan, mor glow kaldırılmış. Navbar önizleme dropdown'u gibi diğer
+   *  kullanımlar bu prop'u geçmeyip mevcut cam-kart görünümünü korur. */
+  premium?: boolean;
   className?: string;
 }) {
   const expanded = size === "expanded";
@@ -49,26 +54,41 @@ export function AiMentorPreviewCard({
   }
 
   return (
-    <div className={cn("relative", expanded ? "w-full" : "w-full max-w-[420px]", className)}>
+    <div
+      className={cn(
+        "relative",
+        expanded ? "w-full" : "w-full max-w-[420px]",
+        premium && "premium-glow-card",
+        className
+      )}
+    >
       {/* Katmanlı derinlik: kartın arkasında yumuşak mor bir parıltı — düz mavi temadan
-          ayrışan "premium" his için, göz yormaması adına düşük opasitede. */}
-      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-purple/10 opacity-40 blur-2xl" />
+          ayrışan "premium" his için, göz yormaması adına düşük opasitede.
+          premium modda (dönen gradient çerçeve) bu statik mor glow kaldırılır. */}
+      {!premium && (
+        <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-purple/10 opacity-40 blur-2xl" />
+      )}
 
       <Card
         variant="glass"
-        className="relative gap-4 overflow-hidden border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] p-5 shadow-[0_24px_60px_-20px_rgba(139,92,246,0.25)]"
+        className={cn(
+          "relative gap-4 overflow-hidden p-5",
+          premium
+            ? "border-transparent bg-background shadow-none backdrop-blur-none"
+            : "border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] shadow-[0_24px_60px_-20px_rgba(139,92,246,0.25)]"
+        )}
       >
         {/* İç üst kenar aydınlatması — cam katmanına ince bir "highlight" çizgisi */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple/50 to-transparent" />
 
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <span className="flex items-center gap-2 text-card-title-sm text-foreground">
             <span className="flex size-6 items-center justify-center rounded-full bg-purple/20 text-purple">
               <Bot className="size-3.5" />
             </span>
             ORCA AI Mentor
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-success">
+          <span className="flex items-center gap-1.5 text-body-xs text-success">
             <span className="size-1.5 animate-pulse rounded-full bg-success" />
             Online
           </span>
@@ -76,7 +96,7 @@ export function AiMentorPreviewCard({
 
         <div className="max-h-56 space-y-2 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-muted-foreground">
+            <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-body-xs text-muted-foreground">
               Kişiselleştirilmiş eğitim planın için benimle finans konusunda biraz sohbet et.
             </div>
           ) : (
@@ -84,19 +104,19 @@ export function AiMentorPreviewCard({
               m.role === "user" ? (
                 <div
                   key={i}
-                  className="rounded-2xl rounded-tl-sm border border-purple/25 bg-purple/10 px-3 py-2 text-xs text-foreground/90"
+                  className="rounded-2xl rounded-tl-sm border border-purple/25 bg-purple/10 px-3 py-2 text-body-xs text-foreground/90"
                 >
                   {m.content}
                 </div>
               ) : (
-                <div key={i} className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-foreground/90">
+                <div key={i} className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-body-xs text-foreground/90">
                   {m.content}
                 </div>
               )
             )
           )}
           {sendMessage.isPending && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-body-xs text-muted-foreground">
               <Loader2 className="size-3.5 animate-spin text-purple" />
               ORCA düşünüyor...
             </div>
@@ -111,7 +131,7 @@ export function AiMentorPreviewCard({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={user ? "Bir soru sor..." : "Mentor kullanmak için giriş yap..."}
-            className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+            className="flex-1 bg-transparent text-body-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
           <button
             type="submit"

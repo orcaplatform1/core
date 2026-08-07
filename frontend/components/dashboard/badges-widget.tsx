@@ -20,10 +20,10 @@ export function BadgesWidget() {
   return (
     <div className="rounded-2xl border border-border bg-card p-6">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-widget-title text-foreground">
           <Medal className="size-4 text-primary" /> Rozetlerim
         </h3>
-        <Link href="/badges" className="text-xs text-primary hover:underline">
+        <Link href="/badges" className="text-body-xs text-primary hover:underline">
           Tüm Rozetler
         </Link>
       </div>
@@ -41,11 +41,11 @@ export function BadgesWidget() {
               >
                 <Icon className="size-6" />
               </div>
-              <span className="line-clamp-2 text-[11px] font-medium text-foreground">
+              <span className="line-clamp-2 text-body-xs text-foreground">
                 {badge.name}
               </span>
               <span
-                className={`text-[10px] font-medium ${
+                className={`text-body-xs ${
                   badge.locked ? "text-muted-foreground" : "text-success"
                 }`}
               >

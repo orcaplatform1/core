@@ -71,12 +71,12 @@ export function SiteFooter({
               {logoFirst} <span className="text-primary">{logoRest.join(" ")}</span>
             </span>
             {footer.description && (
-              <p className="mt-3 text-sm text-muted-foreground max-w-xs">{footer.description}</p>
+              <p className="text-body-sm mt-3 text-muted-foreground max-w-xs">{footer.description}</p>
             )}
           </div>
           {footerColumns.map((col) => (
             <div key={col.title}>
-              <h4 className="text-sm font-semibold text-foreground mb-4">
+              <h4 className="text-footer-title text-foreground mb-4">
                 {col.title}
               </h4>
               <ul className="flex flex-col gap-3">
@@ -84,7 +84,7 @@ export function SiteFooter({
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+                      className="text-footer-link text-muted-foreground hover:text-foreground transition-colors duration-200"
                     >
                       {link.label}
                     </Link>
@@ -95,7 +95,7 @@ export function SiteFooter({
           ))}
         </div>
 
-        <p className="mt-12 border-t border-divider pt-8 text-[11px] leading-relaxed text-muted-foreground/70">
+        <p className="text-body-xs mt-12 border-t border-divider pt-8 leading-relaxed text-muted-foreground/70">
           Yasal Uyarı: Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir.
           Bu görüşler mali durumunuz ile risk ve getiri tercihlerinize uygun olmayabilir. Sadece burada yer alan
           bilgilere dayanılarak yatırım kararı verilmesi beklentilerinize uygun sonuçlar doğurmayabilir. Sitedeki
@@ -104,10 +104,10 @@ export function SiteFooter({
 
         <div className="mt-6 flex flex-col-reverse items-center gap-6 pt-2 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <p className="text-xs text-muted-foreground">{footer.copyrightText}</p>
+            <p className="text-footer-copyright text-muted-foreground">{footer.copyrightText}</p>
             <Link
               href="/sitemap"
-              className="text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              className="text-footer-copyright text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               Site Haritası
             </Link>

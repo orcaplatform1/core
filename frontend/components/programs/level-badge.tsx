@@ -18,7 +18,7 @@ export function LevelBadge({ level }: { level: ProgramLevel | null }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold",
+        "text-badge inline-flex items-center rounded-lg px-2.5 py-1",
         colors[level]
       )}
     >

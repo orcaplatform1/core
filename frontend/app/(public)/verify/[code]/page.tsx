@@ -34,23 +34,23 @@ export default function VerifyPage({
         ) : data?.valid ? (
           <>
             <ShieldCheck className="mx-auto size-10 text-success" />
-            <h1 className="mt-4 text-xl font-bold text-foreground">Sertifika Doğrulandı</h1>
+            <h1 className="mt-4 text-h1 text-foreground">Sertifika Doğrulandı</h1>
             <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-secondary p-5 text-left">
               <div className="flex items-center gap-2 border-b border-border pb-3">
                 <Award className="size-5 text-primary" />
-                <span className="text-sm font-semibold text-foreground">{data.code}</span>
+                <span className="text-card-title-sm text-foreground">{data.code}</span>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Sertifika Sahibi</p>
-                <p className="text-sm font-medium text-foreground">{data.studentName}</p>
+                <p className="text-body-xs text-muted-foreground">Sertifika Sahibi</p>
+                <p className="text-body-sm text-foreground">{data.studentName}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Program</p>
-                <p className="text-sm font-medium text-foreground">{data.programTitle}</p>
+                <p className="text-body-xs text-muted-foreground">Program</p>
+                <p className="text-body-sm text-foreground">{data.programTitle}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Veriliş Tarihi</p>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-body-xs text-muted-foreground">Veriliş Tarihi</p>
+                <p className="text-body-sm text-foreground">
                   {data.issuedAt &&
                     new Date(data.issuedAt).toLocaleDateString("tr-TR", {
                       day: "2-digit",
@@ -64,8 +64,8 @@ export default function VerifyPage({
         ) : (
           <>
             <ShieldX className="mx-auto size-10 text-danger" />
-            <h1 className="mt-4 text-xl font-bold text-foreground">Geçersiz Sertifika</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="mt-4 text-h1 text-foreground">Geçersiz Sertifika</h1>
+            <p className="mt-2 text-body-sm text-muted-foreground">
               Bu koda ait bir sertifika bulunamadı.
             </p>
           </>

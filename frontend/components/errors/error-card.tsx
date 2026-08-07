@@ -124,18 +124,18 @@ export function ErrorCard({
           <Icon className="size-8 text-danger" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">{title ?? preset.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{description ?? preset.description}</p>
+          <h1 className="text-card-title-lg text-foreground">{title ?? preset.title}</h1>
+          <p className="text-body-sm mt-2 text-muted-foreground">{description ?? preset.description}</p>
         </div>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-xs font-medium text-primary hover:underline"
+            className="text-btn-sm text-primary hover:underline"
           >
             Tekrar dene
           </button>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-body-xs text-muted-foreground">
           {seconds} saniye içinde ana sayfaya yönlendirileceksiniz...
         </p>
       </div>

@@ -22,7 +22,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
     "Yapay zeka destekli analiz, profesyonel eğitim ve gerçek piyasa simülasyonları ile trading yolculuğunu üst seviyeye taşı.",
   heroPrimaryCtaLabel: "Keşfetmeye Başla",
   heroPrimaryCtaHref: "/register",
-  heroSecondaryCtaLabel: "Tanıtım Videosu",
+  heroSecondaryCtaLabel: "Ücretsiz İlk Dersi İzle",
   heroSecondaryCtaHref: "/programs",
   heroImageUrl: "/core/marketing/orca-hero-whale.webp",
 
