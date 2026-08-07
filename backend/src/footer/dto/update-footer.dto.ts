@@ -29,4 +29,8 @@ export class UpdateFooterDto {
 
   @IsOptional()
   supportLinks?: { label: string; href: string }[];
+
+  @IsOptional()
+  @IsString()
+  legalDisclaimer?: string;
 }

@@ -141,4 +141,6 @@ export const DEFAULT_FOOTER_SETTINGS: FooterSettingsData = {
     { label: "Destek Merkezi", href: "/support" },
     { label: "İletişim", href: "/contact" },
   ],
+  legalDisclaimer:
+    "Yasal Uyarı: Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir. Bu görüşler mali durumunuz ile risk ve getiri tercihlerinize uygun olmayabilir. Sadece burada yer alan bilgilere dayanılarak yatırım kararı verilmesi beklentilerinize uygun sonuçlar doğurmayabilir. Sitedeki verilerin doğruluğu ve kullanımından doğabilecek zararlardan sitemiz sorumlu değildir.",
 };

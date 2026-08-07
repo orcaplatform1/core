@@ -102,6 +102,7 @@ export interface FooterSettingsData {
   copyrightText?: string | null;
   platformLinks?: FooterLinkItem[] | null;
   supportLinks?: FooterLinkItem[] | null;
+  legalDisclaimer?: string | null;
 }
 
 export interface LegalPageSummary {

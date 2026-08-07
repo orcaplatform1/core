@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, TrendingUp, TrendingDown, Zap, AlertTriangle, LineChart, Clock, Coins, Globe2 } from "lucide-react";
+import { ShieldAlert, TrendingUp, TrendingDown, Zap, AlertTriangle, Coins, Globe2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "@/components/ui/external-link";
@@ -17,6 +17,7 @@ import {
   type TrendLabel,
   type SignalStatsBlock,
 } from "@/lib/hooks/use-admin-scanner";
+
 
 const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: string; color: string }> = {
   GUCLU: { label: "GÜÇLÜ", bg: "#22C55E22", color: "#22C55E" },
@@ -372,11 +373,10 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
 
 export default function AdminScannerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
-  const [style, setStyle] = useState<"SWING" | "DAY">("SWING");
   const [market, setMarket] = useState<ScanMarket>("CRYPTO");
-  const { data: lastScan, isLoading } = useLastScan(style, market);
-  const { data: tracked } = useTrackedSignals(style, market);
-  const triggerScan = useTriggerScan(style, market);
+  const { data: lastScan, isLoading } = useLastScan(market);
+  const { data: tracked } = useTrackedSignals(market);
+  const triggerScan = useTriggerScan(market);
 
   if (authLoading) {
     return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
@@ -411,8 +411,8 @@ export default function AdminScannerPage() {
           <p className="text-body-sm text-[#A8A6A0]">
             Sadece kişisel kullanım — öğrencilere kapalı.{" "}
             {market === "CRYPTO"
-              ? "Binance top 200 kripto, 15 dakikada bir otomatik tarama."
-              : "Yahoo Finance forex majörleri + emtia (XAUUSD, XAGUSD, BRENT, WTI...), 15 dakikada bir otomatik tarama."}
+              ? "Binance top 50 kripto (hacme göre), ICT/SMC Breakout & Retest, 15 dakikada bir otomatik tarama."
+              : "Yahoo Finance forex majörleri + emtia (XAUUSD, XAGUSD, BRENT, WTI...), ICT Likidite Süpürme, 15 dakikada bir otomatik tarama."}
           </p>
         </div>
         <Link href="/manage" className="text-body-sm text-primary hover:underline">
@@ -421,36 +421,6 @@ export default function AdminScannerPage() {
       </div>
 
       <div className="space-y-4">
-        <div>
-          <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Strateji</p>
-          <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-md">
-            <button
-              type="button"
-              onClick={() => setStyle("SWING")}
-              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
-                style === "SWING"
-                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              }`}
-            >
-              <LineChart size={16} />
-              Swing Trade
-            </button>
-            <button
-              type="button"
-              onClick={() => setStyle("DAY")}
-              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
-                style === "DAY"
-                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              }`}
-            >
-              <Clock size={16} />
-              Day Trade
-            </button>
-          </div>
-        </div>
-
         <div>
           <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Piyasa</p>
           <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-md">

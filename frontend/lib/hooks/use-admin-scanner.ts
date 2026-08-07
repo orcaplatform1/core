@@ -1,7 +1,6 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-export type ScanStyle = "SWING" | "DAY";
 export type ScanMarket = "CRYPTO" | "FOREX";
 export type TrendLabel = "PRO_TREND" | "COUNTER_TREND";
 export type ScanSignal = {
@@ -36,21 +35,18 @@ export type ScanResultRow = {
   results: ScanResultData;
   createdAt: string;
 };
-export function useLastScan(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
+export function useLastScan(market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "last", style, market],
-    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?style=${style}&market=${market}`),
+    queryKey: ["admin", "scanner", "last", market],
+    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?market=${market}`),
   });
 }
-export function useTriggerScan(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
+export function useTriggerScan(market: ScanMarket = "CRYPTO") {
   const qc = useQueryClient();
-  const path =
-    market === "FOREX"
-      ? style === "DAY" ? "/scanner/scan/forex/day-trade" : "/scanner/scan/forex"
-      : style === "DAY" ? "/scanner/scan/day-trade" : "/scanner/scan";
+  const path = market === "FOREX" ? "/scanner/scan/forex/day-trade" : "/scanner/scan/day-trade";
   return useMutation({
     mutationFn: () => apiClient<{ message: string }>(path, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", style, market] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", market] }),
   });
 }
 export function useLivePrice(symbol: string, enabled: boolean, market: ScanMarket = "CRYPTO") {
@@ -92,10 +88,10 @@ export type TrackedSignalsData = {
     counterTrend: SignalStatsBlock;
   };
 };
-export function useTrackedSignals(style: ScanStyle = "SWING", market: ScanMarket = "CRYPTO") {
+export function useTrackedSignals(market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "tracked", style, market],
-    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?style=${style}&market=${market}`),
+    queryKey: ["admin", "scanner", "tracked", market],
+    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?market=${market}`),
     refetchInterval: 30000,
   });
 }

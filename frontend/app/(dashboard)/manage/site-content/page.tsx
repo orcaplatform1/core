@@ -835,6 +835,14 @@ export default function SiteContentPage() {
                   onChange={(e) => setFooterForm((f) => ({ ...f, copyrightText: e.target.value }))}
                 />
               </Field>
+              <Field label="Yasal uyarı metni (footer altında)">
+                <textarea
+                  className={inputClass()}
+                  rows={4}
+                  value={footerForm.legalDisclaimer ?? ""}
+                  onChange={(e) => setFooterForm((f) => ({ ...f, legalDisclaimer: e.target.value }))}
+                />
+              </Field>
 
               <div className="space-y-2">
                 <p className="text-label text-[#A8A6A0]">Platform linkleri (footer)</p>

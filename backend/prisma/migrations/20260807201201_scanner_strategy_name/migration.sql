@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "ScanResult" ADD COLUMN     "strategyName" TEXT NOT NULL DEFAULT 'SUPPLY_DEMAND_ZONE';
+
+-- AlterTable
+ALTER TABLE "TrackedSignal" ADD COLUMN     "strategyName" TEXT NOT NULL DEFAULT 'SUPPLY_DEMAND_ZONE';

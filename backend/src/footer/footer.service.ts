@@ -18,6 +18,8 @@ export class FooterService {
         data: {
           companyName: 'ORCA',
           copyrightText: '© 2026 ORCA. Tüm hakları saklıdır. Bu platformda yer alan tüm içerikler, tasarımlar, marka unsurları ve fikrî mülkiyet hakları ilgili yasal mevzuat kapsamında korunmaktadır.',
+          legalDisclaimer:
+            'Yasal Uyarı: Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir. Bu görüşler mali durumunuz ile risk ve getiri tercihlerinize uygun olmayabilir. Sadece burada yer alan bilgilere dayanılarak yatırım kararı verilmesi beklentilerinize uygun sonuçlar doğurmayabilir. Sitedeki verilerin doğruluğu ve kullanımından doğabilecek zararlardan sitemiz sorumlu değildir.',
         },
       });
     }

@@ -96,10 +96,7 @@ export function SiteFooter({
         </div>
 
         <p className="text-body-xs mt-12 border-t border-divider pt-8 leading-relaxed text-muted-foreground/70">
-          Yasal Uyarı: Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir.
-          Bu görüşler mali durumunuz ile risk ve getiri tercihlerinize uygun olmayabilir. Sadece burada yer alan
-          bilgilere dayanılarak yatırım kararı verilmesi beklentilerinize uygun sonuçlar doğurmayabilir. Sitedeki
-          verilerin doğruluğu ve kullanımından doğabilecek zararlardan sitemiz sorumlu değildir.
+          {footer.legalDisclaimer ?? DEFAULT_FOOTER_SETTINGS.legalDisclaimer}
         </p>
 
         <div className="mt-6 flex flex-col-reverse items-center gap-6 pt-2 sm:flex-row sm:justify-between">

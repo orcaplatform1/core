@@ -827,11 +827,12 @@ model StatsSnapshot {
 }
 
 model ScanResult {
-  id        String    @id @default(cuid())
-  results   Json
-  style     String    @default("SWING")
-  market    AssetType @default(CRYPTO)
-  createdAt DateTime  @default(now())
+  id           String    @id @default(cuid())
+  results      Json
+  style        String    @default("SWING")
+  market       AssetType @default(CRYPTO)
+  strategyName String    @default("SUPPLY_DEMAND_ZONE")
+  createdAt    DateTime  @default(now())
 }
 
 model TrackedSignal {
@@ -854,6 +855,7 @@ model TrackedSignal {
   // ikiye ayirip hangisinin daha iyi performans verdigini olcmek icin (bkz.
   // scanner.service.ts getTrackedSignals()).
   trendLabel      String    @default("PRO_TREND")
+  strategyName    String    @default("SUPPLY_DEMAND_ZONE")
   createdAt       DateTime  @default(now())
   triggeredAt     DateTime?
   closedAt        DateTime?
@@ -1056,16 +1058,17 @@ model Page {
 }
 
 model FooterSettings {
-  id            String   @id @default(cuid())
-  companyName   String   @default("ORCA")
-  description   String?
-  contactEmail  String?
-  contactPhone  String?
-  socialLinks   Json?
-  copyrightText String?
-  platformLinks Json?
-  supportLinks  Json?
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  companyName     String   @default("ORCA")
+  description     String?
+  contactEmail    String?
+  contactPhone    String?
+  socialLinks     Json?
+  copyrightText   String?
+  platformLinks   Json?
+  supportLinks    Json?
+  legalDisclaimer String?  @db.Text
+  updatedAt       DateTime @updatedAt
 }
 
 model SiteContentSettings {

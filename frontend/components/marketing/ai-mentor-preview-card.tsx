@@ -97,7 +97,7 @@ export function AiMentorPreviewCard({
         <div className="max-h-56 space-y-2 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="card-inner rounded-2xl rounded-tl-sm px-3 py-2 text-body-xs text-muted-foreground">
-              Kişiselleştirilmiş eğitim planın için benimle finans konusunda biraz sohbet et.
+              Kişiselleştirilmiş eğitim planın için bana biraz bilgi vermeni istiyorum.
             </div>
           ) : (
             messages.map((m, i) =>
@@ -130,7 +130,7 @@ export function AiMentorPreviewCard({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={user ? "Bir soru sor..." : "Mentor kullanmak için giriş yap..."}
+            placeholder={user ? "" : "Mentor kullanmak için giriş yap..."}
             className="flex-1 bg-transparent text-body-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
           <button

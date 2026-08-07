@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ScannerService } from './scanner.service';
@@ -13,42 +13,34 @@ export class ScannerController {
     private readonly scannerService: ScannerService,
     @InjectQueue('scanner') private readonly scannerQueue: Queue,
   ) {}
-  @Post('scan')
-  async runScan() {
-    await this.scannerQueue.add('hourly-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
-    return { message: 'Tarama kuyruğa eklendi, arka planda çalışıyor. Birkaç dakika sonra "son tarama" sonucunu kontrol et.' };
-  }
+  // Swing (kripto + forex) tamamen kaldirildi - sadece Day-Trade taramalari kalir.
   @Post('scan/day-trade')
   async runDayTradeScan() {
     await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
-    return { message: 'Day Trade taraması kuyruğa eklendi (sadece killzone saatlerinde gerçek sonuç üretir).' };
-  }
-  @Post('scan/forex')
-  async runForexScan() {
-    await this.scannerQueue.add('forex-swing-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
-    return { message: 'Forex taraması kuyruğa eklendi, arka planda çalışıyor.' };
+    return { message: 'Day Trade taraması (ICT/SMC Breakout & Retest, kripto) kuyruğa eklendi.' };
   }
   @Post('scan/forex/day-trade')
   async runForexDayTradeScan() {
     await this.scannerQueue.add('forex-day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
-    return { message: 'Forex Day Trade taraması kuyruğa eklendi.' };
+    return { message: 'Forex Day Trade taraması (ICT likidite süpürme) kuyruğa eklendi.' };
   }
   @Get('last')
-  getLastScan(@Query('style') style?: string, @Query('market') market?: string) {
-    return this.scannerService.getLastScan(style || 'SWING', market || 'CRYPTO');
+  getLastScan(@Query('market') market?: string) {
+    return this.scannerService.getLastScan('DAY', market || 'CRYPTO');
   }
   @Get('price/:symbol')
   getLivePrice(@Param('symbol') symbol: string, @Query('market') market?: string) {
     return this.scannerService.getLivePrice(symbol, market || 'CRYPTO');
   }
   @Get('tracked')
-  getTrackedSignals(@Query('style') style?: string, @Query('market') market?: string) {
-    return this.scannerService.getTrackedSignals(style || 'SWING', market || 'CRYPTO');
+  getTrackedSignals(@Query('market') market?: string) {
+    return this.scannerService.getTrackedSignals('DAY', market || 'CRYPTO');
   }
 
-  @Post('refresh-winrate')
-  async refreshWinRate() {
-    await this.scannerQueue.add('refresh-winrate', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
-    return { message: 'Basari orani hesaplama kuyruga eklendi, sembol sayisina gore birkac dakika surebilir.' };
+  // Kripto strateji degisikligi (Supply/Demand -> ICT/SMC Breakout & Retest)
+  // sonrasi eski kripto sinyallerini bir kez temizlemek icin. Forex'e dokunmaz.
+  @Delete('tracked/crypto')
+  async clearCryptoSignals() {
+    return this.scannerService.clearCryptoSignals();
   }
 }

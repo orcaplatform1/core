@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import { HeroBackground } from "./hero-background";
 import { AiMentorPreviewCard } from "./ai-mentor-preview-card";
@@ -31,19 +32,19 @@ export function Hero({
       <div className="relative mx-auto grid max-w-[1440px] grid-cols-1 gap-12 px-4 py-20 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:items-end lg:px-8 lg:py-28">
         <div className="max-w-2xl">
           {badge && (
-            <span className="mb-6 inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary/25 bg-primary/10 px-3 py-1.5 text-badge text-primary">
+            <span className="mb-6 inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-2xl border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold sm:text-xs text-primary">
               {badge}
             </span>
           )}
           <h1 className="text-display-md text-foreground">
             {title}
           </h1>
-          <p className="mt-5 max-w-xl text-body text-muted-foreground">
+          <p className="mt-5 max-w-xl text-sm text-muted-foreground sm:text-base">
             {description}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <PremiumGlowButton
+            <Button
               size="lg"
               render={
                 <Link href={primaryCta.href}>

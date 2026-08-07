@@ -302,7 +302,7 @@ body {
 .premium-glow-card {
   position: relative;
   border-radius: var(--radius-2xl);
-  padding: 3px;
+  padding: 2px;
   overflow: hidden;
   isolation: isolate;
   box-shadow:
@@ -339,23 +339,44 @@ body {
    ================================================================ */
 
 /* Display (Hero) */
+/* Display class'ları mobil ekranda çok büyük kaldığı için 768px altında küçültülmüş
+   bir taban boyut kullanılıyor, tam spec boyutu md: breakpoint'inden itibaren geçerli
+   oluyor. Bu class'lar Tailwind'in responsive prefix sistemine (sm:/md:) girmediği
+   için (@theme dışında sade CSS class'lar) duyarlılık burada, tanımın içinde. */
 .text-display-xl {
-  font-size: 72px;
+  font-size: 36px;
   font-weight: 700;
-  line-height: 80px;
-  letter-spacing: -0.04em;
+  line-height: 42px;
+  letter-spacing: -0.02em;
 }
 .text-display-lg {
-  font-size: 60px;
+  font-size: 32px;
   font-weight: 700;
-  line-height: 68px;
-  letter-spacing: -0.035em;
+  line-height: 38px;
+  letter-spacing: -0.02em;
 }
 .text-display-md {
-  font-size: 48px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 56px;
-  letter-spacing: -0.03em;
+  line-height: 34px;
+  letter-spacing: -0.015em;
+}
+@media (min-width: 768px) {
+  .text-display-xl {
+    font-size: 72px;
+    line-height: 80px;
+    letter-spacing: -0.04em;
+  }
+  .text-display-lg {
+    font-size: 60px;
+    line-height: 68px;
+    letter-spacing: -0.035em;
+  }
+  .text-display-md {
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -0.03em;
+  }
 }
 
 /* Sayfa Başlıkları */
