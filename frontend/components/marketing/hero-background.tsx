@@ -2,8 +2,9 @@ import Image from "next/image";
 
 /**
  * Hero arkaplanı. `imageSrc` verilmediğinde koyu gradient + parçacık placeholder
- * gösterilir; verildiğinde görsel yavaş, sürekli bir zoom-in/zoom-out döngüsüyle
- * (.hero-bg-zoom, bkz. globals.css) "nefes alır" — prefers-reduced-motion'da kapanır.
+ * gösterilir; verildiğinde görsel yavaş bir Ken Burns döngüsüyle (zoom + hafif çapraz
+ * pan, .hero-bg-zoom, bkz. globals.css) kayar, üzerine aynı ritimde nabız atan bir
+ * vignette (.hero-vignette-pulse) biner — prefers-reduced-motion'da ikisi de kapanır.
  */
 export function HeroBackground({ imageSrc, fill = false }: { imageSrc?: string; fill?: boolean }) {
   return (
@@ -35,7 +36,8 @@ export function HeroBackground({ imageSrc, fill = false }: { imageSrc?: string; 
           unoptimized
           className="hero-bg-zoom object-cover object-[58%_38%] md:object-[72%_38%]"
         />
-      ) : (
+      ) : null}
+      {!imageSrc && (
         <div
           className="absolute inset-0"
           style={{
@@ -62,6 +64,16 @@ export function HeroBackground({ imageSrc, fill = false }: { imageSrc?: string; 
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-transparent" />
+      {imageSrc && (
+        <div
+          className="hero-vignette-pulse pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 50%, transparent 40%, rgba(5,7,15,0.75) 100%), " +
+              "radial-gradient(55% 55% at 72% 30%, rgba(59,91,255,0.35), transparent 70%)",
+          }}
+        />
+      )}
     </div>
   );
 }

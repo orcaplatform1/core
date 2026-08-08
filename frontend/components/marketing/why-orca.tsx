@@ -47,7 +47,7 @@ export function WhyOrca({ title, items }: { title: string; items: WhyOrcaItemDat
 
   return (
     <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mb-10 text-center">
+      <div className="mb-10">
         <h2 className="text-h2 text-foreground">{title}</h2>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

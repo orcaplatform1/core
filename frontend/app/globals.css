@@ -195,22 +195,54 @@ body {
   background-attachment: fixed;
 }
 
-/* Hero arka plan görseli — nefes alır gibi sürekli zoom efekti */
+/* Hero arka plan görseli — Ken Burns: sabit çapraz pan yerine 4 duraklı, dönüş
+   yönü hep değişen bir sürüklenme rotası (tek eksende gidip-gelmek "nefes almak"
+   gibi görünüyordu; burada balina her durakta farklı yöne kayarak yüzüyor hissi
+   veriyor). %0 ile %100 aynı olduğu için "alternate" gerekmiyor, döngü kesintisiz. */
 @keyframes hero-bg-zoom {
-  from {
-    transform: scale(1);
+  0% {
+    transform: scale(1.04) translate(0%, 0%);
   }
-  to {
-    transform: scale(1.1);
+  25% {
+    transform: scale(1.14) translate(-5%, 2.5%);
+  }
+  50% {
+    transform: scale(1.22) translate(-2%, 4.5%);
+  }
+  75% {
+    transform: scale(1.12) translate(3%, 1.5%);
+  }
+  100% {
+    transform: scale(1.04) translate(0%, 0%);
   }
 }
 .hero-bg-zoom {
-  animation: hero-bg-zoom 5s ease-in-out infinite alternate;
+  animation: hero-bg-zoom 22s ease-in-out infinite;
   will-change: transform;
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-bg-zoom {
     animation: none;
+  }
+}
+
+/* Hero vignette — kenarlarda koyulaşan + marka mavisiyle hafif parlayan katman,
+   zoom ile aynı ritimde nabız gibi atarak derinlik hissini güçlendiriyor */
+@keyframes hero-vignette-pulse {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+.hero-vignette-pulse {
+  animation: hero-vignette-pulse 11s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-vignette-pulse {
+    animation: none;
+    opacity: 0.6;
   }
 }
 
