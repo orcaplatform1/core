@@ -266,10 +266,9 @@ body {
   inset: -100%;
   /* Onceki blue->purple->blue gecisi renk kontrasti cok dusuktu - donus DOM'da
      dogru ilerliyordu (getComputedStyle ile dogrulandi) ama goze donuyormus gibi
-     gorunmuyordu (AI Mentor kutusunda daha once yasanan ayni sorun, bkz.
-     .premium-glow-card::before). Ayni "kuyruklu yildiz" cozumu: cogunlukla
-     mavi/mor zemin + parlak beyaz-mor bir flas bandi, boylece donus goze net
-     carpiyor. */
+     gorunmuyordu. "Kuyruklu yildiz" cozumu: cogunlukla mavi/mor zemin + parlak
+     beyaz-mor bir flas bandi, boylece donus goze net carpiyor (AI Mentor
+     kutusundaki .premium-glow-card de ayni renk mantigini kullanir, bkz. asagida). */
   background: conic-gradient(from 0deg, #3B5BFF 0%, #3B5BFF 45%, #8B5CF6 60%, #FFFFFF 72%, #C4B5FD 80%, #3B5BFF 92%, #3B5BFF 100%);
   animation: premium-glow-spin 5s linear infinite;
   will-change: transform;
@@ -289,47 +288,55 @@ body {
   border-radius: 999px !important;
 }
 /* Kart varyantı: AI Mentor kutusu gibi arka planı TAMAMEN transparan kalması gereken
-   kartların çerçevesi için. @property ile açı animasyonu DOM'da doğru ilerliyor olsa da
-   görsel olarak fark edilmeyecek kadar yumuşak kalıyordu; bunun yerine butondaki gibi
-   gerçekten "dönen" bir görünüm için ayrı bir maskeleme katmanı + o katmanın İÇİNDE
-   transform:rotate ile dönen büyük bir conic-gradient kare kullanılıyor. Maskenin
-   kendisi hiç rotate edilmediği için halka her açıda karta birebir oturuyor; sadece
-   içindeki renk deseni dönüyor — merkez gerçekten boş (mask ile oyulmuş) olduğu için
-   backdrop-blur üzerinden hiçbir renk sızmıyor. Renk: mor yok, sadece elektrik mavisi
-   tonları (Primary Blue / Blue Glow / Primary Light). */
-/* Not: CSS mask (content-box/border-box XOR) ile "gerçek delik" denendi ama mask
-   uygulanmış bir eleman altında sadece transform ile dönen bir katman olduğunda
-   tarayıcı her karede yeniden boyamıyor — halka DOM'da doğru dönüyor ama ekranda
-   donuk kalıyor (test edilip doğrulandı). Bu yüzden butondaki KANITLANMIŞ teknik
-   kullanılıyor: overflow:hidden + padding + döner büyük conic-gradient. İçerik
-   (.premium-glow-card > :last-child, yani Card) sayfa arka planıyla birebir aynı
-   koyu tonda (bg-background) tutuluyor — mor/degrade dolgu yok, göz açısından
-   "transparan" hissi veriyor ama halka her zaman net dönüyor. */
+   kartların çerçevesi için — hero'nun üstünde oturduğu için içerik gerçekten şeffaf
+   olmalı (arkadaki hero görünmeli), bu yüzden halka/mask/dönen-büyük-katman
+   tekniklerinin hiçbiri (bkz. .premium-glow-ring) burada kullanılamaz: hepsi merkezi
+   opak bir "örtü" ile kapatmaya dayanıyor. Bunun yerine border-image: border-image
+   tanım gereği SADECE border şeridine boyar, content/padding kutusuna hiç dokunmaz —
+   yani merkez gerçekten boş kalır ve arkadaki hero olduğu gibi görünür. Açı animasyonu
+   @property ile döndürülüyor (transform değil — border-image zaten yalnızca kenarda
+   olduğu için "dönen büyük katman" derdi yok, dolayısıyla önceki mask+transform
+   repaint bug'ı burada devreye girmiyor). border-image border-radius'u yok saydığı
+   için (tüm tarayıcılarda bilinen kısıt) köşeleri yuvarlamak için ayrıca clip-path
+   kullanılıyor. Renk: mor yok, sadece elektrik mavisi tonları (Primary Blue / Blue
+   Glow / Primary Light). */
+@property --pg-card-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes premium-glow-card-spin {
+  from {
+    --pg-card-angle: 0deg;
+  }
+  to {
+    --pg-card-angle: 360deg;
+  }
+}
 .premium-glow-card {
   position: relative;
   border-radius: var(--radius-2xl);
-  padding: 2px;
-  overflow: hidden;
-  isolation: isolate;
+  border: 2px solid transparent;
+  clip-path: inset(0 round var(--radius-2xl));
+  border-image: conic-gradient(
+      from var(--pg-card-angle),
+      #3B5BFF 0%,
+      #3B5BFF 55%,
+      #5A7CFF 68%,
+      #FFFFFF 75%,
+      #8FB8FF 82%,
+      #3B5BFF 92%,
+      #3B5BFF 100%
+    )
+    1;
+  animation: premium-glow-card-spin 5s linear infinite;
   box-shadow:
     0 0 18px -6px rgba(59, 91, 255, 0.4),
     0 0 28px -10px rgba(90, 124, 255, 0.32);
 }
-.premium-glow-card::before {
-  content: "";
-  position: absolute;
-  inset: -100%;
-  background: conic-gradient(from 0deg, #3B5BFF 0%, #3B5BFF 55%, #5A7CFF 68%, #FFFFFF 75%, #8FB8FF 82%, #3B5BFF 92%, #3B5BFF 100%);
-  animation: premium-glow-spin 5s linear infinite;
-}
-.premium-glow-card > :last-child {
-  position: relative;
-  z-index: 1;
-  border-radius: inherit;
-}
 @media (prefers-reduced-motion: reduce) {
   .premium-glow-ring::before,
-  .premium-glow-card::before {
+  .premium-glow-card {
     animation: none;
   }
 }
@@ -342,7 +349,15 @@ body {
    kaplardı (sadece halka degil), bu da AI Mentor kutusunda daha once
    yasanan sorunun ayni sebebi.  */
 .why-orca-badge-glow {
-  position: relative;
+  /* NOT: position BURADA set edilmiyor - eleman zaten JSX'te Tailwind'in
+     "absolute" utility'siyle konumlaniyor (kartin sol-ust kosesinde). Burada
+     "position: relative" yazmak, cakisma durumunda (hangi kuralin CSS
+     derlemesinde daha sonra geldigine bagli olarak) "absolute"nin uzerine
+     yazip elemani normal akisa geri dondurebiliyor - bu da kartin govdesini
+     asagi itip resmin ustunde bosluk birakiyordu (bkz. kullanici raporu).
+     "absolute" (veya "fixed") zaten kendi ::before pseudo-elemani icin
+     gecerli bir konumlandirma baglami olusturdugundan ayrica relative
+     gerekmiyor. */
   display: inline-flex;
   width: fit-content;
   border-radius: 999px;
@@ -376,6 +391,19 @@ body {
   .why-orca-badge-glow::before {
     animation: none;
   }
+}
+
+/* Uzmanlik Programlari kartlarindaki (.program-card-accent) hover davranisiyla
+   ayni - fare ustune gelince kenarlik ve disa dogru bir glow kartin kendi
+   renginde beliriyor. Program kartlari sabit 3 seviye oldugu icin renk
+   [data-level="X"]:hover seçicileriyle sabitlenmisti; burada her kartin
+   kendi rengi (--why-orca-glow, ayni degisken rozet halkasiyla paylasiliyor)
+   oldugundan color-mix() ile dinamik olarak turetiliyor. */
+.why-orca-card-accent:hover {
+  border-color: color-mix(in srgb, var(--why-orca-glow) 60%, transparent) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--why-orca-glow) 40%, transparent),
+    0 20px 45px -16px color-mix(in srgb, var(--why-orca-glow) 55%, transparent) !important;
 }
 
 /* ================================================================

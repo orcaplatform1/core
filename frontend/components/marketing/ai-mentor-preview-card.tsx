@@ -74,7 +74,7 @@ export function AiMentorPreviewCard({
         className={cn(
           "relative gap-4 overflow-hidden p-5",
           premium
-            ? "border-transparent bg-background shadow-none backdrop-blur-none"
+            ? "border-transparent bg-transparent shadow-none backdrop-blur-none"
             : "border-purple/25 bg-gradient-to-b from-purple/[0.08] via-[var(--glass-bg)] to-[var(--glass-bg)] shadow-[0_24px_60px_-20px_rgba(139,92,246,0.25)]"
         )}
       >
