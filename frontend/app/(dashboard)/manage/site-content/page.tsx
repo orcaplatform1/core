@@ -21,6 +21,7 @@ import type {
   SiteContentSettings,
   ToolItemData,
   ToolPreviewKey,
+  WhyOrcaItemData,
 } from "@/lib/marketing/site-content-types";
 
 const TOOL_PREVIEW_KEYS: ToolPreviewKey[] = ["scanner", "backtest", "simulation", "calendar", "live"];
@@ -175,6 +176,7 @@ export default function SiteContentPage() {
             <TabsTrigger value="partners">Partnerler</TabsTrigger>
             <TabsTrigger value="showcase">Platform Vitrini</TabsTrigger>
             <TabsTrigger value="programs">Programlar</TabsTrigger>
+            <TabsTrigger value="why-orca">Neden ORCA</TabsTrigger>
             <TabsTrigger value="tools">Araçlar</TabsTrigger>
             <TabsTrigger value="community">Topluluk</TabsTrigger>
             <TabsTrigger value="cta">CTA</TabsTrigger>
@@ -532,6 +534,151 @@ export default function SiteContentPage() {
                   )}
                 </div>
               )}
+
+              <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
+                Site İçeriğini Kaydet
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="why-orca" className="mt-4">
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <Field label="Bölüm başlığı">
+                <input className={inputClass()} value={form.whyOrcaTitle} onChange={(e) => set("whyOrcaTitle", e.target.value)} />
+              </Field>
+
+              {form.whyOrcaItems.map((item, i) => (
+                <RowCard
+                  key={i}
+                  onRemove={() =>
+                    set(
+                      "whyOrcaItems",
+                      form.whyOrcaItems.filter((_, idx) => idx !== i)
+                    )
+                  }
+                >
+                  <div className="grid grid-cols-3 gap-2">
+                    <Field label="Sıra anahtarı (slug)">
+                      <input
+                        className={inputClass()}
+                        placeholder="1"
+                        value={item.slug}
+                        onChange={(e) => {
+                          const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                          next[i] = { ...next[i], slug: e.target.value };
+                          set("whyOrcaItems", next);
+                        }}
+                      />
+                    </Field>
+                    <Field label="Rozet metni">
+                      <input
+                        className={inputClass()}
+                        placeholder="ÜCRETSİZ"
+                        value={item.badgeLabel}
+                        onChange={(e) => {
+                          const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                          next[i] = { ...next[i], badgeLabel: e.target.value };
+                          set("whyOrcaItems", next);
+                        }}
+                      />
+                    </Field>
+                    <Field label="Rozet rengi (hex)">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="size-6 shrink-0 rounded-full border border-border"
+                          style={{ backgroundColor: item.badgeColor }}
+                        />
+                        <input
+                          className={inputClass()}
+                          placeholder="#32D66B"
+                          value={item.badgeColor}
+                          onChange={(e) => {
+                            const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                            next[i] = { ...next[i], badgeColor: e.target.value };
+                            set("whyOrcaItems", next);
+                          }}
+                        />
+                      </div>
+                    </Field>
+                  </div>
+
+                  <input
+                    className={inputClass()}
+                    placeholder="Başlık"
+                    value={item.title}
+                    onChange={(e) => {
+                      const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                      next[i] = { ...next[i], title: e.target.value };
+                      set("whyOrcaItems", next);
+                    }}
+                  />
+                  <textarea
+                    className={inputClass()}
+                    rows={2}
+                    placeholder="Açıklama"
+                    value={item.description}
+                    onChange={(e) => {
+                      const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                      next[i] = { ...next[i], description: e.target.value };
+                      set("whyOrcaItems", next);
+                    }}
+                  />
+                  <input
+                    className={inputClass()}
+                    placeholder="Tıklanınca gidilecek link (ör. /tools)"
+                    value={item.href}
+                    onChange={(e) => {
+                      const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                      next[i] = { ...next[i], href: e.target.value };
+                      set("whyOrcaItems", next);
+                    }}
+                  />
+
+                  <Field label="Yedek ikon (görsel yüklenmezse gösterilir)">
+                    <IconSelect
+                      value={item.icon}
+                      onChange={(v) => {
+                        const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                        next[i] = { ...next[i], icon: v };
+                        set("whyOrcaItems", next);
+                      }}
+                    />
+                  </Field>
+
+                  <Field label="Kart görseli (yüklenirse ikonun yerine gösterilir)">
+                    <ImagePreviewInput
+                      placeholder="https://.../kart-gorseli.png"
+                      value={item.imageUrl ?? ""}
+                      onChange={(v) => {
+                        const next: WhyOrcaItemData[] = [...form.whyOrcaItems];
+                        next[i] = { ...next[i], imageUrl: v || null };
+                        set("whyOrcaItems", next);
+                      }}
+                    />
+                  </Field>
+                </RowCard>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  set("whyOrcaItems", [
+                    ...form.whyOrcaItems,
+                    {
+                      slug: String(form.whyOrcaItems.length + 1),
+                      badgeLabel: "",
+                      badgeColor: "#355CFF",
+                      icon: "bot",
+                      imageUrl: null,
+                      title: "",
+                      description: "",
+                      href: "",
+                    },
+                  ])
+                }
+              >
+                <Plus size={14} className="mr-1" /> Kart ekle
+              </Button>
 
               <Button onClick={saveSiteContent} disabled={updateSiteContent.isPending}>
                 Site İçeriğini Kaydet

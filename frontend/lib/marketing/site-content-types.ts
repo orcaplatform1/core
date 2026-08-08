@@ -33,6 +33,20 @@ export interface ToolItemData {
   previewKey: ToolPreviewKey;
 }
 
+export interface WhyOrcaItemData {
+  /** Sıralamayı korumak için kullanılan sabit anahtar ("1".."6" vb.) - liste bu alana göre değil, admin panelindeki sıraya göre gösterilir. */
+  slug: string;
+  badgeLabel: string;
+  /** Hex renk (ör. "#32D66B") - rozet dolgusu ve ikon alanındaki radial glow bu renkten türetilir. */
+  badgeColor: string;
+  icon?: string;
+  /** Admin panelden yüklenirse ikonun yerine gösterilir. */
+  imageUrl?: string | null;
+  title: string;
+  description: string;
+  href: string;
+}
+
 export type CommunityStatAutoMetric = "totalUsers" | "dailyActive";
 
 export interface CommunityStatItemData {
@@ -72,6 +86,9 @@ export interface SiteContentSettings {
   toolsTitle: string;
   toolsSubtitle: string;
   toolsItems: ToolItemData[];
+
+  whyOrcaTitle: string;
+  whyOrcaItems: WhyOrcaItemData[];
 
   communityEnabled: boolean;
   communityTitle: string;

@@ -16,6 +16,7 @@ import {
   Trophy,
   Users,
   Waypoints,
+  Wrench,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ export const MARKETING_ICONS: Record<string, LucideIcon> = {
   shield: Shield,
   zap: Zap,
   rocket: Rocket,
+  wrench: Wrench,
 };
 
 export const MARKETING_ICON_KEYS = Object.keys(MARKETING_ICONS);

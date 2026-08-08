@@ -1,5 +1,6 @@
 import { MessageSquare } from "lucide-react";
 import { Hero } from "@/components/marketing/hero";
+import { WhyOrca } from "@/components/marketing/why-orca";
 import { PartnersBar } from "@/components/marketing/partners-bar";
 import { PlatformShowcase } from "@/components/marketing/platform-showcase";
 import { ExpertisePrograms } from "@/components/marketing/expertise-programs";
@@ -35,6 +36,8 @@ export default async function Home() {
       />
 
       <PartnersBar title={siteContent.partnersTitle} partners={siteContent.partnersItems} />
+
+      <WhyOrca title={siteContent.whyOrcaTitle} items={siteContent.whyOrcaItems} />
 
       <PlatformShowcase data={siteContent.platformShowcase} />
 

@@ -92,6 +92,22 @@ export class UpdateSiteContentDto {
   }[];
 
   @IsOptional()
+  @IsString()
+  whyOrcaTitle?: string;
+
+  @IsOptional()
+  whyOrcaItems?: {
+    slug: string;
+    badgeLabel: string;
+    badgeColor: string;
+    icon?: string;
+    imageUrl?: string | null;
+    title: string;
+    description: string;
+    href: string;
+  }[];
+
+  @IsOptional()
   @IsBoolean()
   communityEnabled?: boolean;
 

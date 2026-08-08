@@ -1095,6 +1095,9 @@ model SiteContentSettings {
   toolsSubtitle String?
   toolsItems    Json?
 
+  whyOrcaTitle String?
+  whyOrcaItems Json?
+
   communityEnabled    Boolean @default(true)
   communityTitle      String?
   communityStats      Json?

@@ -334,6 +334,50 @@ body {
   }
 }
 
+/* "Neden ORCA" kart rozetleri — aynı kanıtlanmış donen-halka teknigi (bkz.
+   .premium-glow-ring) ama sabit mavi/mor yerine her kartın kendi rengini
+   (--why-orca-glow, satır içi style ile set edilir) kullanan bir "kuyruklu
+   yıldız" (comet) varyantı. Rozet arka planı kart zeminiyle (#0D1728) aynı
+   tutuluyor - gercek CSS transparent olsaydı donen katman rozetin TAMAMINI
+   kaplardı (sadece halka degil), bu da AI Mentor kutusunda daha once
+   yasanan sorunun ayni sebebi.  */
+.why-orca-badge-glow {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 1.5px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.why-orca-badge-glow::before {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 55%,
+    var(--why-orca-glow) 70%,
+    #ffffff 78%,
+    var(--why-orca-glow) 86%,
+    transparent 100%
+  );
+  animation: premium-glow-spin 5s linear infinite;
+}
+.why-orca-badge-glow > span {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  border-radius: inherit;
+  background-color: #0d1728;
+}
+@media (prefers-reduced-motion: reduce) {
+  .why-orca-badge-glow::before {
+    animation: none;
+  }
+}
+
 /* ================================================================
    ORCA — TİPOGRAFİ SİSTEMİ (2026-08-07)
    Ana font: Geist Sans (--font-sans). Sayısal/kod/finansal veri: Geist Mono
