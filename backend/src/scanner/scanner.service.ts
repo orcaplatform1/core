@@ -80,8 +80,18 @@ const ICT_EMA_TREND_PERIOD = 200;
 const ICT_ATR_PERIOD = 14;
 // Stop, FVG ucgenindeki en dusuk low'un ATR*bu kat kadar altina konur.
 const ICT_ATR_STOP_MULT = 0.5;
-// TP = Entry + (Entry-Stop) * bu kat (net 1:2 R:R).
+// TP3 (final hedef) = Entry + (Entry-Stop) * bu kat (net 1:2 R:R). TP1/TP2 bu
+// hedefe kademeli ilerler (bkz. ICT_TP1_RR_MULT/ICT_TP2_RR_MULT) - eskiden
+// ucu de ayni degere esitti (tek hedef), 2026-08-10'da 60 gunluk backtest
+// (490 islem) matematiksel sabit R:R hedefinin (%40.1 win rate, +0.204R/islem)
+// "onceki 200 mumun tepesi" gibi yapisal bir hedeften (%34.1 win rate,
+// +0.054R/islem) daha iyi performans gosterdigini kanitladigi icin kademeleme
+// de matematiksel R katlarina dayandirildi.
 const ICT_RR_MULT = 2;
+// TP1: pozisyonun bir kismi burada kapatilir / stop basabasa cekilir.
+const ICT_TP1_RR_MULT = 1;
+// TP2: ara hedef.
+const ICT_TP2_RR_MULT = 1.5;
 // Taranacak en hacimli coin sayisi. 50 -> 75 (2026-08-09 revizyonu): daha
 // genis bir evrende sinyal bulma sansini artirmak icin havuz buyutuldu.
 const ICT_TOP_SYMBOLS = 75;
@@ -91,6 +101,13 @@ const ICT_TOP_SYMBOLS = 75;
 // tetiklenip taramayi tamamen iptal ediyordu (over-filtering), sadece ani
 // cokus filtresi kaldi.
 const ICT_BTC_DROP_PCT = 1.5;
+// BTC kendi 1 saatlik EMA'sinin altindaysa (dusus trendi) hic LONG sinyali
+// uretilmez. 2026-08-10: 60 gunluk backtest (479 islem, kripto) BTC bu trend
+// altindayken tetiklenen sinyallerin de POZITIF (+0.09R/islem) ama BTC
+// trendin ustundeyken (+0.30R/islem, %43.3 win rate vs %36.2) cok daha zayif
+// kaldigini gosterdi - kalite/miktar tercihi geregi bu segment tamamen
+// eleniyor.
+const ICT_BTC_TREND_EMA_PERIOD = 50;
 // EMA200 + hacim ortalamasi + MSB lookback icin gereken minimum mum sayisi.
 const ICT_MIN_CANDLES = 210;
 
@@ -107,8 +124,13 @@ const ICT_MIN_CANDLES = 210;
 const FX_MSS_LOOKBACK = 5;
 // Stop, supurme mumunun en uc low'unun bu kadar pip altina konur.
 const FX_STOP_PIP_BUFFER = 2;
-// TP = Entry + Risk * bu kat (net 1:3 R:R).
+// TP3 (final hedef) = Entry + Risk * bu kat (net 1:3 R:R). TP1/TP2 bu hedefe
+// esit araliklarla kademelenir (bkz. FX_TP1_RR_MULT/FX_TP2_RR_MULT) - kripto
+// tarafinda 2026-08-10'da backtest edilen matematiksel R:R kademelemesiyle
+// tutarlilik icin ayni yontem (sabit R katlari) kullanildi.
 const FX_RR_MULT = 3;
+const FX_TP1_RR_MULT = 1;
+const FX_TP2_RR_MULT = 2;
 // Seans tanimlari (UTC saat, standart/yaygin kabul gorern siniglar - kesin
 // degil, kullanici onayina acik).
 const FX_SESSIONS: { name: string; startHourUtc: number; endHourUtc: number }[] = [
@@ -185,6 +207,22 @@ export class ScannerService {
     }));
   }
 
+  // BTC piyasa trend filtresi icin - interval=1h. Eskiden kaldirilan 15dk
+  // EMA50 filtresi cok gurultuluydu (12.5 saatlik pencere, neredeyse surekli
+  // tetikleniyordu); 1 saatlik EMA50 daha yuksek zaman diliminde, daha
+  // istikrarli bir "piyasa rejimi" olcumu.
+  private async fetchBinance1h(symbol: string, limit: number): Promise<Candle[]> {
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const closed = data.slice(0, -1);
+    return closed.map((c: any) => ({
+      time: c[0], open: parseFloat(c[1]), high: parseFloat(c[2]),
+      low: parseFloat(c[3]), close: parseFloat(c[4]), volume: parseFloat(c[5]),
+    }));
+  }
+
   private async fetchBinanceFundingRate(symbol: string): Promise<number | null> {
     try {
       const url = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`;
@@ -234,20 +272,33 @@ export class ScannerService {
     return recent.reduce((a, b) => a + b, 0) / recent.length;
   }
 
-  // BTC Piyasa Filtresi (2026-08-09 revizyonu): sadece "ani cokus" (Black
-  // Swan) durumu kontrol edilir - BTC'nin son kapanan 15dk mumu
-  // %ICT_BTC_DROP_PCT'ten fazla dustuyse piyasa "guvensiz" sayilir ve o
-  // taramada hic ICT sinyali uretilmez. Onceki "BTC kendi EMA50'sinin
-  // altinda olmasin" sarti tamamen kaldirildi - neredeyse her zaman
-  // tetiklenip taramayi baytan iptal ediyordu (over-filtering). Veri
-  // cekilemezse yine fail-safe olarak guvensiz varsayilir.
+  // BTC Piyasa Filtresi: iki ayri kontrol.
+  // 1) Ani cokus (Black Swan): BTC'nin son kapanan 15dk mumu
+  // %ICT_BTC_DROP_PCT'ten fazla dustuyse piyasa "guvensiz" sayilir (2026-08-09
+  // revizyonu - eskiden burada ayrica 15dk EMA50 sarti da vardi, o
+  // kaldirilmisti cunku neredeyse her zaman tetiklenip taramayi baytan iptal
+  // ediyordu / over-filtering).
+  // 2) BTC Trend Filtresi (2026-08-10, backtest sonucu eklendi): BTC kendi 1
+  // saatlik EMA50'sinin altindaysa piyasa "guvensiz" sayilir - eskiki 15dk
+  // EMA50'den farkli olarak bu daha yuksek zaman dilimi oldugu icin surekli
+  // tetiklenmiyor, gercek bir trend rejimi olcuyor.
+  // Veri cekilemezse yine fail-safe olarak guvensiz varsayilir.
   private async isBtcMarketSafe(): Promise<boolean> {
     try {
-      const btc = await this.fetchBinance15m('BTCUSDT', 5);
-      if (btc.length < 1) return false;
-      const last = btc[btc.length - 1];
+      const btc15m = await this.fetchBinance15m('BTCUSDT', 5);
+      if (btc15m.length < 1) return false;
+      const last = btc15m[btc15m.length - 1];
       const candleChangePct = ((last.close - last.open) / last.open) * 100;
       if (candleChangePct < -ICT_BTC_DROP_PCT) return false;
+
+      const btc1h = await this.fetchBinance1h('BTCUSDT', ICT_BTC_TREND_EMA_PERIOD + 20);
+      if (btc1h.length < ICT_BTC_TREND_EMA_PERIOD + 1) return false;
+      const closes1h = btc1h.map((c) => c.close);
+      const ema50Series = this.ema(closes1h, ICT_BTC_TREND_EMA_PERIOD);
+      const lastEma50 = ema50Series[ema50Series.length - 1];
+      const lastClose1h = closes1h[closes1h.length - 1];
+      if (lastClose1h < lastEma50) return false;
+
       return true;
     } catch {
       return false;
@@ -305,7 +356,9 @@ export class ScannerService {
     const stop = swingLow - atrValue * ICT_ATR_STOP_MULT;
     const risk = entry - stop;
     if (!(risk > 0)) return null;
-    const tp = entry + risk * ICT_RR_MULT;
+    const tp1 = entry + risk * ICT_TP1_RR_MULT;
+    const tp2 = entry + risk * ICT_TP2_RR_MULT;
+    const tp3 = entry + risk * ICT_RR_MULT;
 
     const currentPrice = breakoutCandle.close;
     const stillValid = currentPrice <= entryZoneTop && currentPrice >= entryZoneBottom;
@@ -318,7 +371,7 @@ export class ScannerService {
       `Hacim Onayı: kırılım mumunun hacmi, son ${ICT_VOLUME_LOOKBACK} mum ortalamasının ${ICT_VOLUME_MULT}× katına ulaştı`,
       `Fair Value Gap: giriş bölgesi ${entryZoneBottom.toFixed(6)} - ${entryZoneTop.toFixed(6)}`,
       `Trend Filtresi: fiyat 15dk EMA${ICT_EMA_TREND_PERIOD} üzerinde`,
-      `Risk/Ödül: net 1:${ICT_RR_MULT}`,
+      `Risk/Ödül: TP1 1:${ICT_TP1_RR_MULT}, TP2 1:${ICT_TP2_RR_MULT}, TP3 (final) 1:${ICT_RR_MULT}`,
     ];
 
     return {
@@ -328,9 +381,9 @@ export class ScannerService {
       entryZoneTop,
       entryZoneBottom,
       stop,
-      tp1: tp,
-      tp2: tp,
-      tp3: tp,
+      tp1,
+      tp2,
+      tp3,
       rr: ICT_RR_MULT,
       reasons,
       strength: 'GUCLU',
@@ -405,7 +458,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     const marketSafe = await this.isBtcMarketSafe();
     if (!marketSafe) {
-      console.log(`[scanDayTrade] BTC ani cokus filtresi tetiklendi (son 15dk mum %${ICT_BTC_DROP_PCT}+ dustu), tarama atlandi`);
+      console.log(`[scanDayTrade] BTC piyasa filtresi tetiklendi (ani cokus %${ICT_BTC_DROP_PCT}+ veya 1sa EMA${ICT_BTC_TREND_EMA_PERIOD} altinda), tarama atlandi`);
       console.log(`[scanDayTrade] Filtre öncesi ham aday sayısı: ${rawCandidateCount}`);
       console.log(`[scanDayTrade] BTC/DXY filtresine takılanlar: ${rawCandidateCount}`);
       console.log(`[scanDayTrade] Hacim/Trend filtresine takılanlar: 0`);
@@ -542,7 +595,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     const stop = sweepLow - FX_STOP_PIP_BUFFER * pip;
     const risk = entry - stop;
     if (!(risk > 0)) return null;
-    const tp = entry + risk * FX_RR_MULT;
+    const tp1 = entry + risk * FX_TP1_RR_MULT;
+    const tp2 = entry + risk * FX_TP2_RR_MULT;
+    const tp3 = entry + risk * FX_RR_MULT;
 
     const currentPrice = c3.close;
     const stillValid = currentPrice <= entryZoneTop && currentPrice >= entryZoneBottom;
@@ -554,7 +609,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       `Likidite Süpürme: fiyat önceki seansın en düşük seviyesinin (${prevSessionLow.toFixed(5)}) altına sarktı`,
       `15dk MSB: kırılım mumunun kapanışı, önceki ${FX_MSS_LOOKBACK} mumun en yüksek seviyesini yukarı yönlü kırdı`,
       `Fair Value Gap: giriş bölgesi ${entryZoneBottom.toFixed(5)} - ${entryZoneTop.toFixed(5)} (%50 orta nokta: ${entry.toFixed(5)})`,
-      `Risk/Ödül: net 1:${FX_RR_MULT}`,
+      `Risk/Ödül: TP1 1:${FX_TP1_RR_MULT}, TP2 1:${FX_TP2_RR_MULT}, TP3 (final) 1:${FX_RR_MULT}`,
     ];
 
     return {
@@ -564,9 +619,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       entryZoneTop,
       entryZoneBottom,
       stop,
-      tp1: tp,
-      tp2: tp,
-      tp3: tp,
+      tp1,
+      tp2,
+      tp3,
       rr: FX_RR_MULT,
       reasons,
       strength: 'GUCLU',
