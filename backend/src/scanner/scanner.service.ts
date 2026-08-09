@@ -45,6 +45,23 @@ const STABLECOIN_BASE_ASSETS = new Set([
   'USDC', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'USDP', 'PYUSD', 'USDD', 'GUSD',
 ]);
 
+// Adaylar arasi son 60 mumun getiri korelasyonu bu esigi asarsa (ayni
+// sektor/benzer beta hareket eden varlik), ikinci sembol elenir. Kripto ve
+// forex taramalarinda ortak kullanilir. 0.8 -> 0.88 (2026-08-09 revizyonu):
+// asiri katiydi, benzer hareket eden ama farkli sinyal kalitesine sahip
+// varliklari gereksiz yere siliyordu - esik yukseltilerek daha az agresif
+// eleme yapiliyor.
+const CORRELATION_THRESHOLD = 0.88;
+
+// Bir sembolun TrackedSignal'i kapandiktan (HIT_TP3/HIT_STOP/EXPIRED/
+// INVALIDATED - hepsi closedAt dolduruyor) sonra ayni sembol icin yeni bir
+// sinyal acilmadan once beklenmesi gereken sure. Olmadan: fiyat ayni yapisal
+// seviyede cirpinirsa (whipsaw) tarayici birkac tarama dongusu icinde ayni
+// kirilimi "yeni sinyal" sanip tekrar tekrar aciyordu (kullanici sikayeti:
+// "abc coin 3 kere ayni setup tetiklenmis"). Day-trade sinyallerinin kendi
+// vadesiyle (triggeredAt sonrasi 1 gun) tutarli olmasi icin 24 saat secildi.
+const SIGNAL_REENTRY_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 // --- ICT/SMC Breakout & Retest modeli (SADECE kripto Day-Trade taramasinda
 // kullanilir, bkz. buildIctBreakoutRetestSetup/scanDayTrade). Eski Arz/Talep
 // (Supply/Demand Zone) modeli - buildZoneSetup ve yardimcilari - swing'in
@@ -52,8 +69,10 @@ const STABLECOIN_BASE_ASSETS = new Set([
 // gecmesiyle birlikte hicbir yerden cagrilmadigi icin silindi. ---
 // MSB (Market Structure Break) icin geriye bakilan mum sayisi.
 const ICT_MSB_LOOKBACK = 5;
-// Kirilim mumunun hacmi, ortalama hacmin en az bu kati olmali.
-const ICT_VOLUME_MULT = 1.5;
+// Kirilim mumunun hacmi, ortalama hacmin en az bu kati olmali. 1.5 -> 1.2
+// (2026-08-09 revizyonu): %150 sarti canli piyasada neredeyse hic
+// karsilanmiyordu (over-filtering), esik gevsetildi.
+const ICT_VOLUME_MULT = 1.2;
 // Hacim ortalamasi bu kadar mum uzerinden (kirilim mumu haric) hesaplanir.
 const ICT_VOLUME_LOOKBACK = 20;
 // Trend filtresi icin EMA periyodu - fiyat bu EMA'nin ustunde olmali.
@@ -63,22 +82,29 @@ const ICT_ATR_PERIOD = 14;
 const ICT_ATR_STOP_MULT = 0.5;
 // TP = Entry + (Entry-Stop) * bu kat (net 1:2 R:R).
 const ICT_RR_MULT = 2;
-// Taranacak en hacimli coin sayisi (eski modelde 200'du).
-const ICT_TOP_SYMBOLS = 50;
-// BTC piyasa filtresi icin EMA periyodu.
-const ICT_BTC_EMA_PERIOD = 50;
-// BTC'nin son 15dk mumu bu yuzdeden fazla dusmusse piyasa "guvensiz" sayilir.
+// Taranacak en hacimli coin sayisi. 50 -> 75 (2026-08-09 revizyonu): daha
+// genis bir evrende sinyal bulma sansini artirmak icin havuz buyutuldu.
+const ICT_TOP_SYMBOLS = 75;
+// BTC'nin son 15dk mumu bu yuzdeden fazla dusmusse piyasa "guvensiz" sayilir
+// (ani cokus / Black Swan filtresi). 2026-08-09 revizyonu: BTC'nin kendi
+// EMA50'sinin altinda olmasi sartini kaldirir - o sart neredeyse her zaman
+// tetiklenip taramayi tamamen iptal ediyordu (over-filtering), sadece ani
+// cokus filtresi kaldi.
 const ICT_BTC_DROP_PCT = 1.5;
 // EMA200 + hacim ortalamasi + MSB lookback icin gereken minimum mum sayisi.
 const ICT_MIN_CANDLES = 210;
 
 // --- Forex Day-Trade: ICT Likidite Suprurme (Liquidity Sweep) modeli, SADECE
 // forex day-trade taramasinda kullanilir (bkz. buildForexLiquiditySweepSetup/
-// scanForexDayTrade). 1S trend + 15dk likidite avi + FVG girisi. ---
-// 1S MSS (Market Structure Shift) icin geriye bakilan mum sayisi - kullanici
-// bu sayiyi vermedi, kripto'daki ICT_MSB_LOOKBACK ile tutarlilik icin ayni
-// deger (5) kullaniliyor.
-const FX_1H_MSS_LOOKBACK = 5;
+// scanForexDayTrade). 15dk likidite avi + 15dk MSB + FVG girisi. ---
+// MSB (Market Structure Break) icin geriye bakilan mum sayisi. 2026-08-09
+// revizyonu: onceden 1 saatlik grafik uzerinde ayri bir "1S MSS" sarti vardi
+// (bkz. eski FX_1H_MSS_LOOKBACK) - bu, 15dk'lik likidite supurme/FVG
+// mantigiyla zaman dilimi celiskisi yaratiyor ve over-filtering'e yol
+// aciyordu. Artik MSB kontrolu de kriptodaki gibi dogrudan 15dk grafik
+// uzerinde, supurmeden sonraki kirilim mumuyla yapiliyor; 1S veri cekme
+// ihtiyaci tamamen kaldirildi.
+const FX_MSS_LOOKBACK = 5;
 // Stop, supurme mumunun en uc low'unun bu kadar pip altina konur.
 const FX_STOP_PIP_BUFFER = 2;
 // TP = Entry + Risk * bu kat (net 1:3 R:R).
@@ -208,19 +234,18 @@ export class ScannerService {
     return recent.reduce((a, b) => a + b, 0) / recent.length;
   }
 
-  // BTC Piyasa Filtresi: BTC kendi 15dk EMA50'sinin altindaysa veya son 15dk
-  // mumu %ICT_BTC_DROP_PCT'ten fazla dustuyse piyasa "guvensiz" sayilir - o
-  // taramada hic ICT sinyali uretilmez (spec: "Tum altcoin sinyalleri iptal
-  // edilir"). Veri cekilemezse de guvensiz varsayilir (fail-safe).
+  // BTC Piyasa Filtresi (2026-08-09 revizyonu): sadece "ani cokus" (Black
+  // Swan) durumu kontrol edilir - BTC'nin son kapanan 15dk mumu
+  // %ICT_BTC_DROP_PCT'ten fazla dustuyse piyasa "guvensiz" sayilir ve o
+  // taramada hic ICT sinyali uretilmez. Onceki "BTC kendi EMA50'sinin
+  // altinda olmasin" sarti tamamen kaldirildi - neredeyse her zaman
+  // tetiklenip taramayi baytan iptal ediyordu (over-filtering). Veri
+  // cekilemezse yine fail-safe olarak guvensiz varsayilir.
   private async isBtcMarketSafe(): Promise<boolean> {
     try {
-      const btc = await this.fetchBinance15m('BTCUSDT', ICT_BTC_EMA_PERIOD + 20);
-      if (btc.length < ICT_BTC_EMA_PERIOD + 1) return false;
-      const closes = btc.map((c) => c.close);
-      const ema50Series = this.ema(closes, ICT_BTC_EMA_PERIOD);
-      const lastEma50 = ema50Series[ema50Series.length - 1];
+      const btc = await this.fetchBinance15m('BTCUSDT', 5);
+      if (btc.length < 1) return false;
       const last = btc[btc.length - 1];
-      if (last.close < lastEma50) return false;
       const candleChangePct = ((last.close - last.open) / last.open) * 100;
       if (candleChangePct < -ICT_BTC_DROP_PCT) return false;
       return true;
@@ -375,43 +400,54 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   // ICT_TOP_SYMBOLS coin, 15 dakikalik mumlar uzerinde taranir. Tarama basina
   // BIR kez BTC piyasa filtresi kontrol edilir - guvensizse hic aday uretilmez.
   async scanDayTrade() {
+    const symbolList = await this.fetchTopBinanceSymbols(ICT_TOP_SYMBOLS);
+    const rawCandidateCount = symbolList.length;
+
     const marketSafe = await this.isBtcMarketSafe();
     if (!marketSafe) {
-      console.log('[scanDayTrade] BTC piyasa filtresi tetiklendi (EMA50 altinda veya son mum %1.5+ dustu), tarama atlandi');
+      console.log(`[scanDayTrade] BTC ani cokus filtresi tetiklendi (son 15dk mum %${ICT_BTC_DROP_PCT}+ dustu), tarama atlandi`);
+      console.log(`[scanDayTrade] Filtre öncesi ham aday sayısı: ${rawCandidateCount}`);
+      console.log(`[scanDayTrade] BTC/DXY filtresine takılanlar: ${rawCandidateCount}`);
+      console.log(`[scanDayTrade] Hacim/Trend filtresine takılanlar: 0`);
+      console.log(`[scanDayTrade] Korelasyondan elenenler: 0`);
+      console.log(`[scanDayTrade] Kuyruğa/SUPER_ADMIN'e başarıyla gönderilen sinyal sayısı: 0`);
       return [];
     }
 
-    const symbolList = await this.fetchTopBinanceSymbols(ICT_TOP_SYMBOLS);
-
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
+    // MSB + hacim + FVG + EMA200 trend sartlarinin hepsi buildIctBreakoutRetestSetup
+    // icinde tek fonksiyonda birlesik oldugu icin bu sayac hepsini kapsar.
+    let structureFiltered = 0;
 
     for (const symbol of symbolList) {
       try {
         const candles = await this.fetchBinance15m(symbol, 300);
-        if (candles.length < ICT_MIN_CANDLES) continue;
+        if (candles.length < ICT_MIN_CANDLES) { structureFiltered++; continue; }
 
         const setup = this.buildIctBreakoutRetestSetup(candles);
-        if (!setup) continue;
+        if (!setup) { structureFiltered++; continue; }
 
         const closes = candles.slice(-60).map((c) => c.close);
         returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
 
         candidates.push({ symbol, ...setup, winRatePercent: null, fundingRate: null, style: 'DAY' });
-      } catch { continue; }
+      } catch { structureFiltered++; continue; }
       await new Promise((r) => setTimeout(r, 150));
     }
 
     const selected: any[] = [];
     for (const c of candidates) {
-      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
+      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > CORRELATION_THRESHOLD);
       if (!tooCorrelated) selected.push(c);
     }
+    const correlationFiltered = candidates.length - selected.length;
 
-    console.log(
-      `[scanDayTrade] ICT_BREAKOUT_RETEST: taranan=${symbolList.length} bulunanAday=${candidates.length} ` +
-      `korelasyonSonrasi(selected)=${selected.length}`,
-    );
+    console.log(`[scanDayTrade] Filtre öncesi ham aday sayısı: ${rawCandidateCount}`);
+    console.log(`[scanDayTrade] BTC/DXY filtresine takılanlar: 0`);
+    console.log(`[scanDayTrade] Hacim/Trend filtresine takılanlar: ${structureFiltered}`);
+    console.log(`[scanDayTrade] Korelasyondan elenenler: ${correlationFiltered}`);
+    console.log(`[scanDayTrade] Kuyruğa/SUPER_ADMIN'e başarıyla gönderilen sinyal sayısı: ${selected.length}`);
 
     for (const s of selected) {
       s.aiCommentary = await this.interpretWithAI(s.symbol, s);
@@ -453,28 +489,25 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   // Forex Day-Trade: ICT Likidite Supurme (Liquidity Sweep) modeli. Kripto'daki
   // duz devam/kirilim yapisindan farkli olarak burada bir GERI CEKILME +
   // LIKIDITE AVI + TERSINE DONUS yapisi araniyor:
-  //  1) 1S MSS: 1 saatlik seride son kapanan mum, onceki FX_1H_MSS_LOOKBACK
-  //     mumun en yuksegini kirip uzerinde kapanmis olmali (ana yon LONG).
-  //  2) 15dk Likidite Supurme: bir onceki seansin en dusuk seviyesinin altina
+  //  1) 15dk Likidite Supurme: bir onceki seansin en dusuk seviyesinin altina
   //     bir 15dk mumun FITILI sarkmali (kapanisin altinda olmasina gerek yok).
+  //  2) 15dk MSB (Market Structure Break, 2026-08-09 revizyonu): supurmeden
+  //     sonraki kirilim mumu (FVG'nin 3. mumu), onceki FX_MSS_LOOKBACK mumun
+  //     en yuksek seviyesini yukari yonlu kirip uzerinde kapanmis olmali -
+  //     kriptodaki MSB kontroluyle ayni mantik, artik ayri bir 1 saatlik
+  //     zaman dilimine degil dogrudan ayni 15dk seriye bakiliyor (onceki
+  //     surumde 1S ve 15dk arasinda zaman dilimi celiskisi olusuyordu).
   //  3) Tersine Donus + FVG: supurmeden SONRA gelen 3 mumluk yapida (kripto ile
   //     ayni yorum: candle[n-3]->candle[n-2]->candle[n-1], candle[n-1] hem
-  //     tersine donus hem FVG'nin 3. mumu) FVG olusmali: candle[n-1].low >
+  //     MSB/tersine donus hem FVG'nin 3. mumu) FVG olusmali: candle[n-1].low >
   //     candle[n-3].high.
   // Entry = FVG kutusunun %50 orta noktasi (kripto'dan farkli - kripto'da ust
   // siniriydi). Stop = supurme mumunun en uc low'u - FX_STOP_PIP_BUFFER pip.
   // TP = Entry + Risk * FX_RR_MULT (net 1:3).
-  private buildForexLiquiditySweepSetup(symbol: string, hourly: Candle[], fifteenMin: Candle[]): Setup | null {
-    if (hourly.length < FX_1H_MSS_LOOKBACK + 1 || fifteenMin.length < 30) return null;
+  private buildForexLiquiditySweepSetup(symbol: string, fifteenMin: Candle[]): Setup | null {
+    if (fifteenMin.length < FX_MSS_LOOKBACK + 5) return null;
 
-    // 1) 1S MSS - ana yon LONG mu?
-    const hN = hourly.length;
-    const breakout1h = hourly[hN - 1];
-    const prior1hHighs = hourly.slice(hN - 1 - FX_1H_MSS_LOOKBACK, hN - 1).map((c) => c.high);
-    if (prior1hHighs.length < FX_1H_MSS_LOOKBACK) return null;
-    if (!(breakout1h.close > Math.max(...prior1hHighs))) return null;
-
-    // 2) Onceki seansin en dusuk seviyesi + likidite supurme (fitil bazli,
+    // 1) Onceki seansin en dusuk seviyesi + likidite supurme (fitil bazli,
     // supurmeden sonraki FVG ucgeninden ONCE olmali).
     const prevSessionLow = this.findPreviousSessionLow(fifteenMin);
     if (prevSessionLow === null) return null;
@@ -489,8 +522,14 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
     if (sweepLow === null) return null;
 
-    // 3) Tersine donus + FVG (kripto ile ayni yorum)
+    // 2) 15dk MSB - kirilim mumu (c3), onceki FX_MSS_LOOKBACK mumun en
+    // yuksek seviyesini yukari yonlu kirip uzerinde kapanmis olmali.
     const c3 = fifteenMin[n - 1];
+    const priorHighs = fifteenMin.slice(n - 1 - FX_MSS_LOOKBACK, n - 1).map((c) => c.high);
+    if (priorHighs.length < FX_MSS_LOOKBACK) return null;
+    if (!(c3.close > Math.max(...priorHighs))) return null;
+
+    // 3) Tersine donus + FVG (kripto ile ayni yorum)
     const c1 = fifteenMin[n - 3];
     if (!(c3.low > c1.high)) return null;
 
@@ -512,8 +551,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       : Math.round((Math.abs(currentPrice - entry) / entry) * 10000) / 100;
 
     const reasons: string[] = [
-      `1S Trend (MSS): son 1 saatlik mum kapanışı, önceki ${FX_1H_MSS_LOOKBACK} mumun en yüksek seviyesini yukarı yönlü kırdı`,
       `Likidite Süpürme: fiyat önceki seansın en düşük seviyesinin (${prevSessionLow.toFixed(5)}) altına sarktı`,
+      `15dk MSB: kırılım mumunun kapanışı, önceki ${FX_MSS_LOOKBACK} mumun en yüksek seviyesini yukarı yönlü kırdı`,
       `Fair Value Gap: giriş bölgesi ${entryZoneBottom.toFixed(5)} - ${entryZoneTop.toFixed(5)} (%50 orta nokta: ${entry.toFixed(5)})`,
       `Risk/Ödül: net 1:${FX_RR_MULT}`,
     ];
@@ -537,11 +576,13 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     };
   }
 
-  // Forex Day Trade: ICT Likidite Supurme modeli. Guvenlik filtreleri (spec
-  // sirasiyla): 1) bilinen yuksek etkili haber gunu ise tarama tamamen
+  // Forex Day Trade: ICT Likidite Supurme modeli. Guvenlik/uyari filtreleri
+  // (spec sirasiyla): 1) bilinen yuksek etkili haber gunu ise tarama tamamen
   // atlanir, 2) TSI 23:55-01:05 (banka gun sonu spread genislemesi) ise
   // atlanir, 3) DXY kendi 15dk EMA50'sinin ustundeyse (dolar guclu/yukselen)
-  // EURUSD/GBPUSD icin LONG aranmaz.
+  // EURUSD/GBPUSD sinyallerine bilgilendirme notu eklenir (2026-08-09
+  // revizyonu: onceden bu durumda sinyal TAMAMEN engelleniyordu - artik
+  // hard-filtre degil, sadece setup.reasons'a uyari satiri ekleniyor).
   async scanForexDayTrade() {
     const todayIso = new Date().toISOString().slice(0, 10);
     if (FOREX_BLOCKED_DATES.includes(todayIso)) {
@@ -563,45 +604,56 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const dxyEma50 = this.ema(dxyCloses, FX_DXY_EMA_PERIOD);
         dxyBelowEma50 = dxyCandles[dxyCandles.length - 1].close < dxyEma50[dxyEma50.length - 1];
       }
-    } catch { /* dxyBelowEma50 null kalir - veri yoksa DXY filtresi uygulanmaz */ }
+    } catch { /* dxyBelowEma50 null kalir - veri yoksa DXY notu eklenmez */ }
 
     const symbols = Object.keys(YAHOO_MAP);
+    const rawCandidateCount = symbols.length;
     const candidates: any[] = [];
     const returnsMap: Record<string, number[]> = {};
+    // DXY artik hard-filtre degil, sadece bilgilendirme notu - bu sayac
+    // notun eklendigi (elenmeyen) sinyal sayisini takip eder.
+    let dxyNoted = 0;
+    // Likidite supurme + 15dk MSB + FVG sartlarinin hepsi
+    // buildForexLiquiditySweepSetup icinde birlesik oldugu icin bu sayac
+    // hepsini kapsar.
+    let structureFiltered = 0;
 
     for (const symbol of symbols) {
-      // DXY Korelasyon Filtresi: sadece EURUSD/GBPUSD icin - DXY kendi
-      // EMA50'sinin ALTINDA degilse (dolar zayif degilse) bu paritede LONG aranmaz.
-      if (FX_DXY_FILTERED_SYMBOLS.has(symbol) && dxyBelowEma50 === false) continue;
+      const dxyWarning = FX_DXY_FILTERED_SYMBOLS.has(symbol) && dxyBelowEma50 === false;
+      if (dxyWarning) dxyNoted++;
 
       const yahooSymbol = YAHOO_MAP[symbol];
       try {
-        const hourly = await this.fetchYahoo(yahooSymbol, '1mo', '1h');
         const fifteenMin = await this.fetchYahoo(yahooSymbol, '5d', '15m');
-        if (hourly.length < FX_1H_MSS_LOOKBACK + 1 || fifteenMin.length < 30) continue;
+        if (fifteenMin.length < FX_MSS_LOOKBACK + 5) { structureFiltered++; continue; }
 
-        const setup = this.buildForexLiquiditySweepSetup(symbol, hourly, fifteenMin);
-        if (!setup) continue;
+        const setup = this.buildForexLiquiditySweepSetup(symbol, fifteenMin);
+        if (!setup) { structureFiltered++; continue; }
+        if (dxyWarning) {
+          setup.reasons.push('DXY Uyarısı: DXY kendi 15dk EMA50 üzerinde (dolar güçlü) - bilgi amaçlı, sinyal engellenmedi');
+        }
 
         const closes = fifteenMin.slice(-60).map((c) => c.close);
         returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
 
         candidates.push({ symbol, ...setup, winRatePercent: null, fundingRate: null, style: 'DAY' });
-      } catch { continue; }
+      } catch { structureFiltered++; continue; }
       await new Promise((r) => setTimeout(r, 150));
     }
 
     const selected: any[] = [];
     for (const c of candidates) {
-      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > 0.8);
+      const tooCorrelated = selected.some((s) => this.correlation(returnsMap[s.symbol] ?? [], returnsMap[c.symbol] ?? []) > CORRELATION_THRESHOLD);
       if (!tooCorrelated) selected.push(c);
       if (selected.length === 25) break;
     }
+    const correlationFiltered = candidates.length - selected.length;
 
-    console.log(
-      `[scanForexDayTrade] FX_LIQUIDITY_SWEEP: taranan=${symbols.length} bulunanAday=${candidates.length} ` +
-      `korelasyonSonrasi(selected)=${selected.length}`,
-    );
+    console.log(`[scanForexDayTrade] Filtre öncesi ham aday sayısı: ${rawCandidateCount}`);
+    console.log(`[scanForexDayTrade] BTC/DXY filtresine takılanlar: ${dxyNoted} (DXY artık bilgilendirme amaçlı, sinyal engellenmiyor)`);
+    console.log(`[scanForexDayTrade] Hacim/Trend filtresine takılanlar: ${structureFiltered}`);
+    console.log(`[scanForexDayTrade] Korelasyondan elenenler: ${correlationFiltered}`);
+    console.log(`[scanForexDayTrade] Kuyruğa/SUPER_ADMIN'e başarıyla gönderilen sinyal sayısı: ${selected.length}`);
 
     for (const s of selected) {
       s.aiCommentary = await this.interpretWithAI(s.symbol, s);
@@ -663,24 +715,36 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       where: { style: 'DAY', market: 'CRYPTO' },
       orderBy: { createdAt: 'desc' },
     });
-    const previousActiveSymbols = new Set(
-      ((previousScan?.results as any)?.crypto ?? [])
-        .filter((c: any) => c.stillValid)
-        .map((c: any) => c.symbol),
+    const previousDetectedSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? []).map((c: any) => c.symbol),
     );
 
     const results = await this.runDayTradeScan();
-    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+    // stillValid=false (fiyat henuz FVG giris bolgesine geri cekilmedi) demek
+    // sinyalin GECERSIZ oldugu anlamina gelmez - sadece henuz TETIKLENMEDIGI
+    // anlamina gelir. Eskiden burada stillValid ile filtrelenip bu adaylar
+    // tamamen atilirdi; bu yuzden kullanici sinyali ancak fiyat zaten bolgeye
+    // girmisken (yani tetiklenirken/tetiklendikten hemen sonra) goruyordu ve
+    // islemi kaciriyordu. Artik yapisal olarak onaylanan HER setup hemen
+    // WATCHING olarak izlemeye alinir; updateTrackedSignals() fiyat gercekten
+    // bolgeye girdiginde WATCHING->TRIGGERED gecisini zaten yapiyor.
+    const detectedSignals = results.crypto;
 
     const openTracked = await this.prisma.trackedSignal.findMany({
       where: { style: 'DAY', market: 'CRYPTO', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       select: { symbol: true },
     });
     const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
-    const newActiveSignals = activeSignals.filter(
-      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    const recentlyClosed = await this.prisma.trackedSignal.findMany({
+      where: { style: 'DAY', market: 'CRYPTO', closedAt: { gte: new Date(Date.now() - SIGNAL_REENTRY_COOLDOWN_MS) } },
+      select: { symbol: true },
+    });
+    const cooldownSymbols = new Set(recentlyClosed.map((t) => t.symbol));
+    const blockedSymbols = new Set([...trackedSymbols, ...cooldownSymbols]);
+    const newDetectedSignals = detectedSignals.filter(
+      (c: any) => !previousDetectedSymbols.has(c.symbol) && !blockedSymbols.has(c.symbol),
     );
-    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    const signalsNeedingTracking = detectedSignals.filter((c: any) => !blockedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
       await this.createTrackedSignals(signalsNeedingTracking, 'DAY', 'CRYPTO');
     }
@@ -689,15 +753,15 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // yapiliyor - bu, 15 dakikada bir calisan tikimlerden biri.
     await this.updateTrackedSignals();
 
-    if (newActiveSignals.length === 0) return;
+    if (newDetectedSignals.length === 0) return;
 
     const admins = await this.prisma.user.findMany({
       where: { role: 'SUPER_ADMIN' },
       select: { id: true },
     });
 
-    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
-    const message = `${newActiveSignals.length} yeni aktif Day Trade sinyali: ${symbolList}`;
+    const symbolList = newDetectedSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newDetectedSignals.length} yeni aktif Day Trade sinyali: ${symbolList}`;
 
     await this.notificationsService.createForManyUsers(
       admins.map((a) => a.id),
@@ -714,24 +778,30 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       where: { style: 'DAY', market: 'FOREX' },
       orderBy: { createdAt: 'desc' },
     });
-    const previousActiveSymbols = new Set(
-      ((previousScan?.results as any)?.crypto ?? [])
-        .filter((c: any) => c.stillValid)
-        .map((c: any) => c.symbol),
+    const previousDetectedSymbols = new Set(
+      ((previousScan?.results as any)?.crypto ?? []).map((c: any) => c.symbol),
     );
 
     const results = await this.runForexDayTradeScan();
-    const activeSignals = results.crypto.filter((c: any) => c.stillValid);
+    // bkz. scheduledDayTradeScan() - stillValid=false artik "elenir" degil
+    // "henuz tetiklenmedi, WATCHING'e alinir" anlamina geliyor.
+    const detectedSignals = results.crypto;
 
     const openTracked = await this.prisma.trackedSignal.findMany({
       where: { style: 'DAY', market: 'FOREX', status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       select: { symbol: true },
     });
     const trackedSymbols = new Set(openTracked.map((t) => t.symbol));
-    const newActiveSignals = activeSignals.filter(
-      (c: any) => !previousActiveSymbols.has(c.symbol) && !trackedSymbols.has(c.symbol),
+    const recentlyClosed = await this.prisma.trackedSignal.findMany({
+      where: { style: 'DAY', market: 'FOREX', closedAt: { gte: new Date(Date.now() - SIGNAL_REENTRY_COOLDOWN_MS) } },
+      select: { symbol: true },
+    });
+    const cooldownSymbols = new Set(recentlyClosed.map((t) => t.symbol));
+    const blockedSymbols = new Set([...trackedSymbols, ...cooldownSymbols]);
+    const newDetectedSignals = detectedSignals.filter(
+      (c: any) => !previousDetectedSymbols.has(c.symbol) && !blockedSymbols.has(c.symbol),
     );
-    const signalsNeedingTracking = activeSignals.filter((c: any) => !trackedSymbols.has(c.symbol));
+    const signalsNeedingTracking = detectedSignals.filter((c: any) => !blockedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
       await this.createTrackedSignals(signalsNeedingTracking, 'DAY', 'FOREX');
     }
@@ -739,15 +809,15 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // (kripto day-trade) zaten TUM acik kayitlari (market farketmeksizin) her
     // 15 dakikada guncelliyor
 
-    if (newActiveSignals.length === 0) return;
+    if (newDetectedSignals.length === 0) return;
 
     const admins = await this.prisma.user.findMany({
       where: { role: 'SUPER_ADMIN' },
       select: { id: true },
     });
 
-    const symbolList = newActiveSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
-    const message = `${newActiveSignals.length} yeni aktif Forex Day Trade sinyali: ${symbolList}`;
+    const symbolList = newDetectedSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
+    const message = `${newDetectedSignals.length} yeni aktif Forex Day Trade sinyali: ${symbolList}`;
 
     await this.notificationsService.createForManyUsers(
       admins.map((a) => a.id),
