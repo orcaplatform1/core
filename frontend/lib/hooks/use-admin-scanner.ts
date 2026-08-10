@@ -56,6 +56,7 @@ export type TrackedSignal = {
   id: string;
   symbol: string;
   direction: "LONG" | "SHORT";
+  entry: number | null;
   entryZoneTop: number;
   entryZoneBottom: number;
   stop: number;

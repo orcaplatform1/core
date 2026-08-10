@@ -889,6 +889,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         data: {
           symbol: s.symbol,
           direction: s.direction,
+          entry: s.entry,
           entryZoneTop: s.entryZoneTop,
           entryZoneBottom: s.entryZoneBottom,
           stop: s.stop,

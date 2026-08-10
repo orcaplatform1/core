@@ -839,6 +839,7 @@ model TrackedSignal {
   id              String    @id @default(cuid())
   symbol          String
   direction       String
+  entry           Float?
   entryZoneTop    Float
   entryZoneBottom Float
   stop            Float

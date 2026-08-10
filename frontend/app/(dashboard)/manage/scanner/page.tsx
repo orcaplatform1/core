@@ -1,9 +1,25 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, TrendingUp, TrendingDown, Zap, AlertTriangle, Coins, Globe2 } from "lucide-react";
+import {
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
+  Zap,
+  AlertTriangle,
+  Coins,
+  Globe2,
+  Sparkles,
+  X,
+  Target,
+  Clock,
+  Layers,
+  Filter,
+  BarChart3,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import { ExternalLink } from "@/components/ui/external-link";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -247,6 +263,7 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
   const hitLevel =
     signal.status === "HIT_TP1" ? 1 : signal.status === "HIT_TP2" ? 2 : signal.status === "HIT_TP3" ? 3 : 0;
   const stopHit = signal.status === "HIT_STOP";
+  const stopAtBreakeven = hitLevel >= 1 && !stopHit;
   const tpBoxClass = (level: number) =>
     hitLevel >= level
       ? "rounded-lg border border-[#22C55E40] bg-[#22C55E1A] p-2.5 text-center"
@@ -254,6 +271,45 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
   const stopBoxClass = stopHit
     ? "rounded-lg border border-[#EF444440] bg-[#EF44441A] p-2.5"
     : "rounded-lg border border-border bg-card-inner p-2.5";
+
+  // Canli fiyata gore ANLIK uyari - resmi durumdan (hitLevel/status) BAGIMSIZ,
+  // backend'in 15dk'lik tarama dongusunu beklemeden "su an ne oluyor" gorseli.
+  // Resmi kayit/istatistik yine sadece backend guncellemesiyle degisir, bu
+  // sadece erken gorsel bildirim.
+  let liveAlert: { text: string; color: string } | null = null;
+  if (isOpen && displayPrice != null) {
+    // signal.stop DB'deki GUNCEL stop - TP1 resmi olarak islendiyse zaten
+    // basabasa cekilmis oluyor, henuz islenmediyse hala orijinal stop.
+    const liveStopped = bullish ? displayPrice <= signal.stop : displayPrice >= signal.stop;
+    if (liveStopped) {
+      liveAlert = hitLevel >= 1
+        ? { text: "⚡ Canlı: fiyat başabaşa değdi - resmi kapanış bekleniyor (TP1 sayesinde kazanç)", color: "#3B5BFF" }
+        : { text: "⚡ Canlı: fiyat stop seviyesine değdi - resmi kapanış bekleniyor", color: "#EF4444" };
+    } else {
+      const liveLevel = bullish
+        ? displayPrice >= signal.tp3 ? 3 : displayPrice >= signal.tp2 ? 2 : displayPrice >= signal.tp1 ? 1 : 0
+        : displayPrice <= signal.tp3 ? 3 : displayPrice <= signal.tp2 ? 2 : displayPrice <= signal.tp1 ? 1 : 0;
+      if (liveLevel > hitLevel) {
+        liveAlert = { text: `⚡ Canlı: TP${liveLevel} geçildi - resmi güncelleme bekleniyor`, color: "#22C55E" };
+      }
+    }
+  }
+
+  // Giris fiyati baz alinarak mesafe %'si ve R katsayisi - stop mesafesi
+  // 1R kabul edilir (tanim geregi), digerleri buna orantilanir.
+  const entry = signal.entry;
+  const riskDistance = entry != null ? Math.abs(entry - signal.stop) : null;
+  const distancePct = (level: number) => (entry != null ? (Math.abs(level - entry) / entry) * 100 : null);
+  const rMultiple = (level: number) =>
+    entry != null && riskDistance && riskDistance > 0 ? Math.abs(level - entry) / riskDistance : null;
+  const fmtPct = (level: number) => {
+    const p = distancePct(level);
+    return p != null ? `%${p.toFixed(2)}` : "—";
+  };
+  const fmtR = (level: number, sign: "+" | "-") => {
+    const r = rMultiple(level);
+    return r != null ? `${sign}${r.toFixed(2)}R` : "—";
+  };
   return (
     <div className="glow-primary rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -311,6 +367,14 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           </span>
         </div>
       )}
+      {liveAlert && (
+        <div
+          className="rounded-xl border px-3 py-2 text-body-xs font-medium"
+          style={{ borderColor: `${liveAlert.color}40`, backgroundColor: `${liveAlert.color}1A`, color: liveAlert.color }}
+        >
+          {liveAlert.text}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
           <p className="text-body-xs text-[#A8A6A0]">Giriş Bölgesi</p>
@@ -319,8 +383,13 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           </p>
         </div>
         <div className={stopBoxClass}>
-          <p className="text-body-xs text-[#A8A6A0]">Stop</p>
+          <p className="text-body-xs text-[#A8A6A0]">
+            Stop {stopAtBreakeven && <span className="text-[#3B5BFF]">(Girişte - TP1 alındı, kalan risksiz)</span>}
+          </p>
           <p className="text-financial text-[#EF4444]">{fmt(signal.stop)}</p>
+          <p className="text-body-xs text-[#A8A6A0]">
+            {fmtPct(signal.stop)} · {fmtR(signal.stop, "-")}
+          </p>
         </div>
         <div className="rounded-lg border border-border bg-card-inner p-2.5">
           <p className="text-body-xs text-[#A8A6A0]">R:R</p>
@@ -337,15 +406,177 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
         <div className={tpBoxClass(1)}>
           <p className="text-body-xs text-[#A8A6A0]">TP1</p>
           <p className="text-financial text-[#22C55E]">{fmt(signal.tp1)}</p>
+          <p className="text-body-xs text-[#A8A6A0]">
+            {fmtPct(signal.tp1)} · {fmtR(signal.tp1, "+")}
+          </p>
         </div>
         <div className={tpBoxClass(2)}>
           <p className="text-body-xs text-[#A8A6A0]">TP2</p>
           <p className="text-financial text-[#22C55E]">{fmt(signal.tp2)}</p>
+          <p className="text-body-xs text-[#A8A6A0]">
+            {fmtPct(signal.tp2)} · {fmtR(signal.tp2, "+")}
+          </p>
         </div>
         <div className={tpBoxClass(3)}>
           <p className="text-body-xs text-[#A8A6A0]">TP3</p>
           <p className="text-financial text-[#22C55E]">{fmt(signal.tp3)}</p>
+          <p className="text-body-xs text-[#A8A6A0]">
+            {fmtPct(signal.tp3)} · {fmtR(signal.tp3, "+")}
+          </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2">
+        <span className="flex size-6 items-center justify-center rounded-md bg-[#3B5BFF1A] text-[#3B5BFF]">
+          {icon}
+        </span>
+        <h3 className="text-card-title-sm text-[#F5F1EA]">{title}</h3>
+      </div>
+      <div className="pl-8">{children}</div>
+    </div>
+  );
+}
+
+function SubBlock({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3 rounded-lg border border-border bg-card-inner p-3">
+      <p className="mb-1.5 text-body-xs font-semibold uppercase tracking-wider text-[#8FB8FF]">{title}</p>
+      <div className="text-body-xs text-[#D6D3CB]">{children}</div>
+    </div>
+  );
+}
+
+function AboutModulePanel({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 backdrop-blur-sm p-4 sm:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="premium-glow-card relative my-4 w-full max-w-3xl space-y-6 bg-card p-5 sm:p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Kapat"
+          className="absolute right-4 top-4 rounded-full p-1.5 text-[#A8A6A0] transition-colors hover:bg-white/10 hover:text-[#F5F1EA]"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="space-y-1.5 pr-8">
+          <div className="flex items-center gap-2">
+            <Sparkles size={20} className="text-[#3B5BFF]" />
+            <h2 className="text-h2 text-[#F5F1EA]">Orca ACS — Automatic Chart Scanner</h2>
+          </div>
+          <p className="text-body-sm text-[#A8A6A0]">
+            Kural bazlı (rule-based), tamamen matematiksel/deterministik bir ICT/SMC tarama motoru.
+            "AI" burada sadece sinyal zaten bulunduktan <b className="text-[#F5F1EA]">SONRA</b> Türkçe bir
+            senaryo yorumu yazar (Claude Haiku) — sinyalin bulunmasına, yönüne, giriş/stop/TP
+            seviyelerine veya hangi filtreden geçtiğine hiç karışmaz. Karar mekanizmasının tamamı
+            aşağıdaki kurallardan oluşur.
+          </p>
+        </div>
+
+        <Section icon={<Layers size={16} />} title="Strateji">
+          <SubBlock title="Kripto — ICT/SMC Breakout &amp; Retest (Long-only)">
+            <ul className="list-inside list-disc space-y-1">
+              <li>MSB (Market Structure Break): son kapanan 15dk mum, önceki 5 mumun en yükseğini yukarı yönlü kırıp üzerinde kapanır.</li>
+              <li>Hacim Onayı: kırılım mumunun hacmi, son 20 mum ortalamasının en az 1.2 katı.</li>
+              <li>FVG (Fair Value Gap): kırılım yapısındaki 3 mumluk boşluk — giriş bölgesini oluşturur.</li>
+              <li>Trend Filtresi: fiyat 15dk EMA200 üzerinde olmalı.</li>
+            </ul>
+          </SubBlock>
+          <SubBlock title="Forex — ICT Likidite Süpürme">
+            <ul className="list-inside list-disc space-y-1">
+              <li>Önceki seansın en düşük seviyesinin altına bir mum fitilinin sarkması (likidite süpürme).</li>
+              <li>15dk MSB: süpürmeden sonraki kırılım mumu, önceki 5 mumun tepesini yukarı yönlü kırar.</li>
+              <li>FVG girişi (kripto ile aynı 3 mumluk mantık).</li>
+              <li>Bilinen yüksek etkili haber günlerinde ve TSİ 23:55–01:05 (banka gün sonu spread genişlemesi) tarama tamamen atlanır.</li>
+              <li>DXY kendi 15dk EMA50 üzerindeyse EURUSD/GBPUSD sinyaline bilgi notu eklenir — sinyal engellenmez, sadece uyarı.</li>
+            </ul>
+          </SubBlock>
+        </Section>
+
+        <Section icon={<Filter size={16} />} title="Filtreler">
+          <ul className="list-inside list-disc space-y-1.5 text-body-xs text-[#D6D3CB]">
+            <li><b className="text-[#F5F1EA]">Evren:</b> Binance top 75 USDT paritesi (24s hacme göre), stablecoin taban varlıklı çiftler (USDC, BUSD, DAI, TUSD, FDUSD, USDP, PYUSD, USDD, GUSD) tamamen hariç.</li>
+            <li><b className="text-[#F5F1EA]">BTC Piyasa Filtresi:</b> BTC'nin son 15dk mumu %1.5+ düşerse (ani çöküş) VEYA BTC kendi 1 saatlik EMA50'sinin altındaysa, o taramada hiç LONG sinyali üretilmez.</li>
+            <li><b className="text-[#F5F1EA]">Korelasyon Filtresi:</b> adaylar arası son 60 mumun getiri korelasyonu %88'i aşarsa (aynı sektör/benzer hareket eden varlık), ikinci sembol elenir.</li>
+            <li><b className="text-[#F5F1EA]">Yeniden Tetiklenme Bekleme Süresi:</b> bir sinyal kapandıktan (TP/Stop/süre aşımı fark etmeksizin) sonra aynı sembol için 24 saat yeni sinyal açılmaz — fiyatın aynı seviyede çırpınıp (whipsaw) art arda sinyal üretmesini engeller.</li>
+          </ul>
+          <div className="mt-2.5 rounded-lg border border-[#3B5BFF33] bg-[#3B5BFF0D] p-3 text-body-xs text-[#A8A6A0]">
+            <b className="text-[#3B5BFF]">Neden BTC filtresi var?</b> 60 günlük backtest: BTC yükseliş trendindeyken tetiklenen sinyaller ortalama %43.3 win rate / +0.30R beklenti veriyor; BTC düşüş trendindeyken bu %36.2 win rate / +0.09R'a düşüyor. Filtre sinyal sayısını ~%28 azaltıyor ama kaliteyi belirgin yükseltiyor — bilinçli bir tercih.
+          </div>
+        </Section>
+
+        <Section icon={<Target size={16} />} title="Giriş / Stop / TP Sistemi">
+          <div className="space-y-2 text-body-xs text-[#D6D3CB]">
+            <p>
+              <b className="text-[#F5F1EA]">Giriş:</b> fiyat FVG bölgesine geri çekilince tetiklenir (kripto: bölgenin üst sınırı; forex: bölgenin %50 orta noktası). Fiyat henüz bölgeye girmemişse sinyal <b className="text-[#A8A6A0]">İZLENİYOR</b> durumunda en fazla 3 gün takip edilir.
+            </p>
+            <p>
+              <b className="text-[#F5F1EA]">Stop:</b> yapısal swing low/high − ATR(14) × 0.5.
+            </p>
+            <p>
+              <b className="text-[#22C55E]">TP1</b> = Giriş + Risk × 1 (net 1:1) → pozisyonun %50'si kapanır, <b className="text-[#F5F1EA]">kalan %50 için stop girişe (başabaşa) çekilir.</b>
+            </p>
+            <p>
+              <b className="text-[#22C55E]">TP2</b> = Giriş + Risk × 1.5 (kripto) / × 2 (forex) → ara hedef, bilgi amaçlı.
+            </p>
+            <p>
+              <b className="text-[#22C55E]">TP3 (final)</b> = Giriş + Risk × 2 (kripto) / × 3 (forex) → kalan pozisyon burada tamamen kapanır.
+            </p>
+            <div className="rounded-lg border border-[#3B5BFF33] bg-[#3B5BFF0D] p-3">
+              <b className="text-[#3B5BFF]">Önemli:</b> TP1 alındıktan sonra fiyat başabaşa (girişe) geri dönerse bu <b className="text-[#F5F1EA]">KAYIP sayılmaz</b> — TP1'in %50'lik dilimindeki kâr zaten bankaya yatırılmıştır, kalan %50 sadece riske girmeden (0R) kapanır. Toplam işlem net kârlı sonuçlanır.
+            </div>
+          </div>
+        </Section>
+
+        <Section icon={<Clock size={16} />} title="Sinyal Durumları">
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "İZLENİYOR", color: "#A8A6A0", desc: "Yapısal olarak onaylandı, fiyatın giriş bölgesine gelmesi bekleniyor (max 3 gün)." },
+              { label: "TETİKLENDİ", color: "#3B5BFF", desc: "Fiyat giriş bölgesine girdi, pozisyon açık kabul edilir." },
+              { label: "TP1 / TP2 / TP3 VURULDU", color: "#22C55E", desc: "İlgili hedefe ulaşıldı." },
+              { label: "STOP OLDU", color: "#EF4444", desc: "TP1'e hiç ulaşmadan orijinal stop'a çarptı — gerçek kayıp." },
+              { label: "SÜRESİ DOLDU", color: "#F39C3D", desc: "Giriş bölgesine hiç gelmeden (3 gün) veya tetiklendikten sonra (1 gün, day-trade) sonuçlanmadan zaman aşımına uğradı." },
+            ].map((s) => (
+              <div key={s.label} className="w-full rounded-lg border border-border bg-card-inner p-2.5 sm:w-[calc(50%-3px)]">
+                <span
+                  className="mb-1 inline-block rounded-full px-2 py-0.5 text-badge"
+                  style={{ backgroundColor: `${s.color}22`, color: s.color }}
+                >
+                  {s.label}
+                </span>
+                <p className="text-body-xs text-[#A8A6A0]">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section icon={<BarChart3 size={16} />} title="Başarı Ölçümü (Win Rate)">
+          <p className="text-body-xs text-[#D6D3CB]">
+            <b className="text-[#22C55E]">Kazandı:</b> kapanmış VE en az TP1'e ulaşmış sinyaller (TP1 sonrası, yukarıdaki başabaş kuralı gereği kayıp riski yoktur — TP1/TP2/TP3'ün hepsi kazanç sayılır).{" "}
+            <b className="text-[#EF4444]">Kayıp:</b> STOP OLDU durumundaki sinyaller (TP1'e hiç ulaşmadan orijinal stop'a çarpanlar).{" "}
+            Win Rate = Kazandı / (Kazandı + Kayıp). İZLENİYOR/TETİKLENDİ (hâlâ açık) ve SÜRESİ DOLDU durumundaki sinyaller bu orana dahil edilmez.
+          </p>
+        </Section>
+
+        <Section icon={<Zap size={16} />} title="Diğer">
+          <ul className="list-inside list-disc space-y-1 text-body-xs text-[#D6D3CB]">
+            <li>Her sinyal kartındaki Binance ikonu, ilgili paritenin Binance Futures trade sayfasına doğrudan götürür.</li>
+            <li>Kartlardaki canlı fiyat 3 saniyede bir güncellenir; resmi durum (TP/Stop tetiklenmesi, win-rate istatiği) ise 15 dakikalık tarama döngüsünde güncellenir — ikisi arasında fark varsa kartta anlık bir uyarı belirir.</li>
+            <li>Tarama 15 dakikada bir otomatik çalışır, sağ üstteki butonla manuel de tetiklenebilir.</li>
+          </ul>
+        </Section>
       </div>
     </div>
   );
@@ -354,6 +585,7 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
 export default function AdminScannerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [market, setMarket] = useState<ScanMarket>("CRYPTO");
+  const [showAbout, setShowAbout] = useState(false);
   const { data: lastScan, isLoading } = useLastScan(market);
   const { data: tracked } = useTrackedSignals(market);
   const triggerScan = useTriggerScan(market);
@@ -387,18 +619,30 @@ export default function AdminScannerPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-h1 text-[#F5F1EA]">AI Chart Scanner</h1>
-          <p className="text-body-sm text-[#A8A6A0]">
-            Sadece kişisel kullanım — öğrencilere kapalı.{" "}
-            {market === "CRYPTO"
-              ? "Binance top 50 kripto (hacme göre), ICT/SMC Breakout & Retest, 15 dakikada bir otomatik tarama."
-              : "Yahoo Finance forex majörleri + emtia (XAUUSD, XAGUSD, BRENT, WTI...), ICT Likidite Süpürme, 15 dakikada bir otomatik tarama."}
-          </p>
+          <h1 className="text-h1 text-[#F5F1EA]">Orca ACS</h1>
+          <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+            <span
+              className="rounded-full px-2.5 py-1 text-badge uppercase tracking-wider"
+              style={{ backgroundColor: "#3B5BFF22", color: "#3B5BFF" }}
+            >
+              Kullanım durumu: Yalnızca yönetici
+            </span>
+            <PremiumGlowButton
+              type="button"
+              size="sm"
+              onClick={() => setShowAbout(true)}
+              className="gap-1.5 text-badge"
+            >
+              <Sparkles size={13} />
+              Modül Hakkında
+            </PremiumGlowButton>
+          </div>
         </div>
         <Link href="/manage" className="text-body-sm text-primary hover:underline">
           ← M Dashboard
         </Link>
       </div>
+      {showAbout && <AboutModulePanel onClose={() => setShowAbout(false)} />}
 
       <div className="space-y-4">
         <div>
