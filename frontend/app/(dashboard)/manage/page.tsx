@@ -130,7 +130,7 @@ export default function ManagePage() {
             <Zap size={20} color="#3B5BFF" />
           </div>
           <div>
-            <p className="text-card-title-sm text-[#F5F1EA]">AI Chart Scanner</p>
+            <p className="text-card-title-sm text-[#F5F1EA]">Orca ACS</p>
             <p className="text-body-xs text-[#A8A6A0]">Kişisel kullanım — canlı sinyal taraması</p>
           </div>
         </Link>
