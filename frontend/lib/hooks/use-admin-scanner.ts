@@ -75,6 +75,13 @@ export type SignalStatsBlock = {
   wins: number;
   losses: number;
   winRate: number | null;
+  tp1: { count: number; r: number };
+  tp2: { count: number; r: number };
+  tp3: { count: number; r: number };
+  stopped: { count: number; r: number };
+  rWon: number;
+  rLost: number;
+  rNet: number;
 };
 export type TrackedSignalsData = {
   signals: TrackedSignal[];

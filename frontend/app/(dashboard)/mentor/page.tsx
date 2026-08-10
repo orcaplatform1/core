@@ -47,8 +47,8 @@ export default function MentorPage() {
   const noQuota = quota && quota.freeRemaining <= 0 && quota.mentorCredits <= 0;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-72px-4rem)] max-w-3xl flex-col gap-4">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex h-[70vh] max-h-[720px] min-h-[420px] max-w-3xl flex-col gap-4">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="flex items-center gap-2 text-ai-title text-foreground">
             <Bot className="size-6 text-purple" /> Yapay Zeka Mentor
@@ -74,8 +74,8 @@ export default function MentorPage() {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex-1 overflow-y-auto p-5">
+      <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {loadingHistory ? (
             <div className="flex flex-col gap-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -122,7 +122,7 @@ export default function MentorPage() {
           )}
         </div>
 
-        <div className="border-t border-border p-4">
+        <div className="shrink-0 border-t border-border p-4">
           {noQuota ? (
             <div className="flex items-center justify-between rounded-xl bg-warning/10 p-3">
               <span className="text-body-sm text-foreground">

@@ -1,31 +1,23 @@
-import { DashboardSidebar } from "@/components/layout/dashboard-sidebar";
-import { DashboardTopbar } from "@/components/layout/dashboard-topbar";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { DashboardGuard } from "@/components/layout/dashboard-guard";
-import { VerificationGate } from "@/components/layout/verification-gate";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CelebrationOverlay } from "@/components/ui/celebration";
-import { getSiteContent } from "@/lib/marketing/get-site-content";
+import { getFooterSettings, getSiteContent } from "@/lib/marketing/get-site-content";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const siteContent = await getSiteContent();
+  const [siteContent, footer] = await Promise.all([getSiteContent(), getFooterSettings()]);
 
   return (
     <DashboardGuard>
       <TooltipProvider delay={150}>
         <CelebrationOverlay />
-        <div className="min-h-screen bg-background">
-          <DashboardSidebar siteContent={siteContent} />
-          <div className="md:pl-[232px] transition-[padding] duration-[220ms]">
-            <DashboardTopbar siteContent={siteContent} />
-            <main className="p-8">
-            <VerificationGate>{children}</VerificationGate>
-          </main>
-          </div>
-        </div>
+        <DashboardShell siteContent={siteContent} footer={footer}>
+          {children}
+        </DashboardShell>
       </TooltipProvider>
     </DashboardGuard>
   );

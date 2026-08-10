@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { ChevronLeft, ChevronRight, Flame, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { studentNav } from "@/lib/nav-config";
@@ -20,11 +19,14 @@ import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 
 export function DashboardSidebar({
   siteContent = DEFAULT_SITE_CONTENT,
+  collapsed,
+  onToggleCollapsed,
 }: {
   siteContent?: SiteContentSettings;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   const sections = studentNav;
-  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { data: stats } = useMyStats();
   const { user } = useAuth();
@@ -146,7 +148,7 @@ export function DashboardSidebar({
       )}
 
       <button
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={onToggleCollapsed}
         className="flex items-center justify-center h-11 border-t border-sidebar-border text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors duration-200"
         aria-label={collapsed ? "Genişlet" : "Daralt"}
       >

@@ -30,7 +30,7 @@ function DiscordIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-const socialIcons: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+export const socialIcons: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   X: X,
   YouTube: YoutubeIcon,
   Instagram: InstagramIcon,

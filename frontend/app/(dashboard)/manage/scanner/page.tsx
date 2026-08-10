@@ -49,6 +49,7 @@ function StatsCard({
   accentColor: string;
   stats: SignalStatsBlock;
 }) {
+  const rNetColor = stats.rNet > 0 ? "#22C55E" : stats.rNet < 0 ? "#EF4444" : "#A8A6A0";
   return (
     <div className="rounded-xl border border-border bg-card-inner p-3 space-y-1.5">
       <p className="text-badge uppercase tracking-wider" style={{ color: accentColor }}>
@@ -60,6 +61,28 @@ function StatsCard({
         <span className="text-[#EF4444]">Stop: {stats.losses}</span>
         <span className="font-semibold text-[#F5F1EA]">
           Başarı: {stats.winRate !== null ? `%${stats.winRate}` : "Yetersiz veri"}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 text-body-xs text-[#A8A6A0] flex-wrap border-t border-border pt-1.5">
+        <span>
+          TP1: {stats.tp1.count}
+          {stats.tp1.count > 0 && <span className="text-[#22C55E]"> (+{stats.tp1.r.toFixed(2)}R)</span>}
+        </span>
+        <span>
+          TP2: {stats.tp2.count}
+          {stats.tp2.count > 0 && <span className="text-[#22C55E]"> (+{stats.tp2.r.toFixed(2)}R)</span>}
+        </span>
+        <span>
+          TP3: {stats.tp3.count}
+          {stats.tp3.count > 0 && <span className="text-[#22C55E]"> (+{stats.tp3.r.toFixed(2)}R)</span>}
+        </span>
+        <span>
+          Stop: {stats.stopped.count}
+          {stats.stopped.count > 0 && <span className="text-[#EF4444]"> (-{stats.stopped.r.toFixed(2)}R)</span>}
+        </span>
+        <span className="font-semibold" style={{ color: rNetColor }}>
+          Toplam R: {stats.rNet > 0 ? "+" : ""}
+          {stats.rNet.toFixed(2)}R
         </span>
       </div>
     </div>
@@ -272,6 +295,23 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
     ? "rounded-lg border border-[#EF444440] bg-[#EF44441A] p-2.5"
     : "rounded-lg border border-border bg-card-inner p-2.5";
 
+  // Gerceklesen R sonucu - backend'deki computeSignalStats ile BIREBIR ayni
+  // model (bkz. scanner.service.ts): TP1 her zaman 1R'da, orada pozisyonun
+  // %50'si bankaya yatirilip stop basabasa cekiliyor - geri kalan %50 TP3'e
+  // (market'e ozgu R kati, sig.rr) ya da basabasa (0R) kapaniyor. HIT_STOP
+  // sadece TP1 hic bankaya yatirilmadan olusabiliyor, yani tam 1R kayip.
+  const realized =
+    signal.closedAt === null
+      ? null
+      : signal.status === "HIT_STOP"
+        ? { won: 0, lost: 1, net: -1 }
+        : signal.status === "HIT_TP1" || signal.status === "HIT_TP2"
+          ? { won: 0.5, lost: 0, net: 0.5 }
+          : signal.status === "HIT_TP3"
+            ? { won: 0.5 + 0.5 * signal.rr, lost: 0, net: 0.5 + 0.5 * signal.rr }
+            : null;
+  const realizedColor = realized ? (realized.net > 0 ? "#22C55E" : realized.net < 0 ? "#EF4444" : "#A8A6A0") : "#A8A6A0";
+
   // Canli fiyata gore ANLIK uyari - resmi durumdan (hitLevel/status) BAGIMSIZ,
   // backend'in 15dk'lik tarama dongusunu beklemeden "su an ne oluyor" gorseli.
   // Resmi kayit/istatistik yine sadece backend guncellemesiyle degisir, bu
@@ -373,6 +413,21 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           style={{ borderColor: `${liveAlert.color}40`, backgroundColor: `${liveAlert.color}1A`, color: liveAlert.color }}
         >
           {liveAlert.text}
+        </div>
+      )}
+      {realized && (
+        <div
+          className="flex items-center justify-between rounded-xl border px-3 py-2"
+          style={{ borderColor: `${realizedColor}40`, backgroundColor: `${realizedColor}14` }}
+        >
+          <span className="text-body-xs text-[#A8A6A0]">
+            Kazanılan: <span className="font-medium text-[#22C55E]">+{realized.won.toFixed(2)}R</span>
+            {" · "}Kaybedilen: <span className="font-medium text-[#EF4444]">-{realized.lost.toFixed(2)}R</span>
+          </span>
+          <span className="text-financial font-semibold" style={{ color: realizedColor }}>
+            Toplam: {realized.net > 0 ? "+" : ""}
+            {realized.net.toFixed(2)}R
+          </span>
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">

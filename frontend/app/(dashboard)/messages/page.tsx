@@ -259,8 +259,8 @@ function ThreadView({ userId }: { userId: string }) {
     (thread?.isBlockedByMe ? "Bu kullanıcıyı engellediğiniz için mesaj yazamazsınız. Mesajlaşmak için engeli kaldırın." : null);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-border p-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border p-4">
         <div className="relative shrink-0">
           <Avatar className="size-9">
             <AvatarImage src={partnerProfile?.avatarUrl ?? undefined} alt={partnerProfile?.fullName} />
@@ -280,7 +280,7 @@ function ThreadView({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {thread && thread.pagination.totalPages > 1 && page < thread.pagination.totalPages && (
           <div className="flex justify-center">
             <button
@@ -303,7 +303,7 @@ function ThreadView({ userId }: { userId: string }) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-border p-3">
+      <div className="shrink-0 border-t border-border p-3">
         {disabledReason ? (
           <div className="flex items-start gap-2 rounded-xl border border-[#EF444440] bg-[#EF444411] p-3 text-body-xs text-[#EF4444]">
             <ShieldAlert className="size-4 shrink-0" />
@@ -369,7 +369,7 @@ function MessagesPageInner() {
   }, [toParam]);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="flex h-[70vh] max-h-[720px] min-h-[420px] overflow-hidden rounded-2xl border border-border bg-card">
       <div className="w-full max-w-xs shrink-0 overflow-y-auto border-r border-border md:block" style={{ display: selected ? undefined : "block" }}>
         <div className="border-b border-border p-4">
           <h1 className="flex items-center gap-2 text-card-title-sm text-foreground">
@@ -427,7 +427,7 @@ function MessagesPageInner() {
         )}
       </div>
 
-      <div className={`flex-1 ${selected ? "block" : "hidden md:flex md:items-center md:justify-center"}`}>
+      <div className={`min-h-0 flex-1 ${selected ? "block" : "hidden md:flex md:items-center md:justify-center"}`}>
         {selected ? (
           <ThreadView userId={selected} />
         ) : (

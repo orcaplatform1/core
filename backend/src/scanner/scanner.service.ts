@@ -38,11 +38,16 @@ const YAHOO_MAP: Record<string, string> = {
 };
 
 // USDT karsisinda anlamli bir supply/demand hareketi olusturmayan (fiyati zaten
-// ~1.00 civarinda sabit kalan) stablecoin taban varliklari - tarama evreninden
-// tamamen cikarilir (bkz. fetchTopBinanceSymbols). Buyumesi muhtemel bir liste,
-// kolay guncellenebilmesi icin ayri bir config sabiti olarak tutulur.
-const STABLECOIN_BASE_ASSETS = new Set([
+// ~1.00 civarinda sabit kalan) stablecoin taban varliklari VE Binance'in
+// dogrudan listeledigi fiat doviz ciftleri (ornegin EURUSDT - bu bir kripto
+// yapisi degil, EUR/USD fiat kurunun neredeyse birebir yansimasi, ICT/SMC
+// kirilim stratejisi icin anlamsiz sahte sinyaller uretiyordu) - tarama
+// evreninden tamamen cikarilir (bkz. fetchTopBinanceSymbols). Buyumesi
+// muhtemel bir liste, kolay guncellenebilmesi icin ayri bir config sabiti
+// olarak tutulur.
+const NON_CRYPTO_BASE_ASSETS = new Set([
   'USDC', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'USDP', 'PYUSD', 'USDD', 'GUSD',
+  'EUR',
 ]);
 
 // Adaylar arasi son 60 mumun getiri korelasyonu bu esigi asarsa (ayni
@@ -183,7 +188,7 @@ export class ScannerService {
           t.symbol.endsWith('USDT') &&
           !t.symbol.includes('UPUSDT') &&
           !t.symbol.includes('DOWNUSDT') &&
-          !STABLECOIN_BASE_ASSETS.has(t.symbol.slice(0, -4)),
+          !NON_CRYPTO_BASE_ASSETS.has(t.symbol.slice(0, -4)),
         )
         .sort((a: any, b: any) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
         .slice(0, limit)
@@ -908,6 +913,19 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   }
 
   async updateTrackedSignals() {
+    // Hicbir zaman tetiklenmemis (INVALIDATED) veya suresi dolmus (EXPIRED)
+    // kayitlar panelde gosterilmiyor (bkz. getTrackedSignals) ama ayni sembol
+    // icin 24 saatlik yeniden-tetiklenme bekleme suresi (SIGNAL_REENTRY_COOLDOWN_MS)
+    // bu kayitlarin closedAt'ina bakiyor - o yuzden bekleme suresi gecmeden
+    // silinmiyorlar, gectikten sonra artik hicbir ise yaramadiklari icin
+    // veritabanindan temizleniyor.
+    await this.prisma.trackedSignal.deleteMany({
+      where: {
+        status: { in: ['INVALIDATED', 'EXPIRED'] },
+        closedAt: { lt: new Date(Date.now() - SIGNAL_REENTRY_COOLDOWN_MS) },
+      },
+    });
+
     const openSignals = await this.prisma.trackedSignal.findMany({
       where: { status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
     });
@@ -920,12 +938,15 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
       if (sig.status === 'WATCHING') {
         // Giris hic tetiklenmeden fiyat herhangi bir TP seviyesini gecmisse (ETCUSDT'de
-        // gozlenen durum), bu setup artik gerceklestirilemez - normal mesafe/sure
-        // esiklerini beklemeden hemen iptal edilir
+        // gozlenen durum) VEYA giris bolgesine hic girmeden dogrudan stop seviyesini
+        // kirmisse (yapi zaten gecersiz - bkz. kullanici geri bildirimi 2026-08-10),
+        // bu setup artik gerceklestirilemez - normal mesafe/sure esiklerini beklemeden
+        // hemen iptal edilir
         const passedAnyTp = bullish
           ? price >= Math.min(sig.tp1, sig.tp2, sig.tp3)
           : price <= Math.max(sig.tp1, sig.tp2, sig.tp3);
-        if (passedAnyTp) {
+        const hitStopBeforeEntry = bullish ? price <= sig.stop : price >= sig.stop;
+        if (passedAnyTp || hitStopBeforeEntry) {
           await this.prisma.trackedSignal.update({
             where: { id: sig.id },
             data: { status: 'INVALIDATED', closedAt: new Date() },
@@ -1011,25 +1032,81 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   private async computeSignalStats(style: string, market: string) {
     const baseWhere: any = { style, market: market as any };
 
-    const [activeCount, wins, losses] = await Promise.all([
+    // R-multiple hesabi: TP1 her zaman girisin tam 1R uzaginda (bkz.
+    // ICT_TP1_RR_MULT/FX_TP1_RR_MULT, ikisi de =1), yani risk birimi (1R)
+    // piyasadan bagimsiz sabit bir oran - ayri ayri entry/stop fiyatina
+    // gerek yok. TP1 vuruldugunda pozisyonun %50'si bankaya yatirilip stop
+    // basabasa cekiliyor (bkz. updateTrackedSignals) - geri kalan %50 ya
+    // TP3'e ulasip market'e ozgu R katina (kripto 2R, forex 3R - sig.rr)
+    // kapaniyor ya da basabasta (0R) kapaniyor. HIT_STOP statusune sadece
+    // TP1 hic bankaya yatirilmadan ulasilabiliyor, yani her zaman TAM 1R kayip.
+    const TP1_BANKED_FRACTION = 0.5;
+    const [activeCount, closedRows] = await Promise.all([
       this.prisma.trackedSignal.count({
         where: { ...baseWhere, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
       }),
-      // Kazandi: kapanmis VE en az TP1'e ulasmis (TP1/TP2/TP3 hepsi gercek kar,
-      // TP1 sonrasi stop basabasa cekildigi icin bu asamadan sonra kayip riski yok)
-      this.prisma.trackedSignal.count({
-        where: { ...baseWhere, closedAt: { not: null }, status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] } },
+      this.prisma.trackedSignal.findMany({
+        where: {
+          ...baseWhere,
+          OR: [
+            { status: 'HIT_STOP' },
+            { status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] }, closedAt: { not: null } },
+          ],
+        },
+        select: { status: true, rr: true },
       }),
-      this.prisma.trackedSignal.count({ where: { ...baseWhere, status: 'HIT_STOP' } }),
     ]);
+
+    const tp1 = { count: 0, r: 0 };
+    const tp2 = { count: 0, r: 0 };
+    const tp3 = { count: 0, r: 0 };
+    const stopped = { count: 0, r: 0 };
+    for (const row of closedRows) {
+      if (row.status === 'HIT_STOP') {
+        stopped.count += 1;
+        stopped.r += 1;
+      } else if (row.status === 'HIT_TP1') {
+        tp1.count += 1;
+        tp1.r += TP1_BANKED_FRACTION;
+      } else if (row.status === 'HIT_TP2') {
+        tp2.count += 1;
+        tp2.r += TP1_BANKED_FRACTION;
+      } else if (row.status === 'HIT_TP3') {
+        tp3.count += 1;
+        tp3.r += TP1_BANKED_FRACTION + (1 - TP1_BANKED_FRACTION) * row.rr;
+      }
+    }
+    const wins = tp1.count + tp2.count + tp3.count;
+    const losses = stopped.count;
     const total = activeCount + wins + losses;
     const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
-    return { total, wins, losses, winRate };
+    const rWon = tp1.r + tp2.r + tp3.r;
+    const rLost = stopped.r;
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    return {
+      total,
+      wins,
+      losses,
+      winRate,
+      tp1: { count: tp1.count, r: round2(tp1.r) },
+      tp2: { count: tp2.count, r: round2(tp2.r) },
+      tp3: { count: tp3.count, r: round2(tp3.r) },
+      stopped: { count: stopped.count, r: round2(stopped.r) },
+      rWon: round2(rWon),
+      rLost: round2(rLost),
+      rNet: round2(rWon - rLost),
+    };
   }
 
   async getTrackedSignals(style: string = 'DAY', market: string = 'CRYPTO') {
     const signals = await this.prisma.trackedSignal.findMany({
-      where: { style, market: market as any },
+      // EXPIRED/INVALIDATED (hicbir zaman tetiklenmemis veya suresi dolmus
+      // kurulumlar) panelde gosterilmiyor - ne izleniyor, ne tetiklendi, ne
+      // TP/stop gordu, sadece gorsel karisiklik yaratiyorlardi (bkz. kullanici
+      // geri bildirimi 2026-08-10). Bu kayitlar 24 saatlik yeniden-tetiklenme
+      // bekleme suresi dolunca updateTrackedSignals() tarafindan veritabanindan
+      // da siliniyor.
+      where: { style, market: market as any, status: { notIn: ['EXPIRED', 'INVALIDATED'] } },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
