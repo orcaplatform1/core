@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BadgeTriggerType" ADD VALUE 'PROGRAM_COMPLETE';

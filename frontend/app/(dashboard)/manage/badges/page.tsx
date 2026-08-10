@@ -21,6 +21,7 @@ const TRIGGER_TYPES: AdminBadge["triggerType"][] = [
   "STREAK_DAYS",
   "BACKTEST_COUNT",
   "SIMULATION_COUNT",
+  "PROGRAM_COMPLETE",
   "CUSTOM",
 ];
 

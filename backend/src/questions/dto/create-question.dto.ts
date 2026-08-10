@@ -16,6 +16,11 @@ export class CreateQuestionDto {
   @MaxLength(1000)
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  explanation?: string;
+
   @IsString()
   @MinLength(1)
   quizId!: string;

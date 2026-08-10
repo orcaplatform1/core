@@ -18,6 +18,7 @@ import { QuizAttemptsModule } from './quiz-attempts/quiz-attempts.module';
 import { QuizAnswersModule } from './quiz-answers/quiz-answers.module';
 import { ProgressModule } from './progress/progress.module';
 import { CertificatesModule } from './certificates/certificates.module';
+import { SuccessStoriesModule } from './success-stories/success-stories.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -94,6 +95,7 @@ import { VisitorTrialModule } from './visitor-trial/visitor-trial.module';
     QuizAnswersModule,
     ProgressModule,
     CertificatesModule,
+    SuccessStoriesModule,
     SubscriptionsModule,
     EnrollmentsModule,
     PaymentsModule,

@@ -7,7 +7,14 @@ export type AdminBadge = {
   name: string;
   description: string;
   iconUrl: string | null;
-  triggerType: "FIRST_LESSON" | "QUIZ_PASS_COUNT" | "STREAK_DAYS" | "BACKTEST_COUNT" | "SIMULATION_COUNT" | "CUSTOM";
+  triggerType:
+    | "FIRST_LESSON"
+    | "QUIZ_PASS_COUNT"
+    | "STREAK_DAYS"
+    | "BACKTEST_COUNT"
+    | "SIMULATION_COUNT"
+    | "PROGRAM_COMPLETE"
+    | "CUSTOM";
   requiredCount: number;
   createdAt: string;
 };

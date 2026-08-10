@@ -23,11 +23,15 @@ export class AnswersController {
   constructor(private readonly answersService: AnswersService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
   findAll() {
     return this.answersService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
   findOne(@Param('id') id: string) {
     return this.answersService.findById(id);
   }

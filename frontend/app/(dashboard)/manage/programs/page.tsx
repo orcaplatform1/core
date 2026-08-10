@@ -23,6 +23,7 @@ import {
 import type { Program, CourseModule, LessonSummary } from "@/lib/types/curriculum";
 import { LessonResourcesEditor } from "@/components/admin/lesson-resources-editor";
 import { LessonTaskEditor } from "@/components/admin/lesson-task-editor";
+import { QuizEditor } from "@/components/admin/quiz-editor";
 
 const LEVELS = ["BASLANGIC", "ORTA", "ILERI"] as const;
 
@@ -559,6 +560,7 @@ export default function AdminProgramsPage() {
                                         </div>
                                         <LessonResourcesEditor lessonId={l.id} />
                                         <LessonTaskEditor lessonId={l.id} />
+                                        <QuizEditor lessonId={l.id} />
                                       </div>
                                     ) : (
                                       <div className="flex items-center justify-between gap-2">

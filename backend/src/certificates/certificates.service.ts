@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
+import { BadgesService } from '../badges/badges.service';
 import PDFDocument = require('pdfkit');
 import * as QRCode from 'qrcode';
 
@@ -9,6 +10,7 @@ export class CertificatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progressService: ProgressService,
+    private readonly badgesService: BadgesService,
   ) {}
 
   /** Kullanıcının sahip olduğu (enrollment) TÜM programları tamamlayıp tamamlamadığını kontrol eder. */
@@ -58,10 +60,12 @@ export class CertificatesService {
       },
     });
     const code = `ORCA-${String(created.number).padStart(6, '0')}`;
-    return this.prisma.certificate.update({
+    const certificate = await this.prisma.certificate.update({
       where: { id: created.id },
       data: { code },
     });
+    await this.badgesService.checkAndGrant(userId, 'PROGRAM_COMPLETE', 1);
+    return certificate;
   }
 
   async findAll() {

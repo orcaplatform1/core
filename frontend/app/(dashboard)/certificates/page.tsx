@@ -10,6 +10,7 @@ import {
 import { authStorage } from "@/lib/auth-storage";
 import { Button } from "@/components/ui/button";
 import { celebrate } from "@/lib/hooks/use-celebration";
+import { SuccessStoryPanel } from "@/components/dashboard/success-story-panel";
 
 export default function CertificatesPage() {
   const { data: status, isLoading } = useMyCertificateStatus();
@@ -57,41 +58,44 @@ export default function CertificatesPage() {
       {isLoading || !status ? (
         <div className="h-64 animate-pulse rounded-2xl bg-card" />
       ) : status.hasCertificate ? (
-        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 rounded-2xl border border-border bg-card p-10 text-center">
-          <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 via-card to-purple/15">
-            <Award className="size-10 text-primary drop-shadow-[0_0_20px_rgba(59,91,255,0.5)]" />
+        <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+          <div className="flex w-full flex-col items-center gap-5 rounded-2xl border border-border bg-card p-10 text-center">
+            <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 via-card to-purple/15">
+              <Award className="size-10 text-primary drop-shadow-[0_0_20px_rgba(59,91,255,0.5)]" />
+            </div>
+            <div>
+              <p className="text-body-xs text-muted-foreground">{status.certificate.code}</p>
+              <h2 className="mt-1 text-card-title-md text-foreground">
+                ORCA Mezuniyet Sertifikası
+              </h2>
+              <p className="mt-1 text-body-xs text-muted-foreground">
+                {new Date(status.certificate.issuedAt).toLocaleDateString("tr-TR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}{" "}
+                tarihinde verildi
+              </p>
+            </div>
+            <div className="flex w-full gap-3">
+              <Button
+                variant="outline"
+                className="h-11 flex-1"
+                onClick={() => handleDownload(status.certificate.id)}
+              >
+                <Download className="size-4" /> PDF İndir
+              </Button>
+              <Button
+                className="h-11 flex-1"
+                render={
+                  <Link href={`/verify/${status.certificate.code}`}>
+                    <ShieldCheck className="size-4" /> Doğrula
+                  </Link>
+                }
+              />
+            </div>
           </div>
-          <div>
-            <p className="text-body-xs text-muted-foreground">{status.certificate.code}</p>
-            <h2 className="mt-1 text-card-title-md text-foreground">
-              ORCA Mezuniyet Sertifikası
-            </h2>
-            <p className="mt-1 text-body-xs text-muted-foreground">
-              {new Date(status.certificate.issuedAt).toLocaleDateString("tr-TR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}{" "}
-              tarihinde verildi
-            </p>
-          </div>
-          <div className="flex w-full gap-3">
-            <Button
-              variant="outline"
-              className="h-11 flex-1"
-              onClick={() => handleDownload(status.certificate.id)}
-            >
-              <Download className="size-4" /> PDF İndir
-            </Button>
-            <Button
-              className="h-11 flex-1"
-              render={
-                <Link href={`/verify/${status.certificate.code}`}>
-                  <ShieldCheck className="size-4" /> Doğrula
-                </Link>
-              }
-            />
-          </div>
+          <SuccessStoryPanel />
         </div>
       ) : (
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-10 text-center">

@@ -103,6 +103,7 @@ model User {
   postLikes               PostLike[]
   postComments            PostComment[]
   postReports             PostReport[]
+  successStory            SuccessStory?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -533,6 +534,30 @@ model Certificate {
   issuedAt    DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+enum SuccessStoryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model SuccessStory {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  content String
+
+  status          SuccessStoryStatus @default(PENDING)
+  rejectionReason String?
+  moderatedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
 }
 
 model Subscription {
@@ -988,6 +1013,7 @@ enum BadgeTriggerType {
   STREAK_DAYS
   BACKTEST_COUNT
   SIMULATION_COUNT
+  PROGRAM_COMPLETE
   CUSTOM
 }
 
