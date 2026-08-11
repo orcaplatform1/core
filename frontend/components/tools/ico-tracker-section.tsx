@@ -4,6 +4,7 @@ import { Rocket } from "lucide-react";
 import { useIcoProjects } from "@/lib/hooks/use-ico-tracker";
 import { ToolCard } from "./tool-card";
 import { IcoCard } from "./ico-card";
+import { SponsorCtaButton } from "@/components/ui/sponsor-cta-button";
 
 function IcoEmptyState() {
   return (
@@ -23,17 +24,22 @@ export function IcoTrackerSection() {
   const { data } = useIcoProjects();
   const projects = data ?? [];
 
-  if (projects.length === 0) {
-    return <IcoEmptyState />;
-  }
-
   return (
-    <ToolCard title="ICO / IDO'lar" icon={Rocket} accent="primary" className="sm:col-span-2">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((p) => (
-          <IcoCard key={p.id} project={p} />
-        ))}
+    <div className="space-y-3 sm:col-span-2">
+      <div className="flex justify-end">
+        <SponsorCtaButton label="ICO / IDO Ekle" />
       </div>
-    </ToolCard>
+      {projects.length === 0 ? (
+        <IcoEmptyState />
+      ) : (
+        <ToolCard title="ICO / IDO'lar" icon={Rocket} accent="primary">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((p) => (
+              <IcoCard key={p.id} project={p} />
+            ))}
+          </div>
+        </ToolCard>
+      )}
+    </div>
   );
 }

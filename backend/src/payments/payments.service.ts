@@ -24,6 +24,7 @@ const COINGECKO_IDS: Record<string, string> = {
   BTC: 'bitcoin',
   ETH: 'ethereum',
   BNB: 'binancecoin',
+  USDT: 'tether',
 };
 
 @Injectable()
@@ -173,7 +174,7 @@ export class PaymentsService {
   private async fetchCryptoRateTRY(asset: string): Promise<number> {
     const coinId = COINGECKO_IDS[asset];
     if (!coinId) {
-      throw new BadRequestException('Desteklenmeyen kripto varlık. Sadece BTC, ETH, BNB kabul edilir.');
+      throw new BadRequestException('Desteklenmeyen kripto varlık. Sadece BTC, ETH, BNB, USDT kabul edilir.');
     }
     try {
       const res = await fetch(
@@ -189,11 +190,26 @@ export class PaymentsService {
     }
   }
 
+  async getSponsorshipPricingUsd() {
+    const settings = await this.prisma.platformSettings.upsert({
+      where: { id: 'singleton' },
+      update: {},
+      create: { id: 'singleton' },
+    });
+    return {
+      7: settings.sponsorshipPrice7dUSD,
+      15: settings.sponsorshipPrice15dUSD,
+      30: settings.sponsorshipPrice30dUSD,
+    };
+  }
+
   async create(userId: string, dto: CreatePaymentDto) {
     const purpose = dto.purpose ?? 'PROGRAM';
 
     let finalAmount: number;
     let creditAmount: number | undefined;
+
+    let sponsorship: { id: string; userId: string; status: string; paymentId: string | null; priceUsd: number } | null = null;
 
     if (purpose === 'MENTOR_CREDITS') {
       if (!dto.creditAmount || !MENTOR_CREDIT_PRICES[dto.creditAmount]) {
@@ -201,6 +217,24 @@ export class PaymentsService {
       }
       finalAmount = MENTOR_CREDIT_PRICES[dto.creditAmount];
       creditAmount = dto.creditAmount;
+    } else if (purpose === 'SPONSORSHIP') {
+      if (dto.method !== 'CRYPTO') {
+        throw new BadRequestException('Sponsorluk ödemesi yalnızca kripto ile yapılabilir.');
+      }
+      if (!dto.sponsorshipId) {
+        throw new BadRequestException('Sponsorluk başvurusu belirtilmedi.');
+      }
+      sponsorship = await this.prisma.sponsorship.findUnique({ where: { id: dto.sponsorshipId } });
+      if (!sponsorship || sponsorship.userId !== userId) {
+        throw new BadRequestException('Sponsorluk başvurusu bulunamadı.');
+      }
+      if (sponsorship.status !== 'AWAITING_PAYMENT' || sponsorship.paymentId) {
+        throw new BadRequestException('Bu başvuru için ödeme zaten oluşturulmuş.');
+      }
+      // Fiyat basvuru olusturulurken USD olarak kaydedilmisti (bkz. SponsorshipsService.create) -
+      // odeme aninda gunun USDT/TRY kuruyla TRY'ye cevrilir (USDT ~ 1 USD kabul edilir).
+      const usdTryRate = await this.fetchCryptoRateTRY('USDT');
+      finalAmount = Math.round(sponsorship.priceUsd * usdTryRate * 100) / 100;
     } else {
       // Program fiyatı ASLA client'tan alınmaz — DB'deki tek doğru kaynaktan okunur (admin panelden düzenlenebilir).
       finalAmount = await this.getProgramPrice();
@@ -244,7 +278,7 @@ export class PaymentsService {
 
     if (dto.method === 'CRYPTO') {
       if (!dto.cryptoAsset) {
-        throw new BadRequestException('Kripto ile ödemede varlık seçimi zorunlu (BTC, ETH veya BNB).');
+        throw new BadRequestException('Kripto ile ödemede varlık seçimi zorunlu (BTC, ETH, BNB veya USDT).');
       }
       cryptoAsset = dto.cryptoAsset;
       cryptoRateTRY = await this.fetchCryptoRateTRY(dto.cryptoAsset);
@@ -274,6 +308,10 @@ export class PaymentsService {
         creditAmount,
       },
     });
+
+    if (sponsorship) {
+      await this.prisma.sponsorship.update({ where: { id: sponsorship.id }, data: { paymentId: payment.id } });
+    }
 
     if (dto.method === 'CRYPTO' && dto.cryptoProvider === 'BINANCE') {
       const checkoutUrl = await this.createBinancePayOrder(payment.id, finalAmount, dto.currency);
@@ -349,6 +387,30 @@ export class PaymentsService {
         where: { id: payment.userId },
         data: { mentorCredits: { increment: payment.creditAmount } },
       });
+
+      await this.invoicesService.createForPayment(payment.id);
+      return updated;
+    }
+
+    if (payment.purpose === 'SPONSORSHIP') {
+      const sponsorship = await this.prisma.sponsorship.findUnique({ where: { paymentId: payment.id } });
+      if (sponsorship && sponsorship.status === 'AWAITING_PAYMENT') {
+        await this.prisma.sponsorship.update({
+          where: { id: sponsorship.id },
+          data: { status: 'PENDING_REVIEW' },
+        });
+
+        const admins = await this.prisma.user.findMany({ where: { role: 'SUPER_ADMIN' }, select: { id: true } });
+        await this.notificationsService.createForManyUsers(
+          admins.map((a) => a.id),
+          {
+            type: 'SYSTEM' as any,
+            title: 'Yeni sponsor başvurusu',
+            message: `Ödemesi tamamlanan bir sponsor başvurusu (${sponsorship.type === 'ICO' ? 'ICO/IDO' : 'Airdrop'}) onayını bekliyor.`,
+            link: '/manage/sponsorships',
+          },
+        );
+      }
 
       await this.invoicesService.createForPayment(payment.id);
       return updated;

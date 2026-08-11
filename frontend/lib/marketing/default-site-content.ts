@@ -6,6 +6,8 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
   navLinks: [
     { label: "Ana Sayfa", href: "/" },
     { label: "Programlar", href: "/programs" },
+    { label: "En İyiler", href: "/legends" },
+    { label: "Sözlük", href: "/glossary" },
     { label: "AI Mentor", href: "/mentor" },
     { label: "Araçlar", href: "/manage/scanner" },
     { label: "Topluluk", href: "/community" },

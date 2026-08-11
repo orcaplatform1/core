@@ -33,6 +33,7 @@ type ProgramPayload = {
   coverImageUrl?: string;
   level?: "BASLANGIC" | "ORTA" | "ILERI";
   durationHours?: number;
+  order?: number;
 };
 export function useCreateProgram() {
   const qc = useQueryClient();

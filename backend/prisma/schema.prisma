@@ -70,6 +70,7 @@ model User {
   payments                Payment[]              @relation("PaymentBuyer")
   referredPayments        Payment[]              @relation("PaymentReferrer")
   studentReferredPayments Payment[]              @relation("PaymentStudentReferrer")
+  sponsorships            Sponsorship[]          @relation("SponsorshipSubmitter")
   quizAttempts            QuizAttempt[]
   progress                Progress[]
   certificates            Certificate[]
@@ -257,6 +258,7 @@ model Program {
   coverImageUrl String?
   level         ProgramLevel?
   durationHours Int?
+  order         Int           @default(0)
 
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id])
@@ -610,6 +612,8 @@ model Payment {
   cryptoRateTRY      Float?
   cryptoRateLockedAt DateTime?
 
+  sponsorship Sponsorship?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -636,15 +640,21 @@ model MentorSuggestion {
 }
 
 model PlatformSettings {
-  id              String   @id @default("singleton")
-  programPriceTRY Float    @default(4500)
-  updatedAt       DateTime @updatedAt
+  id                     String   @id @default("singleton")
+  programPriceTRY        Float    @default(4500)
+  // Sponsor (ICO/Airdrop reklam) fiyat kademeleri, USD - odeme aninda gunun
+  // USDT/TRY kuruyla TRY'ye cevrilir (bkz. PaymentsService.create SPONSORSHIP dali).
+  sponsorshipPrice7dUSD  Float    @default(150)
+  sponsorshipPrice15dUSD Float    @default(250)
+  sponsorshipPrice30dUSD Float    @default(400)
+  updatedAt              DateTime @updatedAt
 }
 
 enum CryptoAsset {
   BTC
   ETH
   BNB
+  USDT
 }
 
 model Invoice {
@@ -1157,6 +1167,7 @@ model SecurityEvent {
 enum PaymentPurpose {
   PROGRAM
   MENTOR_CREDITS
+  SPONSORSHIP
 }
 
 model Liquidation {
@@ -1461,46 +1472,46 @@ enum AirdropDifficulty {
 }
 
 model Airdrop {
-  id                 String            @id @default(cuid())
-  title              String
-  slug               String            @unique
-  projectName        String
-  blockchain         String
-  category           String
-  logo               String?
-  banner             String?
-  description        String?           @db.Text
-  website            String?
-  twitter            String?
-  discord            String?
-  telegram           String?
-  documentation      String?
-  status             AirdropStatus     @default(UPCOMING)
-  rewardType         String
-  estimatedReward    String?
-  estimatedValueUSD  Float?
-  difficulty         AirdropDifficulty @default(MEDIUM)
-  completionTime     String?
-  requiresKYC        Boolean           @default(false)
-  requiresWallet     Boolean           @default(false)
-  requiresDiscord    Boolean           @default(false)
-  requiresTwitter    Boolean           @default(false)
-  requiresTelegram   Boolean           @default(false)
-  startDate          DateTime?
-  endDate            DateTime?
-  snapshotDate       DateTime?
-  claimDate          DateTime?
-  aiScore            Int               @default(50)
-  riskScore          Int               @default(50)
-  featured           Boolean           @default(false)
+  id                String            @id @default(cuid())
+  title             String
+  slug              String            @unique
+  projectName       String
+  blockchain        String
+  category          String
+  logo              String?
+  banner            String?
+  description       String?           @db.Text
+  website           String?
+  twitter           String?
+  discord           String?
+  telegram          String?
+  documentation     String?
+  status            AirdropStatus     @default(UPCOMING)
+  rewardType        String
+  estimatedReward   String?
+  estimatedValueUSD Float?
+  difficulty        AirdropDifficulty @default(MEDIUM)
+  completionTime    String?
+  requiresKYC       Boolean           @default(false)
+  requiresWallet    Boolean           @default(false)
+  requiresDiscord   Boolean           @default(false)
+  requiresTwitter   Boolean           @default(false)
+  requiresTelegram  Boolean           @default(false)
+  startDate         DateTime?
+  endDate           DateTime?
+  snapshotDate      DateTime?
+  claimDate         DateTime?
+  aiScore           Int               @default(50)
+  riskScore         Int               @default(50)
+  featured          Boolean           @default(false)
   // #Ads etiketi: true ise listelerde tarih/eklenme sirasindan bagimsiz
   // olarak en usttte gosterilir (birden fazla reklamli kayit varsa aralarinda
   // en son eklenen ustte). adExpiresAt gecince (bkz. servisteki cron) isAd
   // otomatik false'a doner, kayit normal siraya geri doner - SILINMEZ.
-  isAd               Boolean           @default(false)
-  adExpiresAt        DateTime?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  isAd              Boolean           @default(false)
+  adExpiresAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   @@index([status])
   @@index([blockchain])
@@ -1508,6 +1519,60 @@ model Airdrop {
   @@index([difficulty])
   @@index([featured])
   @@index([isAd])
+}
+
+// ---------- Sponsor (ucretli ICO/Airdrop reklam) basvurulari ----------
+
+enum SponsorshipType {
+  ICO
+  AIRDROP
+}
+
+// AWAITING_PAYMENT: form dolduruldu, odeme henuz tamamlanmadi.
+// PENDING_REVIEW: kripto odemesi onaylandi (webhook), admin incelemesi bekliyor.
+// APPROVED: admin onayladi - formData'dan gercek IcoProject/Airdrop kaydi
+// otomatik olusturuldu (isAd=true, adExpiresAt=durationDays), tum kullanicilara
+// bildirim gitti. REJECTED: admin reddetti (odeme iade sureci platform disinda).
+enum SponsorshipStatus {
+  AWAITING_PAYMENT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model Sponsorship {
+  id     String            @id @default(cuid())
+  userId String
+  user   User              @relation("SponsorshipSubmitter", fields: [userId], references: [id], onDelete: Restrict)
+  type   SponsorshipType
+  status SponsorshipStatus @default(AWAITING_PAYMENT)
+
+  durationDays Int
+  priceUsd     Float
+
+  contactName     String
+  contactEmail    String
+  contactTelegram String?
+
+  // CreateIcoProjectDto veya CreateAirdropDto ile ayni sekilde (isAd/adExpiresAt
+  // haric) - onay aninda SponsorshipsService bunu ilgili servise iletir.
+  formData Json
+
+  paymentId String?  @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  createdIcoId     String?
+  createdAirdropId String?
+
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedByName  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
 }
 
 // ---------- Ziyaretci Deneme Suresi (Araclar + Topluluk, giris yapmamis kullanicilar) ----------

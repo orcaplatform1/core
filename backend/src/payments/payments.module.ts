@@ -10,5 +10,6 @@ import { BadgesModule } from '../badges/badges.module';
   imports: [AuditLogModule, InvoicesModule, NotificationsModule, BadgesModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}

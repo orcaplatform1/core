@@ -62,6 +62,7 @@ import { SupportModule } from './support/support.module';
 import { CommunityModule } from './community/community.module';
 import { AirdropModule } from './airdrop/airdrop.module';
 import { VisitorTrialModule } from './visitor-trial/visitor-trial.module';
+import { SponsorshipsModule } from './sponsorships/sponsorships.module';
 
 @Module({
   imports: [
@@ -137,6 +138,7 @@ import { VisitorTrialModule } from './visitor-trial/visitor-trial.module';
     SupportModule,
     CommunityModule,
     AirdropModule,
+    SponsorshipsModule,
     VisitorTrialModule,
   ],
   providers: [

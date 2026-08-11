@@ -6,6 +6,7 @@ export type Program = {
   coverImageUrl: string | null;
   level: ProgramLevel | null;
   durationHours: number | null;
+  order: number;
   categoryId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -96,7 +97,7 @@ export type Payment = {
   currency: string;
   method: "CARD" | "CRYPTO" | "BANK_TRANSFER";
   status: "PENDING" | "APPROVED" | "REJECTED";
-  purpose: "PROGRAM" | "MENTOR_CREDITS";
+  purpose: "PROGRAM" | "MENTOR_CREDITS" | "SPONSORSHIP";
   receiptUrl: string | null;
   createdAt: string;
   approvedAt: string | null;
@@ -309,7 +310,7 @@ export type AdminPaymentRow = {
   currency: string;
   method: "CARD" | "CRYPTO" | "BANK_TRANSFER";
   status: "PENDING" | "APPROVED" | "REJECTED";
-  purpose: "PROGRAM" | "MENTOR_CREDITS";
+  purpose: "PROGRAM" | "MENTOR_CREDITS" | "SPONSORSHIP";
   receiptUrl: string | null;
   createdAt: string;
   approvedAt: string | null;

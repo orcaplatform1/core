@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Gift, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAirdrops, type AirdropQuery, type AirdropStatus, type AirdropDifficulty } from "@/lib/hooks/use-airdrops";
 import { AirdropCard } from "./airdrop-card";
+import { SponsorCtaButton } from "@/components/ui/sponsor-cta-button";
 
 function selectClass() {
   return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-body-sm text-foreground/90 outline-none focus:border-primary";
@@ -39,6 +40,9 @@ export function AirdropListSection() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <SponsorCtaButton label="Airdrop Ekle" />
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <input
           className={`${selectClass()} min-w-[200px] flex-1`}

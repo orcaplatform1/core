@@ -11,6 +11,11 @@ export function ProgramCard({ program }: { program: Program }) {
       className="program-card-accent group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1"
     >
       <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-primary/20 via-card to-purple/10">
+        {program.order > 0 && (
+          <span className="text-badge absolute left-3 top-3 z-10 rounded-lg bg-background/70 px-2 py-1 text-foreground backdrop-blur-sm">
+            {String(program.order).padStart(2, "0")}
+          </span>
+        )}
         {program.coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img

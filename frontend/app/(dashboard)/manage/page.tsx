@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag, Gift, Rocket, Star } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag, Gift, Rocket, Star, Handshake } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -240,6 +240,18 @@ export default function ManagePage() {
           <div>
             <p className="text-card-title-sm text-[#F5F1EA]">ICO / IDO</p>
             <p className="text-body-xs text-[#A8A6A0]">Lansman ekle/düzenle, #Ads pinleme</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/sponsorships"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#22C55E22]">
+            <Handshake size={20} color="#22C55E" />
+          </div>
+          <div>
+            <p className="text-card-title-sm text-[#F5F1EA]">Sponsorlar</p>
+            <p className="text-body-xs text-[#A8A6A0]">Ücretli ICO/Airdrop reklam başvurularını onayla, gelir istatistiği</p>
           </div>
         </Link>
         <Link

@@ -24,4 +24,9 @@ export class CreateProgramDto {
   @IsInt()
   @Min(1)
   durationHours?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
 }

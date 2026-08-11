@@ -8,5 +8,6 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
   imports: [AuditLogModule],
   controllers: [AirdropController, AdminAirdropController],
   providers: [AirdropService],
+  exports: [AirdropService],
 })
 export class AirdropModule {}

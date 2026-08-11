@@ -62,6 +62,7 @@ export default function AdminProgramsPage() {
     coverImageUrl: "",
     level: "BASLANGIC" as (typeof LEVELS)[number],
     durationHours: "",
+    order: "",
   });
 
   const [newModuleForProgram, setNewModuleForProgram] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export default function AdminProgramsPage() {
       coverImageUrl: "",
       level: "BASLANGIC",
       durationHours: "",
+      order: "",
     });
   }
 
@@ -110,6 +112,7 @@ export default function AdminProgramsPage() {
       coverImageUrl: p.coverImageUrl ?? "",
       level: (p.level as (typeof LEVELS)[number]) ?? "BASLANGIC",
       durationHours: p.durationHours ? String(p.durationHours) : "",
+      order: p.order ? String(p.order) : "",
     });
   }
 
@@ -125,6 +128,7 @@ export default function AdminProgramsPage() {
       coverImageUrl: programForm.coverImageUrl || undefined,
       level: programForm.level,
       durationHours: programForm.durationHours ? Number(programForm.durationHours) : undefined,
+      order: programForm.order ? Number(programForm.order) : undefined,
     };
     try {
       if (editingProgramId) {
@@ -335,6 +339,14 @@ export default function AdminProgramsPage() {
             onChange={(e) => setProgramForm((f) => ({ ...f, durationHours: e.target.value }))}
           />
         </div>
+        <input
+          className={inputClass()}
+          placeholder="Sıra No (landing page'de gösterim sırası, örn. 1)"
+          type="number"
+          min={0}
+          value={programForm.order}
+          onChange={(e) => setProgramForm((f) => ({ ...f, order: e.target.value }))}
+        />
         <div className="flex gap-2">
           <Button size="sm" onClick={submitProgram} disabled={createProgram.isPending || updateProgram.isPending}>
             <Check size={14} className="mr-1" /> Kaydet
@@ -446,7 +458,7 @@ export default function AdminProgramsPage() {
                     <div>
                       <p className="text-card-title-sm text-[#F5F1EA]">{p.title}</p>
                       <p className="text-body-xs text-[#A8A6A0]">
-                        {p.level ?? "—"} · {p.durationHours ? `${p.durationHours} saat` : "süre yok"} ·{" "}
+                        #{p.order} · {p.level ?? "—"} · {p.durationHours ? `${p.durationHours} saat` : "süre yok"} ·{" "}
                         {programModules.length} modül
                       </p>
                     </div>

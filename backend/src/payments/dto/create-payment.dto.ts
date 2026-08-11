@@ -8,7 +8,7 @@ export class CreatePaymentDto {
   @IsIn(['BINANCE', 'OKX', 'BYBIT'])
   cryptoProvider?: string;
   @IsOptional()
-  @IsIn(['BTC', 'ETH', 'BNB'])
+  @IsIn(['BTC', 'ETH', 'BNB', 'USDT'])
   cryptoAsset?: string;
   @IsOptional()
   @IsIn(['TURKCELL', 'VODAFONE', 'TURK_TELEKOM'])
@@ -23,9 +23,12 @@ export class CreatePaymentDto {
   @IsString()
   promoCode?: string;
   @IsOptional()
-  @IsIn(['PROGRAM', 'MENTOR_CREDITS'])
+  @IsIn(['PROGRAM', 'MENTOR_CREDITS', 'SPONSORSHIP'])
   purpose?: string;
   @IsOptional()
   @IsIn([100, 250, 500])
   creditAmount?: number;
+  @IsOptional()
+  @IsString()
+  sponsorshipId?: string;
 }

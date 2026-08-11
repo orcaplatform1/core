@@ -8,5 +8,6 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
   imports: [AuditLogModule],
   controllers: [IcoTrackerController, AdminIcoTrackerController],
   providers: [IcoTrackerService],
+  exports: [IcoTrackerService],
 })
 export class IcoTrackerModule {}
