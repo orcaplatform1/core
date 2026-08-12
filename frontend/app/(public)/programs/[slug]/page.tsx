@@ -57,12 +57,31 @@ export default async function ProgramDetailPage({
       : {}),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Programlar", item: "https://traders.tr/core/programs" },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: program.title,
+        item: `https://traders.tr/core/programs/${program.slug ?? program.id}`,
+      },
+    ],
+  };
+
   return (
     <div className="mx-auto max-w-[1000px] px-4 py-16 sm:px-6">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {program.coverImageUrl && (
         <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">
