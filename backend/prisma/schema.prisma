@@ -254,6 +254,7 @@ model Commission {
 model Program {
   id            String        @id @default(cuid())
   title         String
+  slug          String?       @unique
   description   String?
   coverImageUrl String?
   level         ProgramLevel?

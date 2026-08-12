@@ -5,7 +5,7 @@ import { FAQ_CATEGORIES } from "@/lib/marketing/faq-data";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
-  title: "Sıkça Sorulan Sorular | ORCA",
+  title: "Sıkça Sorulan Sorular",
   description:
     "ORCA hakkında merak edilenler: eğitimler, Yapay Zeka Mentor, üyelik ve ödeme, simülasyon & backtest, teknik konular, topluluk ve güven ile ilgili tüm sorulara yanıt bulun.",
 };

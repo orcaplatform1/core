@@ -15,11 +15,37 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "latin-ext"],
 });
 
+const SITE_URL = "https://traders.tr/core";
+const SITE_DESCRIPTION =
+  "Yapay zeka destekli finans ve trading eğitim platformu - kripto, borsa ve forex eğitimleri, canlı piyasa araçları ve AI Mentor.";
+
 export async function generateMetadata(): Promise<Metadata> {
   const siteContent = await getSiteContent();
+  const ogImage = siteContent.heroImageUrl
+    ? new URL(siteContent.heroImageUrl, SITE_URL).toString()
+    : `${SITE_URL}/marketing/orca-hero-whale.webp`;
   return {
-    title: "ORCA",
-    description: "Yapay zeka destekli finans ve trading eğitim platformu",
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: "ORCA - Finans ve Trading Eğitim Platformu",
+      template: "%s | ORCA",
+    },
+    description: SITE_DESCRIPTION,
+    openGraph: {
+      type: "website",
+      locale: "tr_TR",
+      siteName: "ORCA",
+      title: "ORCA - Finans ve Trading Eğitim Platformu",
+      description: SITE_DESCRIPTION,
+      url: SITE_URL,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "ORCA" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "ORCA - Finans ve Trading Eğitim Platformu",
+      description: SITE_DESCRIPTION,
+      images: [ogImage],
+    },
     icons: siteContent.faviconUrl
       ? {
           // sizes/type belirtmezsek bazı tarayıcılar görseli tek boyut varsayıp
@@ -38,6 +64,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  name: "ORCA",
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -46,6 +81,11 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col text-foreground">
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+        />
         <Providers>
           {children}
           <CookieConsent />

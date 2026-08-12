@@ -4,7 +4,7 @@ import { GlossaryContent } from "@/components/glossary/glossary-content";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
-  title: "Sözlük | ORCA",
+  title: "Sözlük",
   description: "Kripto, borsa ve forex dünyasının tüm terim ve kavramları tek sayfada.",
 };
 

@@ -18,7 +18,7 @@ export async function generateMetadata({
   const legend = getLegend(slug);
   if (!legend) return {};
   return {
-    title: `${legend.name} | En İyiler | ORCA`,
+    title: `${legend.name} - En İyiler`,
     description: legend.bio.slice(0, 155),
   };
 }

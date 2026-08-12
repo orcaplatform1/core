@@ -6,7 +6,7 @@ import { VisitorTrialGate } from "@/components/layout/visitor-trial-gate";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
-  title: "Topluluk | ORCA",
+  title: "Topluluk",
   description:
     "ORCA öğrencilerinin paylaştığı grafik analizlerini keşfet, kendi analizini paylaş, beğen ve yorum yap.",
 };

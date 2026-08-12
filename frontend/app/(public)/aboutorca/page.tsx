@@ -7,7 +7,7 @@ import { getPageBySlug, getSiteContent } from "@/lib/marketing/get-site-content"
 import { groupBlocksIntoSections, type AboutSection } from "@/lib/marketing/about-content";
 
 export const metadata: Metadata = {
-  title: "Hakkımızda | ORCA",
+  title: "Hakkımızda",
   description:
     "ORCA, finans eğitiminin ihtiyaç duyduğu tüm bileşenleri tek çatı altında bir araya getiren yeni nesil bir finans eğitim ekosistemidir.",
 };

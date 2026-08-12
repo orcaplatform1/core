@@ -7,7 +7,7 @@ import { getPageBySlug, getSiteContent, getFooterPages } from "@/lib/marketing/g
 const SLUG = "privacy-policy";
 
 export const metadata: Metadata = {
-  title: "Gizlilik Politikası | ORCA",
+  title: "Gizlilik Politikası",
   description: "ORCA platformunda kişisel verilerin işlenmesine ilişkin gizlilik politikası.",
 };
 

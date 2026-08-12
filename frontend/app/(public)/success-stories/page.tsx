@@ -5,7 +5,7 @@ import { SuccessStoriesContent } from "@/components/marketing/success-stories-co
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
-  title: "Başarı Hikayeleri | ORCA",
+  title: "Başarı Hikayeleri",
   description: "ORCA'yı bitiren öğrencilerin kendi ağızlarından anlattığı başarı hikayeleri.",
 };
 

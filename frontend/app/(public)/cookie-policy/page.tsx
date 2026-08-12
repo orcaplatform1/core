@@ -7,7 +7,7 @@ import { getPageBySlug, getSiteContent, getFooterPages } from "@/lib/marketing/g
 const SLUG = "cookie-policy";
 
 export const metadata: Metadata = {
-  title: "Çerez Politikası | ORCA",
+  title: "Çerez Politikası",
   description: "traders.tr'de kullanılan çerezler ve benzeri teknolojiler hakkında bilgi.",
 };
 

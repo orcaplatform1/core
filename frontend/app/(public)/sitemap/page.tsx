@@ -6,7 +6,7 @@ import { getPrograms } from "@/lib/marketing/get-programs";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "Site Haritası | ORCA",
+  title: "Site Haritası",
   description: "ORCA platformundaki tüm sayfalara ve bölümlere tek yerden ulaşın.",
 };
 

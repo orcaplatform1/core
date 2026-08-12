@@ -7,7 +7,7 @@ import { getPageBySlug, getSiteContent, getFooterPages } from "@/lib/marketing/g
 const SLUG = "terms-of-service";
 
 export const metadata: Metadata = {
-  title: "Kullanım Koşulları | ORCA",
+  title: "Kullanım Koşulları",
   description: "ORCA platformunun kullanımına ilişkin şartlar ve koşullar.",
 };
 

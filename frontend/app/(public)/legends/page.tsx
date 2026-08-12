@@ -4,7 +4,7 @@ import { LegendsList } from "@/components/legends/legends-list";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
 
 export const metadata: Metadata = {
-  title: "En İyiler | ORCA",
+  title: "En İyiler",
   description: "Tarihin en iyi 20 yatırımcısı ve traderı - nasıl başladıkları, nasıl başardıkları.",
 };
 

@@ -7,7 +7,7 @@ import { getPageBySlug, getSiteContent, getFooterPages } from "@/lib/marketing/g
 const SLUG = "distance-sales-agreement";
 
 export const metadata: Metadata = {
-  title: "Mesafeli Satış Sözleşmesi | ORCA",
+  title: "Mesafeli Satış Sözleşmesi",
   description: "ORCA platformu üzerinden yapılan satışlara ilişkin mesafeli satış sözleşmesi.",
 };
 
