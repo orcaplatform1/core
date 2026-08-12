@@ -1,10 +1,12 @@
-"use client";
-
-import { usePrograms } from "@/lib/hooks/use-curriculum";
+import { getPrograms } from "@/lib/marketing/get-programs";
 import { ProgramCard } from "@/components/programs/program-card";
 
-export function ProgramsContent() {
-  const { data: programs, isLoading } = usePrograms();
+// Server component: programlar SSR sirasinda fetch edilir (SEO + hizli ilk
+// render icin) - onceden client-side react-query hook'uyla cekiliyordu, bu da
+// ilk HTML'de sadece yukleniyor iskeleti gorunmesine, arama motorlarinin
+// kart icerigini hic gormemesine sebep oluyordu.
+export async function ProgramsContent() {
+  const programs = await getPrograms();
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
@@ -12,13 +14,7 @@ export function ProgramsContent() {
         Finans ve trading dünyasında ustalaşmak için tasarlanmış eğitim programları.
       </p>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-72 animate-pulse rounded-2xl bg-card" />
-          ))}
-        </div>
-      ) : !programs || programs.length === 0 ? (
+      {programs.length === 0 ? (
         <p className="text-body-sm text-muted-foreground">Henüz yayınlanmış bir program yok.</p>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

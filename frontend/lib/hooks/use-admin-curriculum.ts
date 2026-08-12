@@ -34,6 +34,7 @@ type ProgramPayload = {
   level?: "BASLANGIC" | "ORTA" | "ILERI";
   durationHours?: number;
   order?: number;
+  slug?: string;
 };
 export function useCreateProgram() {
   const qc = useQueryClient();

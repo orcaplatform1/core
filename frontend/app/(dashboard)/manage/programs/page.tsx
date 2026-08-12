@@ -63,6 +63,7 @@ export default function AdminProgramsPage() {
     level: "BASLANGIC" as (typeof LEVELS)[number],
     durationHours: "",
     order: "",
+    slug: "",
   });
 
   const [newModuleForProgram, setNewModuleForProgram] = useState<string | null>(null);
@@ -99,6 +100,7 @@ export default function AdminProgramsPage() {
       level: "BASLANGIC",
       durationHours: "",
       order: "",
+      slug: "",
     });
   }
 
@@ -113,6 +115,7 @@ export default function AdminProgramsPage() {
       level: (p.level as (typeof LEVELS)[number]) ?? "BASLANGIC",
       durationHours: p.durationHours ? String(p.durationHours) : "",
       order: p.order ? String(p.order) : "",
+      slug: p.slug ?? "",
     });
   }
 
@@ -129,6 +132,7 @@ export default function AdminProgramsPage() {
       level: programForm.level,
       durationHours: programForm.durationHours ? Number(programForm.durationHours) : undefined,
       order: programForm.order ? Number(programForm.order) : undefined,
+      slug: programForm.slug.trim() || undefined,
     };
     try {
       if (editingProgramId) {
@@ -346,6 +350,12 @@ export default function AdminProgramsPage() {
           min={0}
           value={programForm.order}
           onChange={(e) => setProgramForm((f) => ({ ...f, order: e.target.value }))}
+        />
+        <input
+          className={inputClass()}
+          placeholder="URL slug (boş bırakılırsa başlıktan otomatik oluşur, örn. forex-uzmanlik-programi)"
+          value={programForm.slug}
+          onChange={(e) => setProgramForm((f) => ({ ...f, slug: e.target.value }))}
         />
         <div className="flex gap-2">
           <Button size="sm" onClick={submitProgram} disabled={createProgram.isPending || updateProgram.isPending}>

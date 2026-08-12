@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -27,8 +28,10 @@ export class ProgramsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.programsService.findById(id);
+  async findOne(@Param('id') id: string) {
+    const program = await this.programsService.findBySlugOrId(id);
+    if (!program) throw new NotFoundException('Program bulunamadı.');
+    return program;
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

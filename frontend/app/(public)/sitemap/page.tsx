@@ -107,7 +107,7 @@ export default async function SitemapPage() {
                 {programs.map((program) => (
                   <li key={program.id}>
                     <Link
-                      href={`/programs/${program.id}`}
+                      href={`/programs/${program.slug ?? program.id}`}
                       className="block rounded-lg border border-border bg-card px-4 py-2.5 text-navbar text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                     >
                       {program.title}

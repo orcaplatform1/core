@@ -29,4 +29,8 @@ export class CreateProgramDto {
   @IsInt()
   @Min(0)
   order?: number;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 }

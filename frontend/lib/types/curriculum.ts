@@ -2,6 +2,7 @@ export type ProgramLevel = "BASLANGIC" | "ORTA" | "ILERI";
 export type Program = {
   id: string;
   title: string;
+  slug: string | null;
   description: string | null;
   coverImageUrl: string | null;
   level: ProgramLevel | null;

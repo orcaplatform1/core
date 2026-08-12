@@ -1,85 +1,48 @@
 "use client";
 
-import { use } from "react";
 import Link from "next/link";
-import { Clock, Layers, Lock, PlayCircle } from "lucide-react";
-import { useProgram, useAllModules, useAllLessons, useMyEnrollments } from "@/lib/hooks/use-curriculum";
+import { Lock, PlayCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { LevelBadge } from "@/components/programs/level-badge";
+import { useMyEnrollments } from "@/lib/hooks/use-curriculum";
 import { Button } from "@/components/ui/button";
 import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import type { Program, CourseModule, LessonSummary } from "@/lib/types/curriculum";
 
-export default function ProgramDetailPage({
-  params,
+// Program, modul ve dersler artik ust seviye server component'te (SEO icin
+// server-side) fetch edilip prop olarak buraya geciyor - bu bilesen sadece
+// giris/kayit durumuna gore degisen etkilesimli kismi (CTA, kilit ikonlari,
+// ders linki vs. duz metin) client tarafinda yonetiyor.
+export function ProgramCurriculum({
+  program,
+  modules,
+  lessons,
 }: {
-  params: Promise<{ id: string }>;
+  program: Program;
+  modules: CourseModule[];
+  lessons: LessonSummary[];
 }) {
-  const { id } = use(params);
   const { user } = useAuth();
-  const { data: program, isLoading } = useProgram(id);
-  const { data: allModules } = useAllModules();
-  const { data: allLessons } = useAllLessons();
   const { data: enrollments } = useMyEnrollments();
 
-  const modules = (allModules ?? [])
-    .filter((m) => m.programId === id)
-    .sort((a, b) => a.order - b.order);
-
-  const isEnrolled = !!enrollments?.some((e) => e.programId === id) || user?.role === "SUPER_ADMIN";
-
-  if (isLoading || !program) {
-    return (
-      <div className="mx-auto max-w-[1000px] px-4 py-16">
-        <div className="h-64 animate-pulse rounded-2xl bg-card" />
-      </div>
-    );
-  }
+  const isEnrolled = !!enrollments?.some((e) => e.programId === program.id) || user?.role === "SUPER_ADMIN";
 
   return (
-    <div className="mx-auto max-w-[1000px] px-4 py-16 sm:px-6">
-      {program.coverImageUrl && (
-        <div className="mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={program.coverImageUrl}
-            alt={program.title}
-            className="h-full w-full object-cover"
-          />
-        </div>
+    <>
+      {isEnrolled ? (
+        <Button
+          className="mt-2 h-12 w-fit"
+          render={<Link href={`/courses/${program.id}`}>Eğitime Devam Et</Link>}
+        />
+      ) : user ? (
+        <PremiumGlowButton
+          wrapperClassName="mt-2"
+          className="h-12 w-fit"
+          render={<Link href="/subscription">Programı Satın Al</Link>}
+        />
+      ) : (
+        <Button className="mt-2 h-12 w-fit" render={<Link href="/login">Satın Almak İçin Giriş Yap</Link>} />
       )}
-      <div className="flex flex-col gap-4">
-        <LevelBadge level={program.level} />
-        <h1 className="text-h1 text-foreground">{program.title}</h1>
-        {program.description && (
-          <p className="text-body text-muted-foreground">{program.description}</p>
-        )}
-        <div className="flex items-center gap-5 text-body-sm text-muted-foreground">
-          {program.durationHours && (
-            <span className="flex items-center gap-1.5">
-              <Clock className="size-4" /> {program.durationHours} saat
-            </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Layers className="size-4" /> {modules.length} modül
-          </span>
-        </div>
-
-        {isEnrolled ? (
-          <Button
-            className="mt-2 h-12 w-fit"
-            render={<Link href={`/courses/${program.id}`}>Eğitime Devam Et</Link>}
-          />
-        ) : user ? (
-          <PremiumGlowButton
-            wrapperClassName="mt-2"
-            className="h-12 w-fit"
-            render={<Link href="/subscription">Programı Satın Al</Link>}
-          />
-        ) : (
-          <Button className="mt-2 h-12 w-fit" render={<Link href="/login">Satın Almak İçin Giriş Yap</Link>} />
-        )}
-      </div>
 
       <div className="mt-12">
         <h2 className="text-h2 text-foreground">Müfredat</h2>
@@ -88,7 +51,7 @@ export default function ProgramDetailPage({
         ) : (
           <Accordion multiple={false} className="mt-4 flex flex-col gap-3">
             {modules.map((mod, i) => {
-              const moduleLessons = (allLessons ?? [])
+              const moduleLessons = lessons
                 .filter((l) => l.moduleId === mod.id)
                 .sort((a, b) => a.order - b.order);
               return (
@@ -120,7 +83,7 @@ export default function ProgramDetailPage({
                         user ? (
                           <Link
                             key={lesson.id}
-                            href={`/courses/${id}/lessons/${lesson.id}`}
+                            href={`/courses/${program.id}/lessons/${lesson.id}`}
                             className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-body-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground"
                           >
                             <PlayCircle className="size-4 shrink-0" />
@@ -144,6 +107,6 @@ export default function ProgramDetailPage({
           </Accordion>
         )}
       </div>
-    </div>
+    </>
   );
 }
