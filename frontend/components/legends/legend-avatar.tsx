@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // Fotoğrafı olmayan (veya yüklenemeyen) kişiler için baş harf rozetine düşer -
@@ -20,13 +21,19 @@ export function LegendAvatar({
 
   if (showPhoto) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={photoUrl}
-        alt={name}
-        onError={() => setFailed(true)}
-        className={cn(dims, "shrink-0 rounded-full border border-border object-cover")}
-      />
+      <div className={cn(dims, "relative shrink-0 overflow-hidden rounded-full border border-border")}>
+        {/* unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
+            ile dahili self-fetch yaparken 400 dönüyor (bkz. hero-background.tsx). */}
+        <Image
+          src={photoUrl}
+          alt={name}
+          fill
+          unoptimized
+          sizes={size === "lg" ? "144px" : "44px"}
+          onError={() => setFailed(true)}
+          className="object-cover"
+        />
+      </div>
     );
   }
 

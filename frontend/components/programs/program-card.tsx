@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Clock } from "lucide-react";
 import type { Program } from "@/lib/types/curriculum";
 import { LevelBadge } from "./level-badge";
@@ -17,11 +18,16 @@ export function ProgramCard({ program }: { program: Program }) {
           </span>
         )}
         {program.coverImageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
+          // ile dahili self-fetch yaparken 400 dönüyor (bkz. hero-background.tsx) -
+          // yine de fill+sizes sayesinde lazy-load ve doğru en-boy oranı korunuyor.
+          <Image
             src={program.coverImageUrl}
             alt={program.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            unoptimized
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         )}
       </div>
