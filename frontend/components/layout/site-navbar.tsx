@@ -34,131 +34,133 @@ export function SiteNavbar({
           <SiteLogo siteContent={siteContent} textClassName="text-lg text-foreground" imgClassName="h-12" />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {publicLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-navbar text-secondary-foreground/80 hover:text-foreground transition-colors duration-200"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
+            {isLoading ? (
+              <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />
+            ) : user ? (
+              <>
+                <Button variant="outline" onClick={logout}>
+                  <LogOut className="size-4" /> Çıkış Yap
+                </Button>
+                <PremiumGlowButton
+                  render={
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
+                    </Link>
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <Button variant="outline" render={<Link href="/login">Giriş</Link>} />
+                <PremiumGlowButton render={<Link href="/register">Kayıt Ol</Link>} />
+              </>
+            )}
+            <div className="group relative hidden lg:block">
+              <Link
+                href={siteContent.aiMentorHref}
+                className="flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/15"
+              >
+                <Bot className="size-3.5" />
+                {siteContent.aiMentorLabel}
+                <span className="size-1.5 rounded-full bg-success animate-pulse" />
+              </Link>
 
-        <div className="hidden md:flex items-center gap-3">
-          {isLoading ? (
-            <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />
-          ) : user ? (
-            <PremiumGlowButton
-              render={
-                <Link href="/dashboard">
-                  <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
-                </Link>
-              }
-            />
-          ) : (
-            <>
-              <Button variant="outline" render={<Link href="/login">Giriş</Link>} />
-              <PremiumGlowButton render={<Link href="/register">Kayıt Ol</Link>} />
-            </>
-          )}
-          <div className="group relative hidden lg:block">
-            <Link
-              href={siteContent.aiMentorHref}
-              className="flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/15"
-            >
-              <Bot className="size-3.5" />
-              {siteContent.aiMentorLabel}
-              <span className="size-1.5 rounded-full bg-success animate-pulse" />
-            </Link>
-
-            <div className="pointer-events-none absolute right-0 top-full z-50 translate-y-1 pt-3 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-              <AiMentorPreviewCard size="compact" className="w-[360px] max-w-[90vw]" />
+              <div className="pointer-events-none absolute right-0 top-full z-50 translate-y-1 pt-3 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <AiMentorPreviewCard size="compact" className="w-[360px] max-w-[90vw]" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger
-            className="md:hidden"
-            render={
-              <Button variant="ghost" size="icon" aria-label="Menü">
-                <Menu className="size-5" />
-              </Button>
-            }
-          />
-          <SheetContent
-            side="right"
-            className="w-[300px] bg-sidebar border-l border-sidebar-border p-0"
-          >
-            <SheetTitle className="sr-only">Menü</SheetTitle>
-            <div className="flex items-center justify-between h-[72px] px-5 border-b border-sidebar-border">
-              <SiteLogo siteContent={siteContent} imgClassName="h-8" />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setOpen(false)}
-                aria-label="Kapat"
-              >
-                <X className="size-5" />
-              </Button>
-            </div>
-            <nav className="flex flex-col gap-2 p-5">
-              {publicLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
+          {/* Menü linkleri çoğaldığı için masaüstünde de artık ayrı bir <nav> listesi yok -
+              tüm ekran boyutlarında tek hamburger (☰) menüsü kullanılıyor, sağ köşede,
+              giriş/dashboard butonlarının hemen sağında. */}
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger
+              render={
+                <Button variant="ghost" size="icon" aria-label="Menü">
+                  <Menu className="size-5" />
+                </Button>
+              }
+            />
+            <SheetContent
+              side="right"
+              className="w-[300px] bg-sidebar border-l border-sidebar-border p-0"
+            >
+              <SheetTitle className="sr-only">Menü</SheetTitle>
+              <div className="flex items-center justify-between h-[72px] px-5 border-b border-sidebar-border">
+                <SiteLogo siteContent={siteContent} imgClassName="h-8" />
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setOpen(false)}
-                  className="text-navbar rounded-lg px-3.5 py-3 text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
+                  aria-label="Kapat"
                 >
-                  {link.label}
-                </Link>
-              ))}
-
-              <Separator className="my-1" />
-              {user ? (
-                <>
-                  <PremiumGlowButton
-                    wrapperClassName="w-full mt-1"
-                    className="h-11 w-full text-[15px]"
+                  <X className="size-5" />
+                </Button>
+              </div>
+              <nav className="flex flex-col gap-2 p-5">
+                {publicLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
                     onClick={() => setOpen(false)}
-                    render={
-                      <Link href="/dashboard">
-                        <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
-                      </Link>
-                    }
-                  />
-                  <Button
-                    variant="outline"
-                    className="h-11 mt-2 text-[15px]"
-                    onClick={() => {
-                      setOpen(false);
-                      logout();
-                    }}
+                    className="text-navbar rounded-lg px-3.5 py-3 text-secondary-foreground/80 hover:bg-accent hover:text-foreground transition-colors duration-200"
                   >
-                    <LogOut className="size-4" /> Çıkış Yap
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    className="h-11 mt-1 text-[15px]"
-                    onClick={() => setOpen(false)}
-                    render={<Link href="/login">Giriş</Link>}
-                  />
-                  <PremiumGlowButton
-                    wrapperClassName="w-full mt-2"
-                    className="h-11 w-full text-[15px]"
-                    onClick={() => setOpen(false)}
-                    render={<Link href="/register">Kayıt Ol</Link>}
-                  />
-                </>
-              )}
-            </nav>
-          </SheetContent>
-        </Sheet>
+                    {link.label}
+                  </Link>
+                ))}
+
+                {/* Dashboard/Çıkış/Giriş butonları masaüstünde ayrıca görünür durumda
+                    (bkz. üstteki hidden md:flex kümesi), burada tekrar etmeye gerek yok -
+                    yalnızca mobilde bu menü tek erişim yolu olduğu için gösteriliyor. */}
+                <Separator className="my-1 md:hidden" />
+                <div className="contents md:hidden">
+                {user ? (
+                  <>
+                    <PremiumGlowButton
+                      wrapperClassName="w-full mt-1"
+                      className="h-11 w-full text-[15px]"
+                      onClick={() => setOpen(false)}
+                      render={
+                        <Link href="/dashboard">
+                          <LayoutDashboard className="size-4" /> Dashboard&apos;a Git
+                        </Link>
+                      }
+                    />
+                    <Button
+                      variant="outline"
+                      className="h-11 mt-2 text-[15px]"
+                      onClick={() => {
+                        setOpen(false);
+                        logout();
+                      }}
+                    >
+                      <LogOut className="size-4" /> Çıkış Yap
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-11 mt-1 text-[15px]"
+                      onClick={() => setOpen(false)}
+                      render={<Link href="/login">Giriş</Link>}
+                    />
+                    <PremiumGlowButton
+                      wrapperClassName="w-full mt-2"
+                      className="h-11 w-full text-[15px]"
+                      onClick={() => setOpen(false)}
+                      render={<Link href="/register">Kayıt Ol</Link>}
+                    />
+                  </>
+                )}
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
