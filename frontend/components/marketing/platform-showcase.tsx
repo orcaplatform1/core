@@ -54,8 +54,15 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
               }}
             >
               {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt="ORCA Dashboard" className="h-full w-full object-cover object-top" />
+                <Image
+                  src={imageUrl}
+                  alt="ORCA Dashboard"
+                  fill
+                  unoptimized
+                  priority
+                  sizes="(min-width: 768px) 640px, 90vw"
+                  className="object-cover object-top"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] text-body-xs text-muted-foreground">
                   Dashboard görseli henüz eklenmedi
@@ -93,11 +100,13 @@ export function PlatformShowcase({ data }: { data: PlatformShowcaseData }) {
                     guvenli sekilde iniyor. */}
                 <div className="absolute inset-0 pt-[9%]">
                   {phoneImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={phoneImageUrl}
                       alt="ORCA Mobil"
-                      className="h-full w-full bg-[#05070f] object-contain object-top"
+                      fill
+                      unoptimized
+                      sizes="150px"
+                      className="bg-[#05070f] object-contain object-top"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0d1220] to-[#05070f] p-1 text-center text-body-xs text-muted-foreground">

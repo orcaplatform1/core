@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { resolveIcon } from "@/lib/marketing/icon-registry";
 import type { WhyOrcaItemData } from "@/lib/marketing/site-content-types";
 
@@ -21,8 +22,7 @@ function WhyOrcaCardItem({ item }: { item: WhyOrcaItemData }) {
         }}
       >
         {item.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover" />
+          <Image src={item.imageUrl} alt={item.title} fill unoptimized sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
         ) : (
           <Icon className="size-9" style={{ color: item.badgeColor }} />
         )}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, Layers } from "lucide-react";
 import { getProgramBySlugOrId, getAllModules, getAllLessons } from "@/lib/marketing/get-programs";
@@ -64,12 +65,16 @@ export default async function ProgramDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
       />
       {program.coverImageUrl && (
-        <div className="mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">
+          {/* unoptimized: bkz. hero-background.tsx - basePath ile optimizer proxy 400 donuyor */}
+          <Image
             src={program.coverImageUrl}
             alt={program.title}
-            className="h-full w-full object-cover"
+            fill
+            unoptimized
+            priority
+            sizes="(min-width: 640px) 1000px, 100vw"
+            className="object-cover"
           />
         </div>
       )}
