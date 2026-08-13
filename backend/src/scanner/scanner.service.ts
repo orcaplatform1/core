@@ -976,8 +976,12 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       }
 
       // Tetiklenmis ama henuz stop/TP'ye ulasmamis, stile gore sure asimi:
-      // SWING 10 gun, DAY 1 gun (day trade pozisyonlari uzun sure acik kalmamali)
-      if (sig.triggeredAt) {
+      // SWING 10 gun, DAY 1 gun (day trade pozisyonlari uzun sure acik kalmamali).
+      // TP1/TP2 zaten bankaya yatmissa (stop basabasta) bu sure asimi UYGULANMAZ -
+      // aksi halde kazanan bir sinyal, final TP'ye/basabasa ulasmadan sure dolunca
+      // EXPIRED'a cevrilip istatistiklerden ve DB'den siliniyordu (bkz. kullanici
+      // geri bildirimi 2026-08-13 - ilk gun TP1 alinan bir sinyal boyle "silinmisti").
+      if (sig.triggeredAt && sig.status !== 'HIT_TP1' && sig.status !== 'HIT_TP2') {
         const triggeredAgeMs = Date.now() - sig.triggeredAt.getTime();
         const expiryMs = sig.style === 'DAY' ? 1 * 24 * 60 * 60 * 1000 : 10 * 24 * 60 * 60 * 1000;
         if (triggeredAgeMs > expiryMs) {
