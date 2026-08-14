@@ -23,7 +23,6 @@ interface Setup {
   tp3: number;
   rr: number;
   reasons: string[];
-  strength: 'GUCLU' | 'ORTA' | 'RISKLI';
   stillValid: boolean;
   distancePercent: number;
   patternType: 'ICT_BREAKOUT_RETEST' | 'FX_LIQUIDITY_SWEEP';
@@ -136,6 +135,22 @@ const FX_STOP_PIP_BUFFER = 2;
 const FX_RR_MULT = 3;
 const FX_TP1_RR_MULT = 1;
 const FX_TP2_RR_MULT = 2;
+
+// --- Simulasyon bakiyesi: gercek para olmadan "canli girsem ne olurdu"
+// hissi vermek icin her tetiklenen sinyal, sifirdan bu sabit bakiye/kaldiracla
+// acilmis GIBI varsayilir (kullanici geri bildirimi 2026-08-14). Compounding
+// YOK - her islem birbirinden bagimsiz, kendi basina bu bakiyeyle acilir;
+// aksi halde bir kayip sonraki tum islemlerin boyutunu kucultup gercekci
+// olmayan bir egri uretirdi. Notional = bakiye x kaldirac; 1R'nin dolar
+// karsiligi = notional x (risk mesafesi / giris fiyati) - yani riski genis
+// olan (yuzdece) sinyallerde 1R daha fazla dolar ifade eder, tipki gercek
+// pozisyon boyutlandirmasinda oldugu gibi. Kripto icin şu an acik/kapanmis
+// sinyal yok ama sistem ayni formulle hazir, ilk sinyal geldiginde otomatik
+// calisir.
+const FOREX_SIM_BALANCE = 500;
+const FOREX_SIM_LEVERAGE = 100;
+const CRYPTO_SIM_BALANCE = 250;
+const CRYPTO_SIM_LEVERAGE = 100;
 // Seans tanimlari (UTC saat, standart/yaygin kabul gorern siniglar - kesin
 // degil, kullanici onayina acik).
 const FX_SESSIONS: { name: string; startHourUtc: number; endHourUtc: number }[] = [
@@ -391,7 +406,6 @@ export class ScannerService {
       tp3,
       rr: ICT_RR_MULT,
       reasons,
-      strength: 'GUCLU',
       stillValid,
       distancePercent,
       patternType: 'ICT_BREAKOUT_RETEST',
@@ -629,7 +643,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       tp3,
       rr: FX_RR_MULT,
       reasons,
-      strength: 'GUCLU',
       stillValid,
       distancePercent,
       patternType: 'FX_LIQUIDITY_SWEEP',
@@ -745,6 +758,37 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       return { symbol, price: candles[candles.length - 1].close };
     } catch {
       return { symbol, price: null };
+    }
+  }
+
+  // updateTrackedSignals() icin: son N adet 1dk mumu (High/Low/Close), eskiden-
+  // yeniye sirali. Tek anlik ticker fiyati yerine bu kullanilarak taramalar
+  // arasindaki wick'ler (TP/stop'a degip geri cekilme) kacirilmiyor.
+  private async getRecentCandles(symbol: string, market: string, limit = 20): Promise<Candle[]> {
+    if (market === 'FOREX') {
+      const yahooSymbol = YAHOO_MAP[symbol];
+      if (!yahooSymbol) return [];
+      try {
+        const candles = await this.fetchYahoo(yahooSymbol, '1d', '1m');
+        return candles.slice(-limit);
+      } catch {
+        return [];
+      }
+    }
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&limit=${limit}`);
+      if (!res.ok) return [];
+      const data = (await res.json()) as any[];
+      return data.map((k) => ({
+        time: k[0],
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4]),
+        volume: parseFloat(k[5]),
+      }));
+    } catch {
+      return [];
     }
   }
 
@@ -902,7 +946,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           tp2: s.tp2,
           tp3: s.tp3,
           rr: s.rr,
-          strength: s.strength,
           style,
           market: market as any,
           status: 'WATCHING',
@@ -927,53 +970,19 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     });
 
     const openSignals = await this.prisma.trackedSignal.findMany({
-      where: { status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
+      where: { closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
     });
 
     for (const sig of openSignals) {
       const bullish = sig.direction === 'LONG';
-      const live = await this.getLivePrice(sig.symbol, sig.market);
-      if (live.price === null) continue;
-      const price = live.price;
-
-      if (sig.status === 'WATCHING') {
-        // Giris hic tetiklenmeden fiyat herhangi bir TP seviyesini gecmisse (ETCUSDT'de
-        // gozlenen durum) VEYA giris bolgesine hic girmeden dogrudan stop seviyesini
-        // kirmisse (yapi zaten gecersiz - bkz. kullanici geri bildirimi 2026-08-10),
-        // bu setup artik gerceklestirilemez - normal mesafe/sure esiklerini beklemeden
-        // hemen iptal edilir
-        const passedAnyTp = bullish
-          ? price >= Math.min(sig.tp1, sig.tp2, sig.tp3)
-          : price <= Math.max(sig.tp1, sig.tp2, sig.tp3);
-        const hitStopBeforeEntry = bullish ? price <= sig.stop : price >= sig.stop;
-        if (passedAnyTp || hitStopBeforeEntry) {
-          await this.prisma.trackedSignal.update({
-            where: { id: sig.id },
-            data: { status: 'INVALIDATED', closedAt: new Date() },
-          });
-          continue;
-        }
-
-        const entered = price <= sig.entryZoneTop && price >= sig.entryZoneBottom;
-        if (entered) {
-          await this.prisma.trackedSignal.update({
-            where: { id: sig.id },
-            data: { status: 'TRIGGERED', triggeredAt: new Date() },
-          });
-          continue;
-        }
-        const zoneMid = (sig.entryZoneTop + sig.entryZoneBottom) / 2;
-        const distancePercent = Math.abs(price - zoneMid) / zoneMid * 100;
-        const watchingAgeMs = Date.now() - sig.createdAt.getTime();
-        const watchingExpiryMs = 3 * 24 * 60 * 60 * 1000;
-        if (distancePercent > 8 || watchingAgeMs > watchingExpiryMs) {
-          await this.prisma.trackedSignal.update({
-            where: { id: sig.id },
-            data: { status: 'INVALIDATED', closedAt: new Date() },
-          });
-        }
-        continue;
-      }
+      // Tek anlik ticker fiyati yerine son ~20 dakikanin 1dk mumlari (High/Low)
+      // kullaniliyor - iki tarama arasinda (15dk araliklarla calisiyor, bkz.
+      // scanner-scheduler.service.ts) fiyat bir TP/stop seviyesine degip geri
+      // cekilirse (wick) tek anlik fiyatla bu tamamen kaciriliyordu (bkz.
+      // kullanici geri bildirimi 2026-08-14). Mumlar eskiden-yeniye sirayla
+      // islenip TP1->stop gibi ayni pencere icindeki olay sirasi da korunuyor.
+      const candles = await this.getRecentCandles(sig.symbol, sig.market);
+      if (candles.length === 0) continue;
 
       // Tetiklenmis ama henuz stop/TP'ye ulasmamis, stile gore sure asimi:
       // SWING 10 gun, DAY 1 gun (day trade pozisyonlari uzun sure acik kalmamali).
@@ -981,7 +990,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       // aksi halde kazanan bir sinyal, final TP'ye/basabasa ulasmadan sure dolunca
       // EXPIRED'a cevrilip istatistiklerden ve DB'den siliniyordu (bkz. kullanici
       // geri bildirimi 2026-08-13 - ilk gun TP1 alinan bir sinyal boyle "silinmisti").
-      if (sig.triggeredAt && sig.status !== 'HIT_TP1' && sig.status !== 'HIT_TP2') {
+      // Wall-clock'a bagli oldugu icin mum basina degil tek seferlik kontrol ediliyor.
+      if (sig.status !== 'WATCHING' && sig.triggeredAt && sig.status !== 'HIT_TP1' && sig.status !== 'HIT_TP2') {
         const triggeredAgeMs = Date.now() - sig.triggeredAt.getTime();
         const expiryMs = sig.style === 'DAY' ? 1 * 24 * 60 * 60 * 1000 : 10 * 24 * 60 * 60 * 1000;
         if (triggeredAgeMs > expiryMs) {
@@ -993,42 +1003,91 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         }
       }
 
-      const hitStop = bullish ? price <= sig.stop : price >= sig.stop;
-      if (hitStop) {
-        // TP1 alindiktan sonra stop basabasa cekilmis oluyor (asagida) - fiyat
-        // oraya donerse bu gercek bir kayip DEGIL, en son ulasilan TP'de kapanir
-        const alreadyBankedTp = sig.status === 'HIT_TP1' || sig.status === 'HIT_TP2';
-        await this.prisma.trackedSignal.update({
-          where: { id: sig.id },
-          data: alreadyBankedTp
-            ? { closedAt: new Date() }
-            : { status: 'HIT_STOP', closedAt: new Date() },
-        });
-        continue;
+      let status: string = sig.status;
+      let stop = sig.stop;
+      const updates: Record<string, any> = {};
+      let closed = false;
+
+      for (const c of candles) {
+        if (closed) break;
+
+        if (status === 'WATCHING') {
+          // Giris hic tetiklenmeden fiyat herhangi bir TP seviyesini gecmisse (ETCUSDT'de
+          // gozlenen durum) VEYA giris bolgesine hic girmeden dogrudan stop seviyesini
+          // kirmisse (yapi zaten gecersiz - bkz. kullanici geri bildirimi 2026-08-10),
+          // bu setup artik gerceklestirilemez - normal mesafe/sure esiklerini beklemeden
+          // hemen iptal edilir
+          const passedAnyTp = bullish
+            ? c.high >= Math.min(sig.tp1, sig.tp2, sig.tp3)
+            : c.low <= Math.max(sig.tp1, sig.tp2, sig.tp3);
+          const hitStopBeforeEntry = bullish ? c.low <= stop : c.high >= stop;
+          if (passedAnyTp || hitStopBeforeEntry) {
+            status = 'INVALIDATED';
+            Object.assign(updates, { status, closedAt: new Date() });
+            closed = true;
+            break;
+          }
+
+          const entered = c.low <= sig.entryZoneTop && c.high >= sig.entryZoneBottom;
+          if (entered) {
+            status = 'TRIGGERED';
+            Object.assign(updates, { status, triggeredAt: new Date(c.time) });
+            continue;
+          }
+          continue;
+        }
+
+        const hitStop = bullish ? c.low <= stop : c.high >= stop;
+        if (hitStop) {
+          // TP1 alindiktan sonra stop basabasa cekilmis oluyor (asagida) - fiyat
+          // oraya donerse bu gercek bir kayip DEGIL, en son ulasilan TP'de kapanir
+          const alreadyBankedTp = status === 'HIT_TP1' || status === 'HIT_TP2';
+          if (alreadyBankedTp) {
+            Object.assign(updates, { closedAt: new Date() });
+          } else {
+            status = 'HIT_STOP';
+            Object.assign(updates, { status, closedAt: new Date() });
+          }
+          closed = true;
+          break;
+        }
+
+        const hitTp3 = bullish ? c.high >= sig.tp3 : c.low <= sig.tp3;
+        const hitTp2 = bullish ? c.high >= sig.tp2 : c.low <= sig.tp2;
+        const hitTp1 = bullish ? c.high >= sig.tp1 : c.low <= sig.tp1;
+
+        if (hitTp3) {
+          status = 'HIT_TP3';
+          Object.assign(updates, { status, closedAt: new Date() });
+          closed = true;
+          break;
+        } else if (hitTp2 && status !== 'HIT_TP2') {
+          status = 'HIT_TP2';
+          Object.assign(updates, { status });
+        } else if (hitTp1 && status === 'TRIGGERED') {
+          // TP1 vuruldu: stop'u basabasa (giris bolgesi ortalamasina) cek -
+          // artik bu islemde kayip riski yok, en kotu ihtimalle basabas kapanir
+          stop = (sig.entryZoneTop + sig.entryZoneBottom) / 2;
+          status = 'HIT_TP1';
+          Object.assign(updates, { status, stop });
+        }
       }
 
-      const hitTp3 = bullish ? price >= sig.tp3 : price <= sig.tp3;
-      const hitTp2 = bullish ? price >= sig.tp2 : price <= sig.tp2;
-      const hitTp1 = bullish ? price >= sig.tp1 : price <= sig.tp1;
+      // Hic bir mumda tetiklenmeden WATCHING kaldiysa, mesafe/sure asimi kontrolu
+      // son mumun kapanisina (guncel fiyata yakin) ve wall-clock'a gore yapilir.
+      if (status === 'WATCHING' && !closed) {
+        const lastClose = candles[candles.length - 1].close;
+        const zoneMid = (sig.entryZoneTop + sig.entryZoneBottom) / 2;
+        const distancePercent = Math.abs(lastClose - zoneMid) / zoneMid * 100;
+        const watchingAgeMs = Date.now() - sig.createdAt.getTime();
+        const watchingExpiryMs = 3 * 24 * 60 * 60 * 1000;
+        if (distancePercent > 8 || watchingAgeMs > watchingExpiryMs) {
+          Object.assign(updates, { status: 'INVALIDATED', closedAt: new Date() });
+        }
+      }
 
-      if (hitTp3) {
-        await this.prisma.trackedSignal.update({
-          where: { id: sig.id },
-          data: { status: 'HIT_TP3', closedAt: new Date() },
-        });
-      } else if (hitTp2 && sig.status !== 'HIT_TP2') {
-        await this.prisma.trackedSignal.update({
-          where: { id: sig.id },
-          data: { status: 'HIT_TP2' },
-        });
-      } else if (hitTp1 && sig.status === 'TRIGGERED') {
-        // TP1 vuruldu: stop'u basabasa (giris bolgesi ortalamasina) cek -
-        // artik bu islemde kayip riski yok, en kotu ihtimalle basabas kapanir
-        const breakeven = (sig.entryZoneTop + sig.entryZoneBottom) / 2;
-        await this.prisma.trackedSignal.update({
-          where: { id: sig.id },
-          data: { status: 'HIT_TP1', stop: breakeven },
-        });
+      if (Object.keys(updates).length > 0) {
+        await this.prisma.trackedSignal.update({ where: { id: sig.id }, data: updates });
       }
     }
   }
@@ -1039,12 +1098,22 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // R-multiple hesabi: TP1 her zaman girisin tam 1R uzaginda (bkz.
     // ICT_TP1_RR_MULT/FX_TP1_RR_MULT, ikisi de =1), yani risk birimi (1R)
     // piyasadan bagimsiz sabit bir oran - ayri ayri entry/stop fiyatina
-    // gerek yok. TP1 vuruldugunda pozisyonun %50'si bankaya yatirilip stop
-    // basabasa cekiliyor (bkz. updateTrackedSignals) - geri kalan %50 ya
-    // TP3'e ulasip market'e ozgu R katina (kripto 2R, forex 3R - sig.rr)
-    // kapaniyor ya da basabasta (0R) kapaniyor. HIT_STOP statusune sadece
-    // TP1 hic bankaya yatirilmadan ulasilabiliyor, yani her zaman TAM 1R kayip.
+    // gerek yok. Pozisyon 3 dilime bolunuyor: TP1'de %50 (1R), TP2'de %25
+    // (kripto 1.5R / forex 2R - bkz. ICT_TP2_RR_MULT/FX_TP2_RR_MULT), TP3'te
+    // (final) kalan %25 (kripto 2R / forex 3R - sig.rr). Her asamada bir
+    // onceki dilim zaten bankaya yatirildigi icin R'lar kumulatif toplanir -
+    // ornek kullanici geri bildirimi 2026-08-14: TP2 vurulan bir sinyalde
+    // "Kazanilan" hep TP1'in 0.5R'inda kalip TP2'nin hic karsiligi
+    // olmuyordu, artik TP2 de kendi diliminin R'ini ekliyor. Fiyat basabasa
+    // donerse kapanmamis dilim(ler) 0R'da kapanir (kayip degil, kar da
+    // degil) - HIT_STOP statusune sadece TP1 hic bankaya yatirilmadan
+    // ulasilabiliyor, yani her zaman TAM 1R kayip.
     const TP1_BANKED_FRACTION = 0.5;
+    const TP2_BANKED_FRACTION = 0.25;
+    const TP2_RR_MULT = market === 'FOREX' ? FX_TP2_RR_MULT : ICT_TP2_RR_MULT;
+    const simBalance = market === 'FOREX' ? FOREX_SIM_BALANCE : CRYPTO_SIM_BALANCE;
+    const simLeverage = market === 'FOREX' ? FOREX_SIM_LEVERAGE : CRYPTO_SIM_LEVERAGE;
+    const simNotional = simBalance * simLeverage;
     const [activeCount, closedRows] = await Promise.all([
       this.prisma.trackedSignal.count({
         where: { ...baseWhere, closedAt: null, status: { in: ['WATCHING', 'TRIGGERED', 'HIT_TP1', 'HIT_TP2'] } },
@@ -1057,27 +1126,40 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
             { status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] }, closedAt: { not: null } },
           ],
         },
-        select: { status: true, rr: true },
+        select: { status: true, rr: true, entry: true, tp1: true },
       }),
     ]);
 
-    const tp1 = { count: 0, r: 0 };
-    const tp2 = { count: 0, r: 0 };
-    const tp3 = { count: 0, r: 0 };
-    const stopped = { count: 0, r: 0 };
+    const tp1 = { count: 0, r: 0, d: 0 };
+    const tp2 = { count: 0, r: 0, d: 0 };
+    const tp3 = { count: 0, r: 0, d: 0 };
+    const stopped = { count: 0, r: 0, d: 0 };
     for (const row of closedRows) {
+      // Bu islemin dolar/R orani - risk mesafesi (giris-tp1) fiyata gore ne
+      // kadar genisse, ayni notional icin 1R o kadar fazla dolar eder.
+      const riskPct = row.entry && row.tp1 != null && row.entry > 0 ? Math.abs(row.tp1 - row.entry) / row.entry : 0;
+      const dollarPer1R = simNotional * riskPct;
       if (row.status === 'HIT_STOP') {
         stopped.count += 1;
         stopped.r += 1;
+        stopped.d += dollarPer1R;
       } else if (row.status === 'HIT_TP1') {
         tp1.count += 1;
         tp1.r += TP1_BANKED_FRACTION;
+        tp1.d += TP1_BANKED_FRACTION * dollarPer1R;
       } else if (row.status === 'HIT_TP2') {
+        const rNet = TP1_BANKED_FRACTION + TP2_BANKED_FRACTION * TP2_RR_MULT;
         tp2.count += 1;
-        tp2.r += TP1_BANKED_FRACTION;
+        tp2.r += rNet;
+        tp2.d += rNet * dollarPer1R;
       } else if (row.status === 'HIT_TP3') {
+        const rNet =
+          TP1_BANKED_FRACTION +
+          TP2_BANKED_FRACTION * TP2_RR_MULT +
+          (1 - TP1_BANKED_FRACTION - TP2_BANKED_FRACTION) * row.rr;
         tp3.count += 1;
-        tp3.r += TP1_BANKED_FRACTION + (1 - TP1_BANKED_FRACTION) * row.rr;
+        tp3.r += rNet;
+        tp3.d += rNet * dollarPer1R;
       }
     }
     const wins = tp1.count + tp2.count + tp3.count;
@@ -1086,19 +1168,26 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     const winRate = wins + losses > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
     const rWon = tp1.r + tp2.r + tp3.r;
     const rLost = stopped.r;
+    const dWon = tp1.d + tp2.d + tp3.d;
+    const dLost = stopped.d;
     const round2 = (n: number) => Math.round(n * 100) / 100;
     return {
       total,
       wins,
       losses,
       winRate,
-      tp1: { count: tp1.count, r: round2(tp1.r) },
-      tp2: { count: tp2.count, r: round2(tp2.r) },
-      tp3: { count: tp3.count, r: round2(tp3.r) },
-      stopped: { count: stopped.count, r: round2(stopped.r) },
+      tp1: { count: tp1.count, r: round2(tp1.r), d: round2(tp1.d) },
+      tp2: { count: tp2.count, r: round2(tp2.r), d: round2(tp2.d) },
+      tp3: { count: tp3.count, r: round2(tp3.r), d: round2(tp3.d) },
+      stopped: { count: stopped.count, r: round2(stopped.r), d: round2(stopped.d) },
       rWon: round2(rWon),
       rLost: round2(rLost),
       rNet: round2(rWon - rLost),
+      dWon: round2(dWon),
+      dLost: round2(dLost),
+      dNet: round2(dWon - dLost),
+      simBalance,
+      simLeverage,
     };
   }
 

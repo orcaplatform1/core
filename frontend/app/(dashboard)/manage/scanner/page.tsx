@@ -34,10 +34,12 @@ import {
 } from "@/lib/hooks/use-admin-scanner";
 
 
-const STRENGTH_STYLES: Record<ScanSignal["strength"], { label: string; bg: string; color: string }> = {
-  GUCLU: { label: "GÜÇLÜ", bg: "#22C55E22", color: "#22C55E" },
-  ORTA: { label: "ORTA", bg: "#F39C3D22", color: "#F39C3D" },
-  RISKLI: { label: "RİSKLİ", bg: "#EF444422", color: "#EF4444" },
+// Simulasyon bakiye/kaldirac - backend'deki FOREX_SIM_BALANCE/CRYPTO_SIM_BALANCE
+// (scanner.service.ts) ile BIREBIR ayni, kart uzerinde tek islemlik dolar
+// karsiligini gostermek icin.
+const SIM_PARAMS: Record<ScanMarket, { balance: number; leverage: number }> = {
+  FOREX: { balance: 500, leverage: 100 },
+  CRYPTO: { balance: 250, leverage: 100 },
 };
 
 function StatsCard({
@@ -50,6 +52,7 @@ function StatsCard({
   stats: SignalStatsBlock;
 }) {
   const rNetColor = stats.rNet > 0 ? "#22C55E" : stats.rNet < 0 ? "#EF4444" : "#A8A6A0";
+  const dNetColor = stats.dNet > 0 ? "#22C55E" : stats.dNet < 0 ? "#EF4444" : "#A8A6A0";
   return (
     <div className="rounded-xl border border-border bg-card-inner p-3 space-y-1.5">
       <p className="text-badge uppercase tracking-wider" style={{ color: accentColor }}>
@@ -85,6 +88,17 @@ function StatsCard({
           {stats.rNet.toFixed(2)}R
         </span>
       </div>
+      <div className="flex items-center gap-2 text-body-xs text-[#A8A6A0] flex-wrap border-t border-border pt-1.5">
+        <span>
+          Simüle bakiye (${stats.simBalance}, 1:{stats.simLeverage} kaldıraç):
+        </span>
+        <span className="font-semibold" style={{ color: dNetColor }}>
+          {stats.dNet > 0 ? "+" : stats.dNet < 0 ? "-" : ""}${fmtUsd(Math.abs(stats.dNet))}
+        </span>
+        <span className="text-[#605D57]">
+          (her işlem bu bakiyeyle sıfırdan açılmış varsayılır, kümülatif değildir)
+        </span>
+      </div>
     </div>
   );
 }
@@ -98,6 +112,10 @@ function fmt(n: number) {
   else if (abs >= 0.0001) decimals = 8;
   else decimals = 10;
   return n.toLocaleString("tr-TR", { maximumFractionDigits: decimals });
+}
+
+function fmtUsd(n: number) {
+  return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function CoinIcon({ symbol, bullish }: { symbol: string; bullish: boolean }) {
@@ -129,7 +147,6 @@ function CoinIcon({ symbol, bullish }: { symbol: string; bullish: boolean }) {
   );
 }
 function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket }) {
-  const strengthStyle = STRENGTH_STYLES[signal.strength];
   const bullish = signal.direction === "LONG";
   const { data: live } = useLivePrice(signal.symbol, true, market);
   const displayPrice = live?.price ?? signal.currentPrice;
@@ -169,14 +186,6 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
             </div>
             <p className="text-body-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <span
-            className="rounded-full px-2.5 py-1 text-badge"
-            style={{ backgroundColor: strengthStyle.bg, color: strengthStyle.color }}
-          >
-            {strengthStyle.label}
-          </span>
         </div>
       </div>
 
@@ -276,9 +285,7 @@ const STATUS_STYLES: Record<TrackedSignal["status"], { label: string; bg: string
 };
 
 function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: ScanMarket }) {
-  const strengthStyle = STRENGTH_STYLES[signal.strength];
   const style = STATUS_STYLES[signal.status];
-  const showStatusBadge = signal.status === "WATCHING" || signal.status === "TRIGGERED" || signal.status === "EXPIRED";
   const bullish = signal.direction === "LONG";
   const isOpen = signal.closedAt === null;
   const { data: live } = useLivePrice(signal.symbol, isOpen, market);
@@ -295,22 +302,57 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
     ? "rounded-lg border border-[#EF444440] bg-[#EF44441A] p-2.5"
     : "rounded-lg border border-border bg-card-inner p-2.5";
 
+  // Giris fiyati baz alinarak mesafe %'si ve R katsayisi - risk mesafesi
+  // signal.stop'tan DEGIL sabit tp1'den turetiliyor. TP1 tasarim geregi her
+  // zaman girisin tam 1R uzaginda ve asla degismiyor (bkz. backend
+  // computeSignalStats yorumu); signal.stop ise TP1 vurulunca basabasa
+  // cekiliyor. Forex sinyallerinde basabas = giris bolgesi ortasi, entry de
+  // AYNI formulle hesaplaniyor - yani TP1 sonrasi entry-stop neredeyse 0'a
+  // dusup ya R'yi tamamen gizliyor (tam 0) ya da normal farklari nerdeyse
+  // sifira bolup anlamsiz dev sayilar (orn. "636373737R") uretiyordu.
+  const entry = signal.entry;
+  const riskDistance = entry != null ? Math.abs(signal.tp1 - entry) : null;
+  const rMultiple = (level: number) =>
+    entry != null && riskDistance && riskDistance > 0 ? Math.abs(level - entry) / riskDistance : null;
+
   // Gerceklesen R sonucu - backend'deki computeSignalStats ile BIREBIR ayni
-  // model (bkz. scanner.service.ts): TP1 her zaman 1R'da, orada pozisyonun
-  // %50'si bankaya yatirilip stop basabasa cekiliyor - geri kalan %50 TP3'e
-  // (market'e ozgu R kati, sig.rr) ya da basabasa (0R) kapaniyor. HIT_STOP
-  // sadece TP1 hic bankaya yatirilmadan olusabiliyor, yani tam 1R kayip.
+  // model (bkz. scanner.service.ts): TP1'de pozisyonun %50'si 1R'da bankaya
+  // yatirilip stop basabasa cekiliyor, TP2'de kalan %25 kendi R'inde (tp2'nin
+  // entry'ye gercek R mesafesi, market'e gore 1.5R kripto / 2R forex)
+  // bankaya yatiyor, son %25 TP3'te (sig.rr) ya da basabasta (0R) kapaniyor.
+  // Once TP1 sonra TP2'de "Kazanilan" hep 0.5R'da kalip TP2'nin karsiligi
+  // gorunmuyordu (bkz. kullanici geri bildirimi 2026-08-14) - artik her
+  // asama kendi dilimini ekliyor.
+  const tp2R = rMultiple(signal.tp2);
   const realized =
     signal.closedAt === null
       ? null
       : signal.status === "HIT_STOP"
         ? { won: 0, lost: 1, net: -1 }
-        : signal.status === "HIT_TP1" || signal.status === "HIT_TP2"
+        : signal.status === "HIT_TP1"
           ? { won: 0.5, lost: 0, net: 0.5 }
-          : signal.status === "HIT_TP3"
-            ? { won: 0.5 + 0.5 * signal.rr, lost: 0, net: 0.5 + 0.5 * signal.rr }
-            : null;
+          : signal.status === "HIT_TP2"
+            ? { won: 0.5 + 0.25 * (tp2R ?? 0), lost: 0, net: 0.5 + 0.25 * (tp2R ?? 0) }
+            : signal.status === "HIT_TP3"
+              ? {
+                  won: 0.5 + 0.25 * (tp2R ?? 0) + 0.25 * signal.rr,
+                  lost: 0,
+                  net: 0.5 + 0.25 * (tp2R ?? 0) + 0.25 * signal.rr,
+                }
+              : null;
   const realizedColor = realized ? (realized.net > 0 ? "#22C55E" : realized.net < 0 ? "#EF4444" : "#A8A6A0") : "#A8A6A0";
+
+  // Simule bakiye karsiligi - backend'deki ayni isimli sabitlerle (bkz.
+  // FOREX_SIM_BALANCE/CRYPTO_SIM_BALANCE, scanner.service.ts) birebir ayni
+  // mantik: bu islem sifirdan bu bakiye/kaldiracla acilmis GIBI varsayilip
+  // yukaridaki "realized" (R cinsinden) sonucu dolara cevriliyor. Notional =
+  // bakiye x kaldirac, 1R'nin dolar karsiligi = notional x risk yuzdesi
+  // (girisin ne kadar uzaginda oldugu) - compounding YOK, her kart kendi
+  // basina bagimsiz bir "yeniden basliyormus gibi" senaryo.
+  const sim = SIM_PARAMS[market];
+  const riskPct = entry != null && riskDistance != null && entry > 0 ? riskDistance / entry : null;
+  const simDollarPer1R = riskPct != null ? sim.balance * sim.leverage * riskPct : null;
+  const simDollar = realized != null && simDollarPer1R != null ? realized.net * simDollarPer1R : null;
 
   // Canli fiyata gore ANLIK uyari - resmi durumdan (hitLevel/status) BAGIMSIZ,
   // backend'in 15dk'lik tarama dongusunu beklemeden "su an ne oluyor" gorseli.
@@ -335,13 +377,7 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
     }
   }
 
-  // Giris fiyati baz alinarak mesafe %'si ve R katsayisi - stop mesafesi
-  // 1R kabul edilir (tanim geregi), digerleri buna orantilanir.
-  const entry = signal.entry;
-  const riskDistance = entry != null ? Math.abs(entry - signal.stop) : null;
   const distancePct = (level: number) => (entry != null ? (Math.abs(level - entry) / entry) * 100 : null);
-  const rMultiple = (level: number) =>
-    entry != null && riskDistance && riskDistance > 0 ? Math.abs(level - entry) / riskDistance : null;
   const fmtPct = (level: number) => {
     const p = distancePct(level);
     return p != null ? `%${p.toFixed(2)}` : "—";
@@ -377,19 +413,11 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          {showStatusBadge && (
-            <span
-              className="rounded-full px-2 py-0.5 text-badge"
-              style={{ backgroundColor: style.bg, color: style.color }}
-            >
-              {style.label}
-            </span>
-          )}
           <span
             className="rounded-full px-2 py-0.5 text-badge"
-            style={{ backgroundColor: strengthStyle.bg, color: strengthStyle.color }}
+            style={{ backgroundColor: style.bg, color: style.color }}
           >
-            {strengthStyle.label}
+            {style.label}
           </span>
         </div>
       </div>
@@ -480,6 +508,18 @@ function TrackedSignalCard({ signal, market }: { signal: TrackedSignal; market: 
           </p>
         </div>
       </div>
+      {simDollar != null && (
+        <div
+          className="flex items-center justify-between rounded-lg border border-border bg-card-inner px-3 py-2"
+        >
+          <span className="text-body-xs text-[#A8A6A0]">
+            Simüle bakiye (${sim.balance}, 1:{sim.leverage} kaldıraç)
+          </span>
+          <span className="text-financial font-semibold" style={{ color: realizedColor }}>
+            {simDollar > 0 ? "+" : simDollar < 0 ? "-" : ""}${fmtUsd(Math.abs(simDollar))}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -581,16 +621,16 @@ function AboutModulePanel({ onClose }: { onClose: () => void }) {
               <b className="text-[#F5F1EA]">Stop:</b> yapısal swing low/high − ATR(14) × 0.5.
             </p>
             <p>
-              <b className="text-[#22C55E]">TP1</b> = Giriş + Risk × 1 (net 1:1) → pozisyonun %50'si kapanır, <b className="text-[#F5F1EA]">kalan %50 için stop girişe (başabaşa) çekilir.</b>
+              <b className="text-[#22C55E]">TP1</b> = Giriş + Risk × 1 (net 1:1) → pozisyonun <b className="text-[#F5F1EA]">%50'si</b> kapanır (kazanç: %50×1R = 0.5R), <b className="text-[#F5F1EA]">kalan %50 için stop girişe (başabaşa) çekilir.</b>
             </p>
             <p>
-              <b className="text-[#22C55E]">TP2</b> = Giriş + Risk × 1.5 (kripto) / × 2 (forex) → ara hedef, bilgi amaçlı.
+              <b className="text-[#22C55E]">TP2</b> = Giriş + Risk × 1.5 (kripto) / × 2 (forex) → pozisyonun <b className="text-[#F5F1EA]">%25'i daha</b> kapanır (bu dilimin kazancı: %25 × TP2'nin R'si), kalan %25 için stop değişmez.
             </p>
             <p>
-              <b className="text-[#22C55E]">TP3 (final)</b> = Giriş + Risk × 2 (kripto) / × 3 (forex) → kalan pozisyon burada tamamen kapanır.
+              <b className="text-[#22C55E]">TP3 (final)</b> = Giriş + Risk × 2 (kripto) / × 3 (forex) → kalan <b className="text-[#F5F1EA]">%25</b> burada tamamen kapanır.
             </p>
             <div className="rounded-lg border border-[#3B5BFF33] bg-[#3B5BFF0D] p-3">
-              <b className="text-[#3B5BFF]">Önemli:</b> TP1 alındıktan sonra fiyat başabaşa (girişe) geri dönerse bu <b className="text-[#F5F1EA]">KAYIP sayılmaz</b> — TP1'in %50'lik dilimindeki kâr zaten bankaya yatırılmıştır, kalan %50 sadece riske girmeden (0R) kapanır. Toplam işlem net kârlı sonuçlanır.
+              <b className="text-[#3B5BFF]">Önemli:</b> Her dilim SADECE kendi kapandığı fiyattaki R'yi kazanır — "toplam kazanılan R" bu dilimlerin toplamıdır, tek bir TP seviyesinin R'si değildir. Örnek: TP1 (%50×1R=0.5R) + TP2 (%25×2R=0.5R) = TP2'ye kadar toplam <b className="text-[#F5F1EA]">1.0R</b> (TP2'nin kendisi "2R" olsa da, çünkü ilk %50 zaten daha düşük fiyatta satılmıştı). TP1 alındıktan sonra fiyat başabaşa (girişe) geri dönerse bu <b className="text-[#F5F1EA]">KAYIP sayılmaz</b> — o ana kadar bankaya yatırılmış dilimler kalır, kapanmamış kısım sadece riske girmeden (0R) kapanır.
             </div>
           </div>
         </Section>
@@ -623,6 +663,25 @@ function AboutModulePanel({ onClose }: { onClose: () => void }) {
             <b className="text-[#EF4444]">Kayıp:</b> STOP OLDU durumundaki sinyaller (TP1'e hiç ulaşmadan orijinal stop'a çarpanlar).{" "}
             Win Rate = Kazandı / (Kazandı + Kayıp). İZLENİYOR/TETİKLENDİ (hâlâ açık) ve SÜRESİ DOLDU durumundaki sinyaller bu orana dahil edilmez.
           </p>
+        </Section>
+
+        <Section icon={<Coins size={16} />} title="Simüle Bakiye ($)">
+          <div className="space-y-2 text-body-xs text-[#D6D3CB]">
+            <p>
+              Gerçek para olmadan "canlı girsem ne olurdu" hissi vermek için her tetiklenen sinyal, sıfırdan sabit bir bakiye/kaldıraçla açılmış <b className="text-[#F5F1EA]">GİBİ</b> varsayılır — <b className="text-[#22C55E]">Forex: $500, 1:100</b> · <b className="text-[#22C55E]">Kripto: $250, 1:100</b>.
+            </p>
+            <div className="rounded-lg border border-[#3B5BFF33] bg-[#3B5BFF0D] p-3 space-y-1">
+              <p><b className="text-[#3B5BFF]">Notional</b> = Bakiye × Kaldıraç (örn. forex'te $500 × 100 = $50.000)</p>
+              <p><b className="text-[#3B5BFF]">1R'nin dolar karşılığı</b> = Notional × (Risk mesafesi ÷ Giriş fiyatı)</p>
+              <p><b className="text-[#3B5BFF]">İşlem sonucu ($)</b> = Kazanılan/Kaybedilen R × 1R'nin dolar karşılığı</p>
+            </div>
+            <p>
+              Risk mesafesi yüzdece ne kadar genişse (girişle stop arası fiyat farkı), aynı notional için 1R o kadar fazla dolar eder — gerçek pozisyon boyutlandırmasındaki gibi. Bu yüzden iki farklı sinyalde aynı "R" sonucu farklı dolar tutarı verebilir.
+            </p>
+            <p>
+              <b className="text-[#F5F1EA]">Kümülatif DEĞİL:</b> her işlem birbirinden bağımsız, kendi başına bu bakiyeyle sıfırdan açılmış sayılır — bir işlemin kaybı bir sonrakinin boyutunu küçültmez. "Toplam $" (istatistik bloğunda) bu bağımsız sonuçların basit toplamıdır, bileşik (compounding) büyüme değildir.
+            </p>
+          </div>
         </Section>
 
         <Section icon={<Zap size={16} />} title="Diğer">

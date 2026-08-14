@@ -15,7 +15,6 @@ export type ScanSignal = {
   tp3: number;
   rr: number;
   reasons: string[];
-  strength: "GUCLU" | "ORTA" | "RISKLI";
   stillValid: boolean;
   distancePercent: number;
   fundingRate: number | null;
@@ -64,7 +63,6 @@ export type TrackedSignal = {
   tp2: number;
   tp3: number;
   rr: number;
-  strength: "GUCLU" | "ORTA" | "RISKLI";
   status: "WATCHING" | "TRIGGERED" | "HIT_TP1" | "HIT_TP2" | "HIT_TP3" | "HIT_STOP" | "EXPIRED";
   createdAt: string;
   triggeredAt: string | null;
@@ -75,13 +73,18 @@ export type SignalStatsBlock = {
   wins: number;
   losses: number;
   winRate: number | null;
-  tp1: { count: number; r: number };
-  tp2: { count: number; r: number };
-  tp3: { count: number; r: number };
-  stopped: { count: number; r: number };
+  tp1: { count: number; r: number; d: number };
+  tp2: { count: number; r: number; d: number };
+  tp3: { count: number; r: number; d: number };
+  stopped: { count: number; r: number; d: number };
   rWon: number;
   rLost: number;
   rNet: number;
+  dWon: number;
+  dLost: number;
+  dNet: number;
+  simBalance: number;
+  simLeverage: number;
 };
 export type TrackedSignalsData = {
   signals: TrackedSignal[];
