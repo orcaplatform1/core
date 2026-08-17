@@ -96,6 +96,14 @@ const ICT_RR_MULT = 2;
 const ICT_TP1_RR_MULT = 1;
 // TP2: ara hedef.
 const ICT_TP2_RR_MULT = 1.5;
+// Risk (entry-stop) duz % olarak sinirlanir. R, swingLow-entry farkina
+// (o anki mumun wick yapisina) bagli oldugundan sinirsiz kucuk/buyuk
+// cikabiliyordu (kullanici gozlemi 2026-08-17: TP1 kimi zaman %0.48 gibi
+// asiri dar - spread/fee R'yi pratikte yiyor -, kimi zaman %6+ gibi asiri
+// genis - tek 15dk mumdan gercekci olmayan bir TP3 mesafesi - cikiyordu).
+// Bu araligin disindaki sinyaller uretilmeden elenir.
+const ICT_MIN_RISK_PCT = 0.006; // %0.6
+const ICT_MAX_RISK_PCT = 0.035; // %3.5
 // Taranacak en hacimli coin sayisi. 50 -> 75 (2026-08-09 revizyonu): daha
 // genis bir evrende sinyal bulma sansini artirmak icin havuz buyutuldu.
 const ICT_TOP_SYMBOLS = 75;
@@ -135,6 +143,11 @@ const FX_STOP_PIP_BUFFER = 2;
 const FX_RR_MULT = 3;
 const FX_TP1_RR_MULT = 1;
 const FX_TP2_RR_MULT = 2;
+// Kripto tarafiyla ayni gerekce (bkz. ICT_MIN_RISK_PCT/ICT_MAX_RISK_PCT
+// yorumu) - forex majorlerinde 15dk'lik hareketler kripto kadar genis
+// olmadigi icin aralik daha dar tutuldu.
+const FX_MIN_RISK_PCT = 0.0015; // %0.15
+const FX_MAX_RISK_PCT = 0.012; // %1.2
 
 // --- Simulasyon bakiyesi: gercek para olmadan "canli girsem ne olurdu"
 // hissi vermek icin her tetiklenen sinyal, sifirdan bu sabit bakiye/kaldiracla
@@ -376,6 +389,8 @@ export class ScannerService {
     const stop = swingLow - atrValue * ICT_ATR_STOP_MULT;
     const risk = entry - stop;
     if (!(risk > 0)) return null;
+    const riskPct = risk / entry;
+    if (riskPct < ICT_MIN_RISK_PCT || riskPct > ICT_MAX_RISK_PCT) return null;
     const tp1 = entry + risk * ICT_TP1_RR_MULT;
     const tp2 = entry + risk * ICT_TP2_RR_MULT;
     const tp3 = entry + risk * ICT_RR_MULT;
@@ -614,6 +629,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     const stop = sweepLow - FX_STOP_PIP_BUFFER * pip;
     const risk = entry - stop;
     if (!(risk > 0)) return null;
+    const riskPct = risk / entry;
+    if (riskPct < FX_MIN_RISK_PCT || riskPct > FX_MAX_RISK_PCT) return null;
     const tp1 = entry + risk * FX_TP1_RR_MULT;
     const tp2 = entry + risk * FX_TP2_RR_MULT;
     const tp3 = entry + risk * FX_RR_MULT;
