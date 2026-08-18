@@ -31,6 +31,31 @@ function inputClass() {
   return "rounded-xl border border-border bg-card-inner px-3 py-1.5 text-body-sm text-[#A8A6A0] outline-none focus:border-primary w-full";
 }
 
+function ImagePreviewInput({
+  placeholder,
+  value,
+  onChange,
+  hint,
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-3">
+        {value && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="önizleme" className="size-10 shrink-0 rounded-lg border border-border object-cover" />
+        )}
+        <input className={inputClass()} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
+      </div>
+      {hint && <p className="mt-1 text-body-xs text-[#A8A6A0]">{hint}</p>}
+    </div>
+  );
+}
+
 export default function AdminProgramsPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const { data: programs, isLoading: loadingPrograms } = usePrograms();
@@ -323,18 +348,12 @@ export default function AdminProgramsPage() {
           </select>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <input
-              className={inputClass()}
-              placeholder="Kapak görsel URL"
-              value={programForm.coverImageUrl}
-              onChange={(e) => setProgramForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
-            />
-            <p className="mt-1 text-body-xs text-[#A8A6A0]">
-              Önerilen boyut: 1600×900px (16:9), min. 1200×675px. Alan otomatik doldurulur (cover); bu oranda
-              olmayan görsellerde üst/alt hafif kırpılabilir.
-            </p>
-          </div>
+          <ImagePreviewInput
+            placeholder="Kapak görsel URL"
+            value={programForm.coverImageUrl}
+            onChange={(v) => setProgramForm((f) => ({ ...f, coverImageUrl: v }))}
+            hint="Görsel kırpılmadan (object-contain) gösterilir, oranı ne olursa olsun tamamı görünür."
+          />
           <input
             className={inputClass()}
             placeholder="Süre (saat)"
