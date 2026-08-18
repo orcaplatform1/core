@@ -39,12 +39,20 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
   ],
 
   featuredProgramIds: [
-    "cms1o20sk0000krc3ib8ipuvb", // Finans Okuryazarlığı ve Servet Yönetimi
+    "cms1o20sk0000krc3ib8ipuvb", // Finans Okuryazarlığı ve Para Yönetimi
     "cms1o219s002zkrc3ynaag4cb", // Kripto Para ve Blockchain Uzmanlığı
     "cms1o21k6004mkrc3xyzwu1zs", // Borsa İstanbul Uzmanlık Programı
     "cms1o21oz005tkrc3z23myfjl", // Forex Uzmanlık Programı
+    "cms1o22m100cwkrc3x6ula07d", // Risk Yönetimi ve Trading Psikolojisi
     "cms1o21t8006kkrc3b5qr0xrp", // Teknik Analiz
-    "cms1o227q009gkrc364j9ot48", // ICT Foundations
+    "cms1o223n008jkrc3tr60xmkg", // Price Action
+    "cms1o22k100cdkrc3lvek7hun", // Wyckoff Metodu
+    "cms5ain360000kryqgic00orz", // ICT 2022 - Temel Modeller
+    "cms5ain99001lkryqypq5a8wm", // ICT 2023 - Narrative Modelleri
+    "cms5ainbd0026kryqzlyr7918", // ICT 2024 - Açılış Modelleri
+    "cmsyh326i0000krg7j4lddvpt", // Order Flow Exclusive
+    "cms5aind7002nkryqsw9qpx65", // ICT 2025 - İleri Seviye Execution
+    "cms5ainey0036kryqsu9gn1dg", // ICT 2026 - Uzman Seviye Execution
   ],
 
   platformShowcase: {

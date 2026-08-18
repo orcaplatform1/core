@@ -44,7 +44,7 @@ export default function CourseDetailPage({
           <img
             src={program.coverImageUrl}
             alt={program.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         </div>
       )}

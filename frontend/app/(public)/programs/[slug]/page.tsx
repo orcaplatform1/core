@@ -93,7 +93,7 @@ export default async function ProgramDetailPage({
             unoptimized
             priority
             sizes="(min-width: 640px) 1000px, 100vw"
-            className="object-cover"
+            className="object-contain"
           />
         </div>
       )}

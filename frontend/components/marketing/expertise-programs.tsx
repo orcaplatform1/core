@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { Program, ProgramLevel } from "@/lib/types/curriculum";
+import type { Program } from "@/lib/types/curriculum";
 import { ProgramCard } from "@/components/programs/program-card";
-
-const LEVEL_ORDER: Record<ProgramLevel, number> = {
-  BASLANGIC: 0,
-  ORTA: 1,
-  ILERI: 2,
-};
 
 export function ExpertisePrograms({
   programs,
@@ -19,7 +13,7 @@ export function ExpertisePrograms({
   const curated = featuredProgramIds
     .map((id) => programs.find((p) => p.id === id))
     .filter((p): p is Program => Boolean(p))
-    .sort((a, b) => (a.level ? LEVEL_ORDER[a.level] : 99) - (b.level ? LEVEL_ORDER[b.level] : 99));
+    .sort((a, b) => a.order - b.order);
 
   if (curated.length === 0) return null;
 
