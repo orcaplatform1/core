@@ -71,6 +71,13 @@ const updates: { title: string; level: 'BASLANGIC' | 'ORTA' | 'ILERI'; durationH
     description: 'Opening gap, opening range ve zaman bazlı açılış modellerini kullanarak seans açılışlarındaki yüksek olasılıklı fırsatları yakalamayı öğrenin.',
   },
   {
+    title: 'Order Flow Exclusive',
+    level: 'ILERI',
+    durationHours: 8,
+    description:
+      'Volume Profile, Footprint Chart, Cumulative Delta, DOM ve Tape Reading ile kurumsal order flow\'u gerçek zamanlı okuyarak ICT modellerini teyit etmeyi öğrenin.',
+  },
+  {
     title: 'ICT 2025 - İleri Seviye Execution',
     level: 'ILERI',
     durationHours: 2,

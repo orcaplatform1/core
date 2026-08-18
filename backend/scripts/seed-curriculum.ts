@@ -370,6 +370,100 @@ const programs: ProgramSeed[] = [
     ],
   },
   {
+    title: 'Order Flow Exclusive',
+    level: 'ILERI',
+    modules: [
+      // TRADEPRO Academy "Order Flow Mastery", Volusia Trading "Order Flow &
+      // Volume Profile Masterclass", Jigsaw Trading ve Order Flow School
+      // müfredatlarının ortak omurgası (Auction Market Theory -> Volume
+      // Profile -> Footprint -> Delta -> DOM/Tape -> Heatmap -> Setup
+      // Framework'leri) temel alınmıştır. ICT 2022-2024'te işlenen Order
+      // Block, FVG, Likidite gibi kavramlar burada tekrar edilmiyor; bu
+      // program onları gerçek zamanlı emir akışıyla teyit etmeyi öğretiyor -
+      // bu yüzden ICT 2024'ten sonra, ICT 2025'ten önce konumlandırıldı.
+      {
+        title: 'Modül 1 - Auction Market Theory ve Piyasa Mikroyapısı',
+        lessons: [
+          'Auction Market Theory (Iki Yonlu Muzayede Mantigi)',
+          'Market Maker ve Market Taker Rolleri',
+          'Emir Defteri (Order Book) Mekanigi',
+          'Likidite Saglayici ve Likidite Alici Emirler',
+          'Balans (Denge) ve Imbalans (Dengesizlik) Piyasalar',
+        ],
+      },
+      {
+        title: 'Modül 2 - Volume Profile ve Market Profile',
+        lessons: [
+          'Volume Profile Nedir?',
+          'Point of Control (POC)',
+          'Value Area High ve Value Area Low (VAH-VAL)',
+          'High Volume Node ve Low Volume Node',
+          'TPO (Time Price Opportunity) ve Market Profile',
+          'Initial Balance ve Gunluk Profil Tipleri',
+        ],
+      },
+      {
+        title: 'Modül 3 - Footprint Chart Okuma',
+        lessons: [
+          'Footprint Chart Anatomisi',
+          'Bid x Ask Verisi Okuma',
+          'Mum Bazli Delta',
+          'Stacked Imbalance (Yigilmis Dengesizlik)',
+          'Unfinished Auction (Bitmemis Muzayede)',
+          'Absorption (Emilim) vs Exhaustion (Tukenme)',
+        ],
+      },
+      {
+        title: 'Modül 4 - Cumulative Delta ve Delta Divergence',
+        lessons: [
+          'Cumulative Volume Delta (CVD)',
+          'Delta Divergence (Fiyat-Delta Uyumsuzlugu)',
+          'Delta ile Trend Teyidi',
+          'Delta Reset Noktalari',
+        ],
+      },
+      {
+        title: 'Modül 5 - DOM ve Tape Reading',
+        lessons: [
+          'DOM (Depth of Market) Okuma',
+          'Iceberg ve Gizli Emirler',
+          'Spoofing ve Sahte Emir Duvarlari',
+          'Time & Sales (Tape) Okuma',
+          'Buyuk Blok Islem (Big Print) Takibi',
+          'Aggressive Buying ve Selling Tespiti',
+        ],
+      },
+      {
+        title: 'Modül 6 - Heatmap ve Likidite Haritalama',
+        lessons: [
+          'Heatmap Okuma (Stacked Bids/Offers)',
+          'Likidite Cekimi (Liquidity Magnet)',
+          'Order Flow ile Likidite Avi Teyidi',
+        ],
+      },
+      {
+        title: 'Modül 7 - Order Flow Setup Kurulumlari',
+        lessons: [
+          'Reversal Setup (Donus Kurulumu)',
+          'Continuation Setup (Devam Kurulumu)',
+          'Failed Auction Setup (Basarisiz Muzayede)',
+          'Trapped Traders (Tuzaga Dusen Islemciler)',
+          'Stop Run ile Likidite Supurme Teyidi',
+        ],
+      },
+      {
+        title: 'Modül 8 - ICT ve Order Flow Entegrasyonu',
+        lessons: [
+          'Order Block Order Flow ile Teyidi',
+          'FVG Doluminda Delta Okuma',
+          'Kill Zone Icinde Gercek Zamanli Order Flow Analizi',
+          'Order Flow ile Giris Hassasiyetini Artirma',
+          'Canli Piyasa Vaka Calismalari',
+        ],
+      },
+    ],
+  },
+  {
     title: 'ICT 2025 - İleri Seviye Execution',
     level: 'ILERI',
     modules: [
