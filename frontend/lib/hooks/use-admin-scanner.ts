@@ -164,7 +164,7 @@ export type LiveAutoTradePosition = {
   id: string;
   symbol: string;
   direction: string;
-  status: "OPEN" | "BREAKEVEN_SET";
+  status: "PENDING_ENTRY" | "OPEN" | "BREAKEVEN_SET";
   entryPrice: number | null;
   qty: number | null;
   markPrice: number | null;
@@ -172,6 +172,12 @@ export type LiveAutoTradePosition = {
   notional: number | null;
   leverage: number | null;
   liquidationPrice: number | null;
+  fundingRate: number | null;
+  stopPrice: number | null;
+  stopTriggered: boolean;
+  tp1Price: number | null;
+  tp2Price: number | null;
+  tp3Price: number | null;
   realizedSoFar: number;
   commissionSoFar: number;
   fundingSoFar: number;
@@ -206,5 +212,20 @@ export function useAutoTrades() {
     queryKey: ["admin", "scanner", "auto-trade", "trades"],
     queryFn: () => apiClient<AutoTrade[]>(`/scanner/auto-trade/trades`),
     refetchInterval: 15000,
+  });
+}
+export type BtcCandle = { time: number; open: number; high: number; low: number; close: number };
+export type MarketContext = {
+  btcCandles: BtcCandle[];
+  btcPrice: number | null;
+  btcChangePercent: number | null;
+  correlations: Record<string, number | null>;
+};
+export function useMarketContext(symbols: string[]) {
+  const key = Array.from(new Set(symbols)).sort().join(",");
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "market-context", key],
+    queryFn: () => apiClient<MarketContext>(`/scanner/auto-trade/market-context?symbols=${encodeURIComponent(key)}`),
+    refetchInterval: 5000,
   });
 }

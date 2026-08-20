@@ -79,18 +79,39 @@ export class BinanceFuturesClientService {
   // (bkz. onSignalCreated). Ilk bracket (en dusuk notional dilimi) en yuksek
   // izin verilen kaldiraci verir - bizim pozisyon boyutlarimiz (sabit dolar
   // risk) neredeyse hep bu ilk dilimde kalir.
-  private maxLeverageCache = new Map<string, number>();
-  async getMaxLeverage(symbol: string): Promise<number> {
-    const cached = this.maxLeverageCache.get(symbol);
+  private leverageBracketsCache = new Map<string, { initialLeverage: number; notionalCap: number }[]>();
+  private async getLeverageBrackets(symbol: string): Promise<{ initialLeverage: number; notionalCap: number }[]> {
+    const cached = this.leverageBracketsCache.get(symbol);
     if (cached) return cached;
-    const rows = await this.signedRequest<{ symbol: string; brackets: { initialLeverage: number }[] }[]>(
+    const rows = await this.signedRequest<{ symbol: string; brackets: { initialLeverage: number; notionalCap: number }[] }[]>(
       'GET',
       '/fapi/v1/leverageBracket',
       { symbol },
     );
-    const maxLev = rows[0]?.brackets?.[0]?.initialLeverage ?? 20;
-    this.maxLeverageCache.set(symbol, maxLev);
-    return maxLev;
+    const brackets = rows[0]?.brackets ?? [{ initialLeverage: 20, notionalCap: Infinity }];
+    this.leverageBracketsCache.set(symbol, brackets);
+    return brackets;
+  }
+
+  async getMaxLeverage(symbol: string): Promise<number> {
+    const brackets = await this.getLeverageBrackets(symbol);
+    return brackets[0]?.initialLeverage ?? 20;
+  }
+
+  // Binance her sembolde kaldiraci NOTIONAL BUYUKLUGUNE gore kademeli sinirlar
+  // (orn. UNIUSDT: 50x sadece $5000 notional'a kadar, sonrasi 25x'e, sonra
+  // 20x'e duser) - getMaxLeverage SADECE en dusuk dilimin tavanini (genelde
+  // en yuksek kaldirac) dondugu icin, sabit dolar risk sizing (onSignalCreated)
+  // dar bir stop mesafesiyle buyuk bir notional urettiginde o notional'in asil
+  // ait oldugu (daha dusuk kaldiracli) dilimi hesaba katmadan emir gonderiyor
+  // ve Binance -2027 "Exceeded the maximum allowable position at current
+  // leverage" ile reddediyordu (bkz. kullanici geri bildirimi 2026-08-20:
+  // UNIUSDT ve APTUSDT). Bu fonksiyon, HEDEFLENEN notional'e gore o notional'in
+  // sigdigi dilimin izin verdigi kaldiraci dondurur.
+  async getLeverageForNotional(symbol: string, notional: number): Promise<number> {
+    const brackets = await this.getLeverageBrackets(symbol);
+    const fit = brackets.find((b) => notional <= b.notionalCap);
+    return (fit ?? brackets[brackets.length - 1])?.initialLeverage ?? 20;
   }
 
   // Kismi dolan bir giris emri iptal edildiginde geride korumasiz bir pozisyon
@@ -140,6 +161,58 @@ export class BinanceFuturesClientService {
     };
   }
 
+  // Panel kartinda SL/TP1/TP2/TP3 fiyatlarini GERCEKTEN borsada bekleyen
+  // emirlerden okumak icin (kullanici istegi 2026-08-20: "stop tp nerede
+  // yazıyor") - DB'deki sig.stop/tp1/tp2/tp3 statik degerler, TP1 dolunca
+  // stop basabasa cekildigi icin (bkz. onTp1Filled) canli deger sadece
+  // borsadan gelen bu emirlerde dogru.
+  async getOpenOrders(symbol: string): Promise<{ orderId: number; price: number }[]> {
+    const rows = await this.signedRequest<{ orderId: number; price: string }[]>('GET', '/fapi/v1/openOrders', { symbol });
+    return rows.map((r) => ({ orderId: r.orderId, price: parseFloat(r.price) }));
+  }
+
+  // Sonraki funding kesintisinin pozisyona +/- yansiyacagini kartta gostermek
+  // icin (kullanici istegi 2026-08-20: "funding + mı - mi de göreyim") -
+  // public bir endpoint, imza gerekmiyor.
+  async getFundingRate(symbol: string): Promise<number | null> {
+    const res = await fetch(`${this.restBase}/fapi/v1/premiumIndex?symbol=${symbol}`);
+    const body = await res.json().catch(() => null);
+    return body?.lastFundingRate != null ? parseFloat(body.lastFundingRate) : null;
+  }
+
+  // BTC referans kartinin fiyati icin - CryptoMovers'in ticker cache'i
+  // dakikada bir yenilendigi (bkz. crypto-tools.service.ts refreshTicker,
+  // '*/1 * * * *' cron) ve TTL 90sn oldugu icin fiyat donuk gorunuyordu
+  // (kullanici geri bildirimi 2026-08-20: "btc fiyatı canlı değil mi hiç
+  // oynamıyor") - bu, o cache'e hic dokunmayan, dogrudan/anlik bir sorgu.
+  async getTickerPrice(symbol: string): Promise<number | null> {
+    const res = await fetch(`${this.restBase}/fapi/v1/ticker/price?symbol=${symbol}`);
+    const body = await res.json().catch(() => null);
+    return body?.price != null ? parseFloat(body.price) : null;
+  }
+
+  // Money Maker'in en ustundeki BTC mum grafigi ve acik/bekleyen pozisyonlarin
+  // BTC ile korelasyonu icin (kullanici istegi 2026-08-20: "mum çubukları
+  // olsun, korelasyon bilgisi yazsın") - public kline endpoint'i, imza
+  // gerekmiyor. Binance kline array formati: [openTime, open, high, low,
+  // close, volume, ...].
+  async getRecentKlines(
+    symbol: string,
+    interval = '1h',
+    limit = 24,
+  ): Promise<{ time: number; open: number; high: number; low: number; close: number }[]> {
+    const res = await fetch(`${this.restBase}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+    const rows = await res.json().catch(() => null);
+    if (!Array.isArray(rows)) return [];
+    return rows.map((r: any[]) => ({
+      time: r[0],
+      open: parseFloat(r[1]),
+      high: parseFloat(r[2]),
+      low: parseFloat(r[3]),
+      close: parseFloat(r[4]),
+    }));
+  }
+
   private filtersCache = new Map<string, SymbolFilters>();
   async getSymbolFilters(symbol: string): Promise<SymbolFilters> {
     const cached = this.filtersCache.get(symbol);
@@ -166,8 +239,26 @@ export class BinanceFuturesClientService {
   roundToStep(value: number, step: number): number {
     if (step <= 0) return value;
     const precision = Math.max(0, Math.round(-Math.log10(step)));
-    return parseFloat((Math.floor(value / step) * step).toFixed(precision));
+    // value/step icin IEEE754 kayan nokta hatasi (orn. 0.568/0.0001 =
+    // 5679.999999999999) tam tick sinirindaki degerleri Math.floor ile bir
+    // adim asagi yuvarlayabiliyordu - bkz. APTUSDT LONG girisinde entryZoneTop
+    // 0.568 iken emir 0.5679'a acilmisti, scanner zaten 0.568 zone-top'unu
+    // "TRIGGERED" saydigi halde borsadaki LIMIT emir bir tick daha dusuk fiyat
+    // bekledigi icin dolmuyordu (kullanici geri bildirimi 2026-08-20).
+    const steps = Math.floor(value / step + 1e-8);
+    return parseFloat((steps * step).toFixed(precision));
   }
+
+  // Binance 2025-12-09'da kosullu emirleri (STOP_MARKET/TAKE_PROFIT_MARKET/
+  // STOP/TAKE_PROFIT/TRAILING_STOP_MARKET) ayri bir "Algo Order" servisine
+  // tasidi - /fapi/v1/order artik bu tipleri -4120 ("Order type not supported
+  // for this endpoint. Please use the Algo Order API endpoints instead")
+  // ile reddediyor (bkz. kullanici geri bildirimi 2026-08-20: APTUSDT girisi
+  // doldu ama stop emri acilamadi, pozisyon korumasiz kaldi). Bu yuzden bu
+  // tipler otomatik olarak /fapi/v1/algoOrder'a yonlendiriliyor - cagiran kod
+  // (auto-trade.service.ts) degismeden ayni {orderId, status} seklini alir
+  // (algoId->orderId, algoStatus->status eslenir).
+  private readonly ALGO_ORDER_TYPES = new Set(['STOP_MARKET', 'TAKE_PROFIT_MARKET']);
 
   async placeOrder(params: {
     symbol: string;
@@ -179,6 +270,19 @@ export class BinanceFuturesClientService {
     reduceOnly?: boolean;
     timeInForce?: 'GTC';
   }): Promise<{ orderId: number; status: string; avgPrice?: string }> {
+    if (this.ALGO_ORDER_TYPES.has(params.type)) {
+      const body: Record<string, string | number> = {
+        algoType: 'CONDITIONAL',
+        symbol: params.symbol,
+        side: params.side,
+        type: params.type,
+      };
+      if (params.quantity != null) body.quantity = params.quantity;
+      if (params.stopPrice != null) body.triggerPrice = params.stopPrice;
+      if (params.reduceOnly) body.reduceOnly = 'true';
+      const res = await this.signedRequest<{ algoId: number; algoStatus: string }>('POST', '/fapi/v1/algoOrder', body);
+      return { orderId: res.algoId, status: res.algoStatus };
+    }
     const body: Record<string, string | number> = {
       symbol: params.symbol,
       side: params.side,
@@ -205,6 +309,31 @@ export class BinanceFuturesClientService {
     }
   }
 
+  // Algo (kosullu) emirler /fapi/v1/order uzerinden iptal edilemiyor, ayri
+  // endpoint gerekiyor - bkz. placeOrder yorumu. Sadece stop-loss emirleri
+  // (STOP_MARKET) bu tipte, TP1/TP2/TP3 hala normal LIMIT.
+  async cancelAlgoOrder(symbol: string, algoId: string | number): Promise<void> {
+    try {
+      await this.signedRequest('DELETE', '/fapi/v1/algoOrder', { symbol, algoId });
+    } catch (err: any) {
+      if (!String(err.message).includes('-2011')) {
+        this.logger.warn(`cancelAlgoOrder basarisiz (${symbol}/${algoId}): ${err.message}`);
+      }
+    }
+  }
+
+  // SL (algo/STOP_MARKET) tetiklenip tetiklenmedigini kontrol etmek icin -
+  // ORDER_TRADE_UPDATE websocket'i sadece normal emirler icin gelir, algo
+  // emirlerinin kendi ALGO_UPDATE eventi belgelenmemis oldugundan (2026-08-20
+  // itibariyle) guvenilir tetiklenme tespiti icin polling kullaniliyor (bkz.
+  // AutoTradeService.pollPendingStopOrders).
+  async getAlgoOrderStatus(
+    symbol: string,
+    algoId: string | number,
+  ): Promise<{ algoStatus: string; actualOrderId: string; actualPrice: string; triggerPrice: string }> {
+    return this.signedRequest('GET', '/fapi/v1/algoOrder', { symbol, algoId });
+  }
+
   // Pozisyon tamamen kapandiktan sonra o sembol+zaman araligindaki GERCEK
   // kar/zarar KIRILIMINI (islem karı, komisyon, funding - ucuncusu Forex'te
   // yok ama kripto vadelide 8 saatte bir tahakkuk eder) cekmek icin -
@@ -218,9 +347,16 @@ export class BinanceFuturesClientService {
     startTime: number,
     endTime: number,
   ): Promise<{ realizedPnl: number; commission: number; funding: number; netTotal: number }> {
+    // Giris komisyonu Binance'in income defterine, bizim entryFilledAt olarak
+    // kaydettigimiz ORDER_TRADE_UPDATE zaman damgasindan (o.T) BIRKAC YUZ MS
+    // ONCE dusuyor (trade gerceklesme ani ile emir guncelleme eventinin
+    // yayilma zamani birebir ayni degil) - startTime tam entryFilledAt'a
+    // esitse bu komisyon kaydi sorgunun disinda kalip "komisyon $0" gibi
+    // yanlis gorunuyordu (bkz. kullanici geri bildirimi 2026-08-20: APTUSDT
+    // giris ucreti hep sifir gozukuyordu, gercekte -$0.93 kesilmisti).
     const rows = await this.signedRequest<{ incomeType: string; income: string }[]>('GET', '/fapi/v1/income', {
       symbol,
-      startTime,
+      startTime: startTime - 5000,
       endTime: endTime + 5000,
       limit: 1000,
     });

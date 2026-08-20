@@ -616,12 +616,12 @@ function AboutModulePanel({ onClose }: { onClose: () => void }) {
         <Section icon={<Filter size={16} />} title="Filtreler">
           <ul className="list-inside list-disc space-y-1.5 text-body-xs text-[#D6D3CB]">
             <li><b className="text-[#F5F1EA]">Evren:</b> Binance top 75 USDT paritesi (24s hacme göre), stablecoin taban varlıklı çiftler (USDC, BUSD, DAI, TUSD, FDUSD, USDP, PYUSD, USDD, GUSD) tamamen hariç.</li>
-            <li><b className="text-[#F5F1EA]">BTC Piyasa Filtresi:</b> BTC'nin son 15dk mumu %1.5+ düşerse (ani çöküş) VEYA BTC kendi 1 saatlik EMA50'sinin altındaysa, o taramada hiç LONG sinyali üretilmez.</li>
+            <li><b className="text-[#F5F1EA]">XBT Piyasa Filtresi:</b> XBT'nin son 15dk mumu %1.5+ düşerse (ani çöküş) VEYA XBT kendi 1 saatlik EMA50'sinin altındaysa, o taramada hiç LONG sinyali üretilmez.</li>
             <li><b className="text-[#F5F1EA]">Korelasyon Filtresi:</b> adaylar arası son 60 mumun getiri korelasyonu %88'i aşarsa (aynı sektör/benzer hareket eden varlık), ikinci sembol elenir.</li>
             <li><b className="text-[#F5F1EA]">Yeniden Tetiklenme Bekleme Süresi:</b> bir sinyal kapandıktan (TP/Stop/süre aşımı fark etmeksizin) sonra aynı sembol için 24 saat yeni sinyal açılmaz — fiyatın aynı seviyede çırpınıp (whipsaw) art arda sinyal üretmesini engeller.</li>
           </ul>
           <div className="mt-2.5 rounded-lg border border-[#3B5BFF33] bg-[#3B5BFF0D] p-3 text-body-xs text-[#A8A6A0]">
-            <b className="text-[#3B5BFF]">Neden BTC filtresi var?</b> 60 günlük backtest: BTC yükseliş trendindeyken tetiklenen sinyaller ortalama %43.3 win rate / +0.30R beklenti veriyor; BTC düşüş trendindeyken bu %36.2 win rate / +0.09R'a düşüyor. Filtre sinyal sayısını ~%28 azaltıyor ama kaliteyi belirgin yükseltiyor — bilinçli bir tercih.
+            <b className="text-[#3B5BFF]">Neden XBT filtresi var?</b> 60 günlük backtest: XBT yükseliş trendindeyken tetiklenen sinyaller ortalama %43.3 win rate / +0.30R beklenti veriyor; XBT düşüş trendindeyken bu %36.2 win rate / +0.09R'a düşüyor. Filtre sinyal sayısını ~%28 azaltıyor ama kaliteyi belirgin yükseltiyor — bilinçli bir tercih.
           </div>
         </Section>
 

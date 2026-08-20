@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -71,6 +71,12 @@ export class AutoTradeController {
   @Get('positions')
   async getPositions() {
     return this.autoTradeService.getLivePositions();
+  }
+
+  @Get('market-context')
+  async getMarketContext(@Query('symbols') symbols?: string) {
+    const list = symbols ? symbols.split(',').filter(Boolean) : [];
+    return this.autoTradeService.getMarketContext(list);
   }
 
   @Post(':id/close')

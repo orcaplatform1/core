@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BinanceFuturesClientService } from './binance-futures-client.service';
@@ -9,6 +10,35 @@ import { BinanceUserStreamService, OrderFillEvent } from './binance-user-stream.
 // ayni olmali (istatistik ve gercek yurutme ayni pozisyon modelini varsaymali).
 const TP1_QTY_FRACTION = 0.5;
 const TP2_QTY_FRACTION = 0.25;
+
+// BTC korelasyon karti icin - iki kapanis serisinin bar-bar yuzde
+// degisimleri arasindaki Pearson katsayisi (bkz. AutoTradeService.
+// getMarketContext yorumu). En az 3 ortak bar yoksa (yeni listelenmis
+// sembol vb.) null doner.
+function pearsonReturnsCorrelation(a: number[], b: number[]): number | null {
+  const n = Math.min(a.length, b.length);
+  if (n < 3) return null;
+  const retA: number[] = [];
+  const retB: number[] = [];
+  for (let i = 1; i < n; i++) {
+    retA.push((a[i] - a[i - 1]) / a[i - 1]);
+    retB.push((b[i] - b[i - 1]) / b[i - 1]);
+  }
+  const meanA = retA.reduce((s, v) => s + v, 0) / retA.length;
+  const meanB = retB.reduce((s, v) => s + v, 0) / retB.length;
+  let cov = 0;
+  let varA = 0;
+  let varB = 0;
+  for (let i = 0; i < retA.length; i++) {
+    const da = retA[i] - meanA;
+    const db = retB[i] - meanB;
+    cov += da * db;
+    varA += da * da;
+    varB += db * db;
+  }
+  if (varA === 0 || varB === 0) return null;
+  return cov / Math.sqrt(varA * varB);
+}
 
 // Sinyalleri GERCEK Binance Futures emirlerine ceviren yurutme motoru.
 // Kullanici istegi 2026-08-20: "sistemi hazırla... stop entry'e kadar kendi
@@ -93,16 +123,23 @@ export class AutoTradeService implements OnModuleInit {
         return;
       }
 
-      // Binance sembol basina farkli max kaldirac izni verir (bazen 100x'i
-      // 50x/20x'e kisitlar) - ayarlanan deger dogrudan gonderilmez, once
-      // sembolun izin verdigi tavana kirpilir (bkz. getMaxLeverage yorumu).
-      const maxLeverage = await this.binance.getMaxLeverage(sig.symbol);
-      const effectiveLeverage = Math.min(config.leverage, maxLeverage);
+      const entryPriceRounded = this.binance.roundToStep(entryPrice, filters.tickSize);
+
+      // Binance kaldiraci NOTIONAL BUYUKLUGUNE gore kademeli sinirlar (orn.
+      // 50x sadece kucuk bir notional'a kadar, sonrasi 25x/20x'e duser) -
+      // sadece sembolun EN YUKSEK kaldiracina (getMaxLeverage) gore kirpmak
+      // yetersizdi: dar bir stop mesafesi buyuk bir qty/notional urettiginde
+      // o notional'in gercekte ait oldugu (daha dusuk kaldirachli) dilim
+      // hesaba katilmadan emir gonderiliyor ve Binance -2027 "Exceeded the
+      // maximum allowable position at current leverage" ile reddediyordu
+      // (bkz. kullanici geri bildirimi 2026-08-20: UNIUSDT ve APTUSDT).
+      const notional = qty * entryPriceRounded;
+      const notionalLeverage = await this.binance.getLeverageForNotional(sig.symbol, notional);
+      const effectiveLeverage = Math.min(config.leverage, notionalLeverage);
       if (effectiveLeverage < config.leverage) {
-        this.logger.log(`${sig.symbol}: kaldirac ${config.leverage}x -> ${effectiveLeverage}x'e kirpildi (Binance bu sembolde max ${maxLeverage}x izin veriyor)`);
+        this.logger.log(`${sig.symbol}: kaldirac ${config.leverage}x -> ${effectiveLeverage}x'e kirpildi (notional $${notional.toFixed(2)} icin Binance bu sembolde max ${notionalLeverage}x izin veriyor)`);
       }
       await this.binance.setLeverage(sig.symbol, effectiveLeverage);
-      const entryPriceRounded = this.binance.roundToStep(entryPrice, filters.tickSize);
       const order = await this.binance.placeOrder({
         symbol: sig.symbol,
         side: bullish ? 'BUY' : 'SELL',
@@ -264,7 +301,7 @@ export class AutoTradeService implements OnModuleInit {
 
   private async onTp1Filled(trade: { id: string; symbol: string; direction: string; slOrderId: string | null; qty: number | null }, event: OrderFillEvent) {
     try {
-      if (trade.slOrderId) await this.binance.cancelOrder(trade.symbol, trade.slOrderId);
+      if (trade.slOrderId) await this.binance.cancelAlgoOrder(trade.symbol, trade.slOrderId);
       const bullish = trade.direction === 'LONG';
       const closeSide: 'BUY' | 'SELL' = bullish ? 'SELL' : 'BUY';
       const filters = await this.binance.getSymbolFilters(trade.symbol);
@@ -316,10 +353,13 @@ export class AutoTradeService implements OnModuleInit {
     reason: 'TP3' | 'STOP',
   ) {
     try {
-      const remainingOrders = [trade.slOrderId, trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
+      const remainingLimitOrders = [trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
         (id): id is string => !!id,
       );
-      await Promise.all(remainingOrders.map((id) => this.binance.cancelOrder(trade.symbol, id)));
+      await Promise.all([
+        ...remainingLimitOrders.map((id) => this.binance.cancelOrder(trade.symbol, id)),
+        trade.slOrderId ? this.binance.cancelAlgoOrder(trade.symbol, trade.slOrderId) : Promise.resolve(),
+      ]);
 
       // TP1'den ONCE stop = gercek tam kayip. TP1'DEN SONRA (BREAKEVEN_SET
       // durumundayken) stop = basabas, TP1'in kari zaten bankaya yatmisti,
@@ -353,6 +393,91 @@ export class AutoTradeService implements OnModuleInit {
     }
   }
 
+  // Stop-loss artik bir "algo" (kosullu) emir - Binance'in ALGO_UPDATE
+  // websocket eventi (2026-08-20 itibariyle) belgelenmedigi icin diger
+  // emirler gibi anlik push bildirimine guvenilemiyor; bu yuzden SADECE stop
+  // emri icin 20sn'de bir /fapi/v1/algoOrder durumu sorgulanip TRIGGERED
+  // olunca pozisyon kapatma akisi (onPositionClosed) tetikleniyor. TP1/TP2/
+  // TP3/giris hala normal LIMIT emir oldugu icin onlar icin polling YOK,
+  // ORDER_TRADE_UPDATE websocket'i yeterli (bkz. handleFill).
+  @Interval(20000)
+  async pollPendingStopOrders() {
+    if (!this.binance.isConfigured) return;
+    const trades = await this.prisma.autoTrade.findMany({
+      where: { status: { in: ['OPEN', 'BREAKEVEN_SET'] }, slOrderId: { not: null } },
+    });
+    for (const trade of trades) {
+      try {
+        const algo = await this.binance.getAlgoOrderStatus(trade.symbol, trade.slOrderId!);
+        if (algo.algoStatus === 'TRIGGERED') {
+          await this.onPositionClosed(trade, 'STOP');
+        }
+      } catch (err: any) {
+        this.logger.warn(`pollPendingStopOrders (${trade.symbol}): ${err.message}`);
+      }
+    }
+  }
+
+  // Guvenlik agi: TrackedSignal'in kendi mum-bazli takibi (scanner.service.ts
+  // updateTrackedSignals, 1dk mum low/high'ina bakar) ile borsadaki GERCEK
+  // LIMIT giris emri BAZEN uyusmuyor - fiyat zonu bir mum icinde kisa bir
+  // fitille (wick) "dokunmus" gibi gorunup TrackedSignal'i TRIGGERED/HIT_TP*'e
+  // ilerletebiliyor, ama o anki likidite bizim spesifik emrimizi doldurmaya
+  // yetmemis olabilir (bkz. kullanici geri bildirimi 2026-08-20: ZECUSDT -
+  // sinyal HIT_TP2'ye kadar ilerledi ama giris emri hic dolmadi, fiyat 564'ten
+  // 593'e kacti). Boyle durumda gercek emir sonsuza kadar bekler ("kacan"
+  // fiyat asla geri gelmez varsayimi makul degil, riskli). Kural: sinyal TP1
+  // (veya sonrasi) seviyesine ulasmisken hala PENDING_ENTRY'deysek fırsat
+  // kacmis demektir - bekleyen emri iptal et, kart listeden dussun (kullanici
+  // istegi: "ilk tp fiyatına ulaşan bekleyen işlemi otomatik iptal et ve sil
+  // gözükmesin bile").
+  @Interval(60000)
+  async pollStaleEntries() {
+    if (!this.binance.isConfigured) return;
+    const pending = await this.prisma.autoTrade.findMany({ where: { status: 'PENDING_ENTRY' } });
+    for (const trade of pending) {
+      const sig = await this.prisma.trackedSignal.findUnique({ where: { id: trade.trackedSignalId } });
+      if (!sig) continue;
+      if (['HIT_TP1', 'HIT_TP2', 'HIT_TP3'].includes(sig.status)) {
+        this.logger.warn(`${trade.symbol}: TP1+ zaten vuruldu ama giris hic dolmadi - kacan firsat, bekleyen emir iptal ediliyor`);
+        await this.notifyAdmins(
+          'Orca ACS: Kaçan giriş iptal edildi',
+          `${trade.symbol}: fiyat girmeden TP1 seviyesine ulaştı, giriş emri hiç dolmadı - fırsat kaçtı, bekleyen emir iptal edildi.`,
+        );
+        await this.onSignalInvalidated(trade.trackedSignalId);
+      }
+    }
+  }
+
+  // Money Maker sayfasinin en ustundeki BTC mum grafigi + acik/bekleyen her
+  // pozisyonun BTC ile ne kadar birlikte hareket ettigi (korelasyon) icin
+  // (kullanici istegi 2026-08-20: "btc grafiğinin altında sembol adı
+  // korelasyon bilgisi yazsın sırayla, mum çubukları olsun"). Korelasyon HAM
+  // FIYAT degil, bar-bar YUZDE DEGISIM (return) uzerinden Pearson katsayisi
+  // ile hesaplanir - ham fiyat serisi kullanilsaydi iki coin de sadece ayni
+  // gun icinde trend yönünde gittigi icin yapay derecede yuksek korelasyon
+  // cikardi, return bazli hesap gercek "birlikte mi hareket ediyor" sorusuna
+  // cevap verir.
+  async getMarketContext(symbols: string[]) {
+    const uniqueSymbols = Array.from(new Set(symbols)).filter((s) => s !== 'BTCUSDT');
+    const [btcCandles, btcPrice, ...symbolCandles] = await Promise.all([
+      this.binance.getRecentKlines('BTCUSDT', '1h', 24),
+      this.binance.getTickerPrice('BTCUSDT'),
+      ...uniqueSymbols.map((s) => this.binance.getRecentKlines(s, '1h', 24).catch(() => [])),
+    ]);
+    const btcCloses = btcCandles.map((c) => c.close);
+    const correlations: Record<string, number | null> = {};
+    uniqueSymbols.forEach((s, i) => {
+      correlations[s] = pearsonReturnsCorrelation(btcCloses, symbolCandles[i].map((c) => c.close));
+    });
+    // Degisim yuzdesi de 24 saatlik mumun ilk acilisina gore anlik olarak
+    // hesaplanir - CryptoMovers'daki changePercent gibi dakikalik cache'e
+    // bagli degil.
+    const btcChangePercent =
+      btcPrice != null && btcCandles[0]?.open ? ((btcPrice - btcCandles[0].open) / btcCandles[0].open) * 100 : null;
+    return { btcCandles, btcPrice, btcChangePercent, correlations };
+  }
+
   // GERCEK (Binance'ten cekilen) toplu istatistik - AutoTradeController
   // /scanner/auto-trade/stats tarafindan kullanilir. Simulasyondaki
   // computeSignalStats'in R-multiple TAHMININDEN farkli olarak burada
@@ -382,35 +507,82 @@ export class AutoTradeService implements OnModuleInit {
   // funding'i gormek icin (kullanici istegi 2026-08-20: "her kartta anlık ne
   // kadar kazanıyoruz kaybediyoruz... ödenen fee ve funding ücreti de yer
   // alsın, ben işlemler için manuel Binance Futures'e girmiyim"). Kismi TP1/
-  // TP2 dolmus olsa bile pozisyon acik sayildigi surece (OPEN/BREAKEVEN_SET)
-  // burada listelenir.
+  // TP2 dolmus olsa bile pozisyon acik sayildigi surece (PENDING_ENTRY/OPEN/
+  // BREAKEVEN_SET) burada listelenir - PENDING_ENTRY icin henuz Binance'de
+  // gercek bir pozisyon yok (limit emir dolmadi), o yuzden mark/notional/
+  // liquidation null doner, kart bunu "bekliyor" olarak gosterir.
   async getLivePositions() {
     const openTrades = await this.prisma.autoTrade.findMany({
-      where: { status: { in: ['OPEN', 'BREAKEVEN_SET'] } },
+      where: { status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] } },
       orderBy: { createdAt: 'desc' },
     });
     const results = await Promise.all(
       openTrades.map(async (trade) => {
-        const [risk, pnlSoFar] = await Promise.all([
+        const [risk, pnlSoFar, sig, fundingRate] = await Promise.all([
           this.binance.getPositionRisk(trade.symbol).catch(() => null),
           trade.entryFilledAt
             ? this.binance.getRealizedPnlBreakdown(trade.symbol, trade.entryFilledAt.getTime(), Date.now()).catch(
                 () => ({ realizedPnl: 0, commission: 0, funding: 0, netTotal: 0 }),
               )
             : Promise.resolve({ realizedPnl: 0, commission: 0, funding: 0, netTotal: 0 }),
+          this.prisma.trackedSignal.findUnique({ where: { id: trade.trackedSignalId } }),
+          this.binance.getFundingRate(trade.symbol).catch(() => null),
         ]);
+
+        // PENDING_ENTRY'de SL/TP emirleri henuz acilmadi - kart, sinyaldeki
+        // PLANLANAN seviyeleri gosterir. OPEN/BREAKEVEN_SET'te ise gercek
+        // deger borsadaki bekleyen emirlerden okunur, cunku TP1 dolunca stop
+        // basabasa cekiliyor (bkz. onTp1Filled) - DB'deki sinyal statik kalir,
+        // gercek deger degisir. Bir TP orderId'si artik openOrders'ta yoksa
+        // (doldu) o alan null doner, kart "doldu" gosterir.
+        let stopPrice: number | null = sig?.stop ?? null;
+        let tp1Price: number | null = sig?.tp1 ?? null;
+        let tp2Price: number | null = sig?.tp2 ?? null;
+        let tp3Price: number | null = sig?.tp3 ?? null;
+        // pollPendingStopOrders 20sn'de bir kontrol ediyor - stop az once
+        // tetiklenmis olabilir ama DB'deki status hala OPEN/BREAKEVEN_SET
+        // gorunebilir (kapatma akisi henuz calismamis). Kart bu kisa pencerede
+        // de "Stop oldu" notunu gosterebilsin diye canli algo durumu da
+        // donduruluyor (kullanici istegi 2026-08-20).
+        let stopTriggered = false;
+        if (trade.status !== 'PENDING_ENTRY') {
+          const [openOrders, algo] = await Promise.all([
+            this.binance.getOpenOrders(trade.symbol).catch(() => [] as { orderId: number; price: number }[]),
+            trade.slOrderId ? this.binance.getAlgoOrderStatus(trade.symbol, trade.slOrderId).catch(() => null) : Promise.resolve(null),
+          ]);
+          const findPrice = (orderId: string | null) =>
+            orderId ? openOrders.find((o) => String(o.orderId) === orderId)?.price ?? null : null;
+          tp1Price = findPrice(trade.tp1OrderId);
+          tp2Price = findPrice(trade.tp2OrderId);
+          tp3Price = findPrice(trade.tp3OrderId);
+          stopPrice = algo ? parseFloat(algo.triggerPrice) : stopPrice;
+          stopTriggered = algo?.algoStatus === 'TRIGGERED';
+        }
+
         return {
           id: trade.id,
           symbol: trade.symbol,
           direction: trade.direction,
           status: trade.status,
-          entryPrice: trade.entryPrice,
+          // PENDING_ENTRY'de trade.entryPrice henuz null (emir dolmadi) -
+          // kart "Giriş: —" gibi bos gorunmesin diye LIMIT emrin hedefledigi
+          // planlanan fiyata (onSignalCreated'daki ayni hesap: bullish ise
+          // entryZoneTop, degilse entryZoneBottom) duser (kullanici istegi
+          // 2026-08-20: "giriş fiyatı bekleniyor derken yazmıyor yazsın").
+          entryPrice:
+            trade.entryPrice ?? (sig ? (trade.direction === 'LONG' ? sig.entryZoneTop : sig.entryZoneBottom) : null),
           qty: trade.qty,
           markPrice: risk?.markPrice ?? null,
           unrealizedProfit: risk?.unrealizedProfit ?? null,
           notional: risk?.notional ?? null,
           leverage: risk?.leverage ?? null,
           liquidationPrice: risk?.liquidationPrice ?? null,
+          fundingRate,
+          stopPrice,
+          stopTriggered,
+          tp1Price,
+          tp2Price,
+          tp3Price,
           // Simdiye kadar (TP1/TP2 kismi kapanislarindan) bankaya yatmis kar +
           // o ana kadar tahakkuk etmis komisyon/funding - hala acik olan
           // dilimin unrealizedProfit'i BUNA DAHIL DEGIL, ayri gosteriliyor.
@@ -437,10 +609,13 @@ export class AutoTradeService implements OnModuleInit {
       throw new Error('İşlem zaten kapalı');
     }
 
-    const orderIds = [trade.slOrderId, trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
+    const limitOrderIds = [trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
       (id): id is string => !!id,
     );
-    await Promise.all(orderIds.map((id) => this.binance.cancelOrder(trade.symbol, id)));
+    await Promise.all([
+      ...limitOrderIds.map((id) => this.binance.cancelOrder(trade.symbol, id)),
+      trade.slOrderId ? this.binance.cancelAlgoOrder(trade.symbol, trade.slOrderId) : Promise.resolve(),
+    ]);
 
     const positionAmt = await this.binance.getPositionAmt(trade.symbol).catch(() => 0);
     if (Math.abs(positionAmt) > 0) {
@@ -495,12 +670,13 @@ export class AutoTradeService implements OnModuleInit {
       where: { status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] } },
     });
     for (const trade of openTrades) {
-      const orderIds = [trade.entryOrderId, trade.slOrderId, trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
+      const limitOrderIds = [trade.entryOrderId, trade.tp1OrderId, trade.tp2OrderId, trade.tp3OrderId].filter(
         (id): id is string => !!id,
       );
-      for (const id of orderIds) {
+      for (const id of limitOrderIds) {
         await this.binance.cancelOrder(trade.symbol, id);
       }
+      if (trade.slOrderId) await this.binance.cancelAlgoOrder(trade.symbol, trade.slOrderId);
       const positionAmt = await this.binance.getPositionAmt(trade.symbol).catch(() => 0);
       if (Math.abs(positionAmt) > 0) {
         await this.binance.placeOrder({

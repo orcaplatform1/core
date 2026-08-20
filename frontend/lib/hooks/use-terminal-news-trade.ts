@@ -174,3 +174,22 @@ export function useCloseAllTerminalNewsTrades() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "terminal-news-trade"] }),
   });
 }
+export type BtcCandle = { time: number; open: number; high: number; low: number; close: number };
+export type MarketContext = {
+  btcCandles: BtcCandle[];
+  btcPrice: number | null;
+  btcChangePercent: number | null;
+  correlations: Record<string, number | null>;
+};
+// Money Maker'daki useMarketContext ile ayni mantik, sadece bu modulun kendi
+// backend prefix'ine (/terminal-news-trade/market-context) gider - backend
+// tarafinda ikisi de AutoTradeService.getMarketContext'i paylasir (bkz.
+// terminal-news-trade.controller.ts yorumu).
+export function useNewsTradeMarketContext(symbols: string[]) {
+  const key = Array.from(new Set(symbols)).sort().join(",");
+  return useQuery({
+    queryKey: ["admin", "terminal-news-trade", "market-context", key],
+    queryFn: () => apiClient<MarketContext>(`/terminal-news-trade/market-context?symbols=${encodeURIComponent(key)}`),
+    refetchInterval: 5000,
+  });
+}

@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { BinanceFuturesClientService } from '../execution/binance-futures-client.service';
+import { AutoTradeService } from '../execution/auto-trade.service';
 import { XStreamService } from './x-stream.service';
 import { NewsClassifierService } from './news-classifier.service';
 import { TerminalNewsTradeService } from './terminal-news-trade.service';
@@ -22,6 +23,7 @@ export class TerminalNewsTradeController {
     private readonly xStream: XStreamService,
     private readonly classifier: NewsClassifierService,
     private readonly service: TerminalNewsTradeService,
+    private readonly autoTradeService: AutoTradeService,
   ) {}
 
   private async getOrCreateConfig() {
@@ -92,6 +94,17 @@ export class TerminalNewsTradeController {
   @Get('positions')
   async getPositions() {
     return this.service.getLivePositions();
+  }
+
+  // Money Maker'daki ile birebir ayni XBT mum grafigi/korelasyon karti icin -
+  // AutoTradeService.getMarketContext'i dogrudan yeniden kullanir (ExecutionModule
+  // zaten import edilmis), ikinci bir implementasyon yazmaya gerek yok (kullanici
+  // istegi 2026-08-20: "money makerdaki kart modeli ve tüm detaylarıyla aynı
+  // şekilde olsun").
+  @Get('market-context')
+  async getMarketContext(@Query('symbols') symbols?: string) {
+    const list = symbols ? symbols.split(',').filter(Boolean) : [];
+    return this.autoTradeService.getMarketContext(list);
   }
 
   @Post(':id/close')

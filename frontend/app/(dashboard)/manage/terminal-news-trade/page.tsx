@@ -33,8 +33,11 @@ import {
   useSendTestNewsEvent,
   useCloseTerminalNewsTrade,
   useCloseAllTerminalNewsTrades,
+  useNewsTradeMarketContext,
   type LiveTerminalNewsTradePosition,
   type NewsCategory,
+  type BtcCandle,
+  type MarketContext,
 } from "@/lib/hooks/use-terminal-news-trade";
 
 const CATEGORY_LABELS: Record<NewsCategory, string> = {
@@ -260,6 +263,105 @@ function fmtUsd(n: number) {
   return n.toFixed(2);
 }
 
+// Money Maker'daki fmtPrice ile birebir ayni - bkz. o dosyadaki yorum
+// (573.8596428571427 gibi ham fiyatlar meme coin disinda anlamsiz/cirkin).
+function fmtPrice(n: number | null): string {
+  if (n == null) return "—";
+  const abs = Math.abs(n);
+  const decimals = abs >= 100 ? 2 : abs >= 1 ? 4 : abs >= 0.01 ? 6 : 8;
+  return parseFloat(n.toFixed(decimals)).toString();
+}
+
+// Money Maker'daki CandleChart ile birebir ayni.
+function CandleChart({ candles }: { candles: BtcCandle[] }) {
+  if (candles.length === 0) return null;
+  const min = Math.min(...candles.map((c) => c.low));
+  const max = Math.max(...candles.map((c) => c.high));
+  const range = max - min || 1;
+  const chartH = 40;
+  const y = (v: number) => chartH - ((v - min) / range) * (chartH - 6) - 3;
+  const n = candles.length;
+  const slotW = 100 / n;
+  const bodyW = slotW * 0.6;
+  return (
+    <svg viewBox={`0 0 100 ${chartH}`} preserveAspectRatio="none" className="relative h-24 w-full sm:h-28">
+      {candles.map((c, i) => {
+        const cx = i * slotW + slotW / 2;
+        const up = c.close >= c.open;
+        const color = up ? "#22C55E" : "#EF4444";
+        const bodyTop = y(Math.max(c.open, c.close));
+        const bodyBottom = y(Math.min(c.open, c.close));
+        return (
+          <g key={c.time}>
+            <line x1={cx} x2={cx} y1={y(c.high)} y2={y(c.low)} stroke={color} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+            <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={Math.max(bodyBottom - bodyTop, 0.5)} fill={color} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Money Maker'daki BtcChartCard ile ayni kart modeli ve tum detaylar (kullanici
+// istegi 2026-08-20: "money makerdaki kart modeli ve tüm detaylarıyla aynı
+// şekilde olsun") - TEK FARK: korelasyon listesi bu modulde SADECE o an
+// haberle acilan/bekleyen coin(ler) icin (positions zaten Terminal News
+// Trade'in kendi pozisyonlari). Haber ne kadar guclu olursa olsun XBT
+// duserse pozisyon zarar edebilir - kullanici bunu gorup elle kapatabilsin
+// diye.
+function XbtChartCard({ context, positions }: { context: MarketContext | undefined; positions: LiveTerminalNewsTradePosition[] | undefined }) {
+  const positive = (context?.btcChangePercent ?? 0) >= 0;
+  const color = positive ? "#22C55E" : "#EF4444";
+  const candles = context?.btcCandles ?? [];
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border p-4 sm:p-5 space-y-2"
+      style={{ background: "radial-gradient(120% 140% at 0% 0%, #1B1F3B 0%, #11142A 45%, #0A0C1B 100%)" }}
+    >
+      <div className="relative flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <CoinIcon symbol="BTCUSDT" />
+          <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">XBT/USDT</span>
+          <span className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#A8A6A0]" style={{ backgroundColor: "#A8A6A022" }}>
+            Korelasyon
+          </span>
+        </div>
+        {context?.btcPrice != null ? (
+          <div className="text-right">
+            <div className="text-body-md font-bold text-[#F5F1EA]">${fmtPrice(context.btcPrice)}</div>
+            {context.btcChangePercent != null && (
+              <div className="text-badge font-semibold" style={{ color }}>
+                {positive ? "+" : ""}{context.btcChangePercent.toFixed(2)}% (24s)
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-body-xs text-[#A8A6A0]">Yükleniyor...</span>
+        )}
+      </div>
+      <CandleChart candles={candles} />
+      {positions && positions.length > 0 && (
+        <div className="relative space-y-1 border-t border-white/10 pt-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A8A6A0]">XBT korelasyonu (açık/bekleyen işlemler)</p>
+          {positions.map((p) => {
+            const corr = context?.correlations?.[p.symbol];
+            const corrColor = corr == null ? "#605D57" : corr >= 0.5 ? "#22C55E" : corr <= -0.5 ? "#EF4444" : "#F5A623";
+            const corrLabel = corr == null ? "veri yetersiz" : corr >= 0.5 ? "güçlü aynı yönlü" : corr <= -0.5 ? "güçlü ters yönlü" : "zayıf/nötr";
+            return (
+              <div key={p.id} className="flex items-center justify-between text-body-xs">
+                <span className="text-[#F5F1EA] font-semibold">{p.symbol}</span>
+                <span style={{ color: corrColor }}>
+                  {corr != null ? `${corr >= 0 ? "+" : ""}${(corr * 100).toFixed(0)}%` : "—"} <span className="text-[#605D57]">({corrLabel})</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Money Maker/scanner sayfalarindaki CoinIcon/Binance-link deseniyle birebir
 // ayni - kullanici istegi 2026-08-20: "logo coin adı yanına binance futures
 // linki olsun".
@@ -452,6 +554,7 @@ export default function TerminalNewsTradePage() {
   const { data: trades } = useTerminalNewsTrades();
   const { data: stats } = useTerminalNewsTradeStats();
   const { data: positions } = useTerminalNewsTradePositions();
+  const { data: marketContext } = useNewsTradeMarketContext(positions?.map((p) => p.symbol) ?? []);
   const { data: events } = useTerminalNewsEvents();
   const updateConfig = useUpdateTerminalNewsTradeConfig();
   const closeOne = useCloseTerminalNewsTrade();
@@ -541,6 +644,8 @@ export default function TerminalNewsTradePage() {
         </Link>
       </div>
       {showAbout && <AboutTerminalNewsTradePanel onClose={() => setShowAbout(false)} />}
+
+      <XbtChartCard context={marketContext} positions={positions} />
 
       <TestEventBox />
 

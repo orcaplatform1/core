@@ -22,12 +22,14 @@ import { useAuth } from "@/context/auth-context";
 import {
   useAutoTradeConfig,
   useUpdateAutoTradeConfig,
-  useAutoTrades,
   useAutoTradeStats,
   useAutoTradePositions,
   useCloseAutoTrade,
   useCloseAllAutoTrades,
+  useMarketContext,
   type LiveAutoTradePosition,
+  type BtcCandle,
+  type MarketContext,
 } from "@/lib/hooks/use-admin-scanner";
 
 // Binance funding'i her 8 saatte bir (00:00/08:00/16:00 UTC) tahakkuk eder -
@@ -262,6 +264,20 @@ function fmtUsd(n: number) {
   return n.toFixed(2);
 }
 
+// Coin fiyatlari (giris/mark/stop/TP) DB'de ham float olarak duruyor (orn.
+// 573.8596428571427) - normal fiyatli coinlerde bu kadar hane anlamsiz/cirkin
+// gorunuyordu, ama meme coin gibi cok kucuk fiyatli (0.00000xxx) coinlerde
+// hane kirpilirse fiyat sifira yuvarlanip anlamsizlasirdi (kullanici istegi
+// 2026-08-20: "573.85... bu kadar uzanmasın, meme coinlerde gözüksün de
+// bunlara gerek yok"). Fiyat buyuklugune gore basamak sayisi kademelendirilip
+// sondaki gereksiz sifirlar atiliyor.
+function fmtPrice(n: number | null): string {
+  if (n == null) return "—";
+  const abs = Math.abs(n);
+  const decimals = abs >= 100 ? 2 : abs >= 1 ? 4 : abs >= 0.01 ? 6 : 8;
+  return parseFloat(n.toFixed(decimals)).toString();
+}
+
 // scanner sayfasindaki CoinIcon deseniyle birebir ayni - iki farkli CDN
 // denenir, ikisi de basarisiz olursa yerine bir ok ikonu duser (bkz. onError).
 function CoinIcon({ symbol }: { symbol: string }) {
@@ -299,31 +315,182 @@ function BinanceFuturesLink({ symbol }: { symbol: string }) {
   );
 }
 
-function PositionCard({ position, onClose, isClosing }: { position: LiveAutoTradePosition; onClose: () => void; isClosing: boolean }) {
+// Mum govdesi/fitili icin basit, kutuphanesiz bir SVG mum grafigi - proje
+// genelindeki Sparkline deseniyle ayni ruhta (bkz. components/tools/sparkline.tsx)
+// ama OHLC veriden mum ciziyor. viewBox 100 birim genislikte, preserveAspectRatio
+// "none" ile karti tam kaplayacak sekilde geriliyor.
+function CandleChart({ candles }: { candles: BtcCandle[] }) {
+  if (candles.length === 0) return null;
+  const min = Math.min(...candles.map((c) => c.low));
+  const max = Math.max(...candles.map((c) => c.high));
+  const range = max - min || 1;
+  const chartH = 40;
+  const y = (v: number) => chartH - ((v - min) / range) * (chartH - 6) - 3;
+  const n = candles.length;
+  const slotW = 100 / n;
+  const bodyW = slotW * 0.6;
+  return (
+    <svg viewBox={`0 0 100 ${chartH}`} preserveAspectRatio="none" className="relative h-24 w-full sm:h-28">
+      {candles.map((c, i) => {
+        const cx = i * slotW + slotW / 2;
+        const up = c.close >= c.open;
+        const color = up ? "#22C55E" : "#EF4444";
+        const bodyTop = y(Math.max(c.open, c.close));
+        const bodyBottom = y(Math.min(c.open, c.close));
+        return (
+          <g key={c.time}>
+            <line x1={cx} x2={cx} y1={y(c.high)} y2={y(c.low)} stroke={color} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+            <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={Math.max(bodyBottom - bodyTop, 0.5)} fill={color} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Sayfanin en ustunde, kaldirac/risk ayarlarinin bile ustunde duran BTC
+// referans karti - kullanici istegi 2026-08-20: "mum çubukları olsun, açık
+// pozisyon ve bekleyen emirlerdekilerle korelasyonu kıyasla, sembol adı
+// korelasyon bilgisi yazsın sırayla". Diger kartlardan (PositionCard) farkli
+// olarak standart/sabit kose kullanir - donen premium-glow-card cercevesi
+// BİLEREK kullanılmadı (kullanici istegi: "köşesi standart olsun, hoverlı
+// animasyonlu olmasın açık pozisyonlar gibi").
+function BtcChartCard({ context, positions }: { context: MarketContext | undefined; positions: LiveAutoTradePosition[] | undefined }) {
+  const positive = (context?.btcChangePercent ?? 0) >= 0;
+  const color = positive ? "#22C55E" : "#EF4444";
+  const candles = context?.btcCandles ?? [];
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border p-4 sm:p-5 space-y-2"
+      style={{ background: "radial-gradient(120% 140% at 0% 0%, #1B1F3B 0%, #11142A 45%, #0A0C1B 100%)" }}
+    >
+      <div className="relative flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <CoinIcon symbol="BTCUSDT" />
+          <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">XBT/USDT</span>
+          <span className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#A8A6A0]" style={{ backgroundColor: "#A8A6A022" }}>
+            Korelasyon
+          </span>
+        </div>
+        {context?.btcPrice != null ? (
+          <div className="text-right">
+            <div className="text-body-md font-bold text-[#F5F1EA]">${fmtPrice(context.btcPrice)}</div>
+            {context.btcChangePercent != null && (
+              <div className="text-badge font-semibold" style={{ color }}>
+                {positive ? "+" : ""}{context.btcChangePercent.toFixed(2)}% (24s)
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-body-xs text-[#A8A6A0]">Yükleniyor...</span>
+        )}
+      </div>
+      <CandleChart candles={candles} />
+      {positions && positions.length > 0 && (
+        <div className="relative space-y-1 border-t border-white/10 pt-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A8A6A0]">XBT korelasyonu (açık/bekleyen işlemler)</p>
+          {positions.map((p) => {
+            const corr = context?.correlations?.[p.symbol];
+            const corrColor = corr == null ? "#605D57" : corr >= 0.5 ? "#22C55E" : corr <= -0.5 ? "#EF4444" : "#F5A623";
+            const corrLabel = corr == null ? "veri yetersiz" : corr >= 0.5 ? "güçlü aynı yönlü" : corr <= -0.5 ? "güçlü ters yönlü" : "zayıf/nötr";
+            return (
+              <div key={p.id} className="flex items-center justify-between text-body-xs">
+                <span className="text-[#F5F1EA] font-semibold">{p.symbol}</span>
+                <span style={{ color: corrColor }}>
+                  {corr != null ? `${corr >= 0 ? "+" : ""}${(corr * 100).toFixed(0)}%` : "—"} <span className="text-[#605D57]">({corrLabel})</span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PositionCard({
+  position,
+  onClose,
+  isClosing,
+  riskPerTradeUsdt,
+}: {
+  position: LiveAutoTradePosition;
+  onClose: () => void;
+  isClosing: boolean;
+  riskPerTradeUsdt: number | null;
+}) {
   const fundingCountdown = useFundingCountdown();
+  const isPending = position.status === "PENDING_ENTRY";
+  const isLong = position.direction === "LONG";
   const unrealized = position.unrealizedProfit ?? 0;
   // Su ana kadar bankaya yatmis (TP1/TP2 kismi kapanislari) kar + acik kalan
   // dilimin anlik kari + o ana kadar odenen komisyon/funding - toplam "su an
   // elde cepte ne var" gorunumu.
   const liveNet = unrealized + position.realizedSoFar + position.commissionSoFar + position.fundingSoFar;
+  const statusColor = position.status === "BREAKEVEN_SET" ? "#22C55E" : isPending ? "#F5A623" : "#3B5BFF";
+  const statusLabel = position.status === "BREAKEVEN_SET" ? "TP1 ALINDI — BAŞABAŞ" : isPending ? "BEKLİYOR — LİMİT EMİR DOLMADI" : "AÇIK";
+
+  // R-multiple: risk mesafesi, pozisyon acilirken kullanilan sabit dolar
+  // riski / miktar'dan turetiliyor (config.riskPerTradeUsdt / qty). TP1
+  // sonrasi stop basabasa cekilse bile ORIJINAL risk sabit kalir - "1R" her
+  // zaman ayni anlama gelir (kullanici istegi 2026-08-20: "yüzdelik ve
+  // RR'ları da parantez içinde yaz").
+  const riskDistance = riskPerTradeUsdt && position.qty ? riskPerTradeUsdt / position.qty : null;
+  const levelMeta = (level: number | null) => {
+    if (level == null || position.entryPrice == null) return null;
+    const signedMove = isLong ? level - position.entryPrice : position.entryPrice - level;
+    const pct = (signedMove / position.entryPrice) * 100;
+    const r = riskDistance ? signedMove / riskDistance : null;
+    return `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%${r != null ? ` · ${r >= 0 ? "+" : ""}${r.toFixed(2)}R` : ""}`;
+  };
+  const stopMeta = levelMeta(position.stopPrice);
+  const tp1Meta = position.tp1Price != null ? levelMeta(position.tp1Price) : null;
+  const tp2Meta = position.tp2Price != null ? levelMeta(position.tp2Price) : null;
+  const tp3Meta = position.tp3Price != null ? levelMeta(position.tp3Price) : null;
+  // Bir TP'nin resting-order fiyati openOrders'ta bulunamiyorsa (null) o TP
+  // dolmus demektir (bkz. getLivePositions yorumu) - kutuyu yesil "buton"a
+  // ceviriyoruz (kullanici istegi 2026-08-20: "tp1 olunca yeşil butona al").
+  const tp1Filled = !isPending && position.tp1Price == null;
+  const tp2Filled = !isPending && position.tp2Price == null;
+  const tp3Filled = !isPending && position.tp3Price == null;
+  // Alt bildirim notu - en ileri asamayi gosterir (stop > TP2 > TP1).
+  const noteText = position.stopTriggered
+    ? "NOT: İşlem Stop Oldu."
+    : tp2Filled
+      ? "NOT: TP2 Alındı. Stop zaten girişte (değişmedi)."
+      : tp1Filled
+        ? "NOT: TP1 Alındı, Giriş Stopa Çekildi."
+        : null;
+
   return (
-    <div className="rounded-xl border border-border bg-card-inner p-3 space-y-2">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div
+      className="premium-glow-card relative overflow-hidden p-4 sm:p-5 space-y-3"
+      style={{ background: "radial-gradient(120% 140% at 0% 0%, #1B1F3B 0%, #11142A 45%, #0A0C1B 100%)" }}
+    >
+      <div
+        className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-25"
+        style={{ background: isLong ? "#22C55E" : "#EF4444" }}
+      />
+      <div className="relative flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <CoinIcon symbol={position.symbol} />
-          <span className="text-body-sm font-semibold text-[#F5F1EA]">{position.symbol}</span>
+          <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">{position.symbol}</span>
           <BinanceFuturesLink symbol={position.symbol} />
           <span
-            className="rounded-full px-2 py-0.5 text-badge uppercase"
-            style={{ backgroundColor: position.direction === "LONG" ? "#22C55E22" : "#EF444422", color: position.direction === "LONG" ? "#22C55E" : "#EF4444" }}
+            className="rounded-full px-2.5 py-1 text-badge font-semibold uppercase"
+            style={{
+              backgroundColor: isLong ? "#22C55E22" : "#EF444422",
+              color: isLong ? "#22C55E" : "#EF4444",
+              boxShadow: `0 0 12px -2px ${isLong ? "#22C55E66" : "#EF444466"}`,
+            }}
           >
             {position.direction}
           </span>
           <span
-            className="rounded-full px-2 py-0.5 text-badge uppercase"
-            style={{ backgroundColor: position.status === "BREAKEVEN_SET" ? "#22C55E22" : "#3B5BFF22", color: position.status === "BREAKEVEN_SET" ? "#22C55E" : "#3B5BFF" }}
+            className="rounded-full px-2.5 py-1 text-badge font-semibold uppercase"
+            style={{ backgroundColor: `${statusColor}22`, color: statusColor, boxShadow: `0 0 12px -2px ${statusColor}66` }}
           >
-            {position.status === "BREAKEVEN_SET" ? "TP1 ALINDI — BAŞABAŞ" : "AÇIK"}
+            {statusLabel}
           </span>
         </div>
         <Button
@@ -333,33 +500,116 @@ function PositionCard({ position, onClose, isClosing }: { position: LiveAutoTrad
           style={{ backgroundColor: "#EF4444" }}
         >
           <XCircle size={13} />
-          Kapat
+          {isPending ? "Emri İptal Et" : "Kapat"}
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-body-xs text-[#A8A6A0] sm:grid-cols-4">
-        <span>Giriş: <b className="text-[#F5F1EA]">{position.entryPrice ?? "—"}</b></span>
-        <span>Mark: <b className="text-[#F5F1EA]">{position.markPrice ?? "—"}</b></span>
+      <div className="relative grid grid-cols-2 gap-x-4 gap-y-1.5 text-body-xs text-[#A8A6A0] sm:grid-cols-4">
+        <span>
+          Giriş: <b className="text-[#F5F1EA]">{fmtPrice(position.entryPrice)}</b>
+          {isPending && <span className="ml-1" style={{ color: "#F5A623" }}>(bekleniyor)</span>}
+        </span>
+        <span>Mark: <b className="text-[#F5F1EA]">{fmtPrice(position.markPrice)}</b></span>
         <span>Miktar: <b className="text-[#F5F1EA]">{position.qty ?? "—"}</b></span>
-        <span>Notional: <b className="text-[#F5F1EA]">${position.notional != null ? fmtUsd(position.notional) : "—"}</b></span>
-        <span>Kaldıraç: <b className="text-[#F5F1EA]">{position.leverage ?? "—"}x</b></span>
-        <span>Likidasyon: <b className="text-[#F5F1EA]">{position.liquidationPrice ?? "—"}</b></span>
-        <span>Sonraki funding: <b className="text-[#F5A623]">{fundingCountdown}</b></span>
+        {!isPending && (
+          <>
+            <span>Notional: <b className="text-[#F5F1EA]">${position.notional != null ? fmtUsd(position.notional) : "—"}</b></span>
+            <span>Kaldıraç: <b className="text-[#F5F1EA]">{position.leverage ?? "—"}x</b></span>
+            <span>Likidasyon: <b className="text-[#F5F1EA]">{fmtPrice(position.liquidationPrice)}</b></span>
+            <span className="col-span-2 sm:col-span-4 whitespace-nowrap">
+              Sonraki funding: <b className="text-[#F5A623]">{fundingCountdown}</b>
+              {position.fundingRate != null && (() => {
+                // Binance'in ham funding rate'i "LONG'lar oduyor mu" isaretini
+                // tasir (rate>0 => longlar SHORT'lara oder) - bu bizim
+                // pozisyonumuza etkisiyle ayni degil (SHORT'ta ters doner).
+                // Kullanicinin gorecegi yuzde/isaret dogrudan "biz ne kadar
+                // kazaniyoruz/kaybediyoruz" olmali (kullanici istegi
+                // 2026-08-20: "-0.0089% alacağız" yazdiginda + isareti yok,
+                // bu yanlis - kazaniyorsak isaret + olmali).
+                const effect = isLong ? -position.fundingRate : position.fundingRate;
+                const costsUs = effect < 0;
+                const benefitsUs = effect > 0;
+                const color = costsUs ? "#EF4444" : benefitsUs ? "#22C55E" : "#A8A6A0";
+                const pct = (effect * 100).toFixed(4);
+                return (
+                  <b className="ml-1" style={{ color }}>
+                    ({effect >= 0 ? "+" : ""}{pct}% {costsUs ? "ödeyeceğiz" : benefitsUs ? "alacağız" : ""})
+                  </b>
+                );
+              })()}
+            </span>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-3 text-body-xs flex-wrap border-t border-border pt-2">
-        <span className="text-[#A8A6A0]">
-          Açık kısım (anlık): <b style={{ color: unrealized >= 0 ? "#22C55E" : "#EF4444" }}>{unrealized >= 0 ? "+" : ""}${fmtUsd(unrealized)}</b>
-        </span>
-        <span className="text-[#A8A6A0]">
-          Bankaya yatan (TP1/TP2): <b style={{ color: position.realizedSoFar >= 0 ? "#22C55E" : "#EF4444" }}>{position.realizedSoFar >= 0 ? "+" : ""}${fmtUsd(position.realizedSoFar)}</b>
-        </span>
-        <span className="text-[#605D57]">Komisyon: -${fmtUsd(Math.abs(position.commissionSoFar))}</span>
-        <span className="text-[#605D57]">Funding: {position.fundingSoFar >= 0 ? "-" : "+"}${fmtUsd(Math.abs(position.fundingSoFar))}</span>
-        <span className="font-semibold" style={{ color: liveNet >= 0 ? "#22C55E" : "#EF4444" }}>
-          Toplam (anlık net): {liveNet >= 0 ? "+" : ""}${fmtUsd(liveNet)}
-        </span>
+      <div className="relative grid grid-cols-2 gap-2 text-body-xs sm:grid-cols-4 border-t border-white/10 pt-2.5">
+        <div
+          className="rounded-lg px-2.5 py-1.5"
+          style={
+            position.stopTriggered
+              ? { backgroundColor: "#EF4444", color: "#0A0C1B" }
+              : { backgroundColor: "transparent", border: "1px solid #EF444466", color: "#EF4444" }
+          }
+        >
+          <div className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Stop</div>
+          <div className="font-semibold" style={position.stopTriggered ? undefined : { color: "#F5F1EA" }}>{fmtPrice(position.stopPrice)}</div>
+          {stopMeta && <div className="opacity-70">{stopMeta}</div>}
+        </div>
+        {([
+          { label: "TP1", price: position.tp1Price, meta: tp1Meta, filled: tp1Filled },
+          { label: "TP2", price: position.tp2Price, meta: tp2Meta, filled: tp2Filled },
+          { label: "TP3", price: position.tp3Price, meta: tp3Meta, filled: tp3Filled },
+        ] as const).map((tp) => (
+          <div
+            key={tp.label}
+            className="rounded-lg px-2.5 py-1.5"
+            style={
+              tp.filled
+                ? { backgroundColor: "#22C55E", color: "#0A0C1B" }
+                : { backgroundColor: "transparent", border: "1px solid #22C55E55", color: "#22C55E" }
+            }
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wide opacity-80">{tp.label}</div>
+            <div className="font-semibold" style={tp.filled ? undefined : { color: "#F5F1EA" }}>
+              {tp.price != null ? fmtPrice(tp.price) : isPending ? "—" : "✓ Doldu"}
+            </div>
+            {tp.meta && <div className="opacity-70">{tp.meta}</div>}
+          </div>
+        ))}
       </div>
+
+      {noteText && (
+        <div
+          className="relative rounded-lg px-3 py-2 text-body-xs font-medium"
+          style={
+            position.stopTriggered
+              ? { backgroundColor: "#EF444422", color: "#EF4444" }
+              : { backgroundColor: "#22C55E22", color: "#22C55E" }
+          }
+        >
+          {noteText}
+        </div>
+      )}
+
+      {!isPending && (
+        <div className="relative flex items-center gap-3 text-body-xs flex-wrap border-t border-white/10 pt-2.5">
+          <span className="text-[#A8A6A0]">
+            Açık kısım (anlık): <b style={{ color: unrealized >= 0 ? "#22C55E" : "#EF4444" }}>{unrealized >= 0 ? "+" : ""}${fmtUsd(unrealized)}</b>
+          </span>
+          <span className="text-[#A8A6A0]">
+            Bankaya yatan (TP1/TP2): <b style={{ color: position.realizedSoFar >= 0 ? "#22C55E" : "#EF4444" }}>{position.realizedSoFar >= 0 ? "+" : ""}${fmtUsd(position.realizedSoFar)}</b>
+          </span>
+          <span className="text-[#A8A6A0]">
+            Komisyon: <b style={{ color: position.commissionSoFar >= 0 ? "#22C55E" : "#EF4444" }}>{position.commissionSoFar >= 0 ? "+" : "-"}${fmtUsd(Math.abs(position.commissionSoFar))}</b>
+          </span>
+          <span className="text-[#A8A6A0]">
+            Funding: <b style={{ color: position.fundingSoFar >= 0 ? "#22C55E" : "#EF4444" }}>{position.fundingSoFar >= 0 ? "+" : "-"}${fmtUsd(Math.abs(position.fundingSoFar))}</b>
+          </span>
+          <span className="font-semibold" style={{ color: liveNet >= 0 ? "#22C55E" : "#EF4444" }}>
+            Toplam (anlık net): {liveNet >= 0 ? "+" : ""}${fmtUsd(liveNet)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -372,9 +622,9 @@ export default function MoneyMakerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [showAbout, setShowAbout] = useState(false);
   const { data: config, isLoading } = useAutoTradeConfig();
-  const { data: trades } = useAutoTrades();
   const { data: stats } = useAutoTradeStats();
   const { data: positions } = useAutoTradePositions();
+  const { data: marketContext } = useMarketContext(positions?.map((p) => p.symbol) ?? []);
   const updateConfig = useUpdateAutoTradeConfig();
   const closeOne = useCloseAutoTrade();
   const closeAll = useCloseAllAutoTrades();
@@ -467,29 +717,7 @@ export default function MoneyMakerPage() {
       </div>
       {showAbout && <AboutMoneyMakerPanel onClose={() => setShowAbout(false)} />}
 
-      {positions && positions.length > 0 && (
-        <div className="rounded-2xl border border-[#EF444433] bg-[#EF44440D] p-4 space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <p className="text-body-sm font-semibold text-[#F5F1EA]">
-              Açık Pozisyonlar ({positions.length})
-            </p>
-            <Button onClick={handleCloseAll} disabled={closeAll.isPending} className="h-9 gap-1.5" style={{ backgroundColor: "#EF4444" }}>
-              <XCircle size={15} />
-              Tüm İşlemleri Kapat (piyasa fiyatından)
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {positions.map((p) => (
-              <PositionCard
-                key={p.id}
-                position={p}
-                onClose={() => handleCloseOne(p.id, p.symbol)}
-                isClosing={closeOne.isPending}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <BtcChartCard context={marketContext} positions={positions} />
 
       {isLoading || !config ? (
         <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
@@ -589,38 +817,31 @@ export default function MoneyMakerPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
 
-          {trades && trades.length > 0 && (
-            <div className="border-t border-border pt-3">
-              <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Son gerçek işlemler</p>
-              <div className="space-y-1">
-                {trades.slice(0, 20).map((t) => (
-                  <div key={t.id} className="flex items-center gap-2 text-body-xs text-[#D6D3CB] flex-wrap">
-                    <span className="font-semibold text-[#F5F1EA]">{t.symbol}</span>
-                    <span>{t.direction}</span>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-badge uppercase"
-                      style={{
-                        backgroundColor:
-                          t.status === "CLOSED" || t.status === "FAILED" || t.status === "EXPIRED" ? "#A8A6A022" : "#3B5BFF22",
-                        color: t.status === "FAILED" ? "#EF4444" : t.status === "CLOSED" ? "#22C55E" : "#3B5BFF",
-                      }}
-                    >
-                      {t.status}
-                    </span>
-                    {t.entryPrice && <span>@{t.entryPrice}</span>}
-                    {t.qty && <span>qty={t.qty}</span>}
-                    {t.netPnl != null && (
-                      <span className="font-semibold" style={{ color: t.netPnl >= 0 ? "#22C55E" : "#EF4444" }}>
-                        net {t.netPnl >= 0 ? "+" : ""}${t.netPnl.toFixed(2)}
-                      </span>
-                    )}
-                    {t.errorMessage && <span className="text-[#EF4444]">{t.errorMessage}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {positions && positions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-body-sm font-semibold text-[#F5F1EA]">
+              Açık Pozisyonlar ({positions.length})
+            </p>
+            <Button onClick={handleCloseAll} disabled={closeAll.isPending} className="h-8 gap-1.5 text-badge" style={{ backgroundColor: "#EF4444" }}>
+              <XCircle size={13} />
+              Tüm İşlemleri Kapat
+            </Button>
+          </div>
+          <div className="-mx-8 grid grid-cols-1 gap-3 px-3 sm:mx-0 sm:px-0 md:grid-cols-2">
+            {positions.map((p) => (
+              <PositionCard
+                key={p.id}
+                position={p}
+                onClose={() => handleCloseOne(p.id, p.symbol)}
+                isClosing={closeOne.isPending}
+                riskPerTradeUsdt={config?.riskPerTradeUsdt ?? null}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
