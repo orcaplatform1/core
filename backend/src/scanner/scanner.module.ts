@@ -5,9 +5,10 @@ import { ScannerController } from './scanner.controller';
 import { ScannerProcessor } from './scanner.processor';
 import { ScannerScheduler } from './scanner-scheduler.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ExecutionModule } from '../execution/execution.module';
 
 @Module({
-  imports: [NotificationsModule, BullModule.registerQueue({ name: 'scanner' })],
+  imports: [NotificationsModule, ExecutionModule, BullModule.registerQueue({ name: 'scanner' })],
   controllers: [ScannerController],
   providers: [ScannerService, ScannerProcessor, ScannerScheduler],
 })

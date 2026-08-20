@@ -35,6 +35,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
 import { FinancialTestModule } from './financial-test/financial-test.module';
 import { ScannerModule } from './scanner/scanner.module';
+import { TerminalNewsTradeModule } from './terminal-news-trade/terminal-news-trade.module';
 import { StorageModule } from './storage/storage.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
@@ -113,6 +114,7 @@ import { SponsorshipsModule } from './sponsorships/sponsorships.module';
     SearchModule,
     FinancialTestModule,
     ScannerModule,
+    TerminalNewsTradeModule,
     StorageModule,
     QuotesModule,
     ChartDrawingsModule,

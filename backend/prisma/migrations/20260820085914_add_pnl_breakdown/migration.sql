@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "AutoTrade" ADD COLUMN     "commission" DOUBLE PRECISION,
+ADD COLUMN     "funding" DOUBLE PRECISION,
+ADD COLUMN     "netPnl" DOUBLE PRECISION;

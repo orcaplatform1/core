@@ -894,6 +894,198 @@ model TrackedSignal {
   @@index([status])
 }
 
+// Binance hesabina baglanip sinyalleri otomatik gercek islem olarak acan
+// yurutme (execution) katmaninin AC/KAPA anahtari ve risk ayarlari - tek
+// satirlik "singleton" tablo (kullanici istegi 2026-08-20: "başarı oranımız
+// belli dedik, bakiye ve kaldıracı ayarlarız, başlarız" - yani enabled=false
+// ve testnet=true varsayilan kalip, kullanici hazir oldugunda admin panelden
+// acacak). API key/secret DB'de DEGIL, sadece .env'de (BINANCE_API_KEY/
+// BINANCE_API_SECRET) tutulur - sifrelenmemis DB alani riskli olur.
+model AutoTradeConfig {
+  id              String   @id @default(cuid())
+  enabled         Boolean  @default(false)
+  testnet         Boolean  @default(true)
+  cryptoEnabled   Boolean  @default(true)
+  // Binance Futures'ta forex parite kontrati yok (EURUSD vb.) - bu alan ileride
+  // farkli bir forex brokeri baglanirsa diye duruyor, su an hicbir yerde
+  // kullanilmiyor (AutoTradeService sadece market===CRYPTO'da islem acar).
+  forexEnabled    Boolean  @default(false)
+  // Bakiyenin yuzdesi DEGIL, sabit dolar tutari (kullanici istegi 2026-08-20:
+  // "yüzdelik olmasın, USDT olsun, işlem başına kaç dolarla açacağımı yazayım").
+  // Kayip = giris-stop mesafesi TP1'e ulasmadan kirilirsa TAM bu tutar (1R).
+  riskPerTradeUsdt Float   @default(10)
+  leverage        Int      @default(10)
+  updatedAt       DateTime @updatedAt
+}
+
+enum AutoTradeStatus {
+  PENDING_ENTRY
+  OPEN
+  BREAKEVEN_SET
+  CLOSED
+  EXPIRED
+  FAILED
+}
+
+// Bir TrackedSignal'in GERCEK Binance emirleriyle birebir karsiligi - stats/
+// win-rate hesaplamasi (computeSignalStats) hala TrackedSignal'in kendi mum-
+// bazli simulasyonunu kullanir, bu tablo ona dokunmaz, sadece gercek para
+// pozisyonunun emir id'lerini ve durumunu tutar (kaynaklar birbirinden
+// bagimsiz - gercek borsa fill'leri ile simulasyon birkac saniye/mum farkli
+// sonuclanabilir, bu beklenen bir durum).
+model AutoTrade {
+  id              String          @id @default(cuid())
+  trackedSignalId String          @unique
+  symbol          String
+  direction       String
+  status          AutoTradeStatus @default(PENDING_ENTRY)
+  entryOrderId    String?
+  slOrderId       String?
+  tp1OrderId      String?
+  tp2OrderId      String?
+  tp3OrderId      String?
+  entryPrice      Float?
+  qty             Float?
+  entryFilledAt   DateTime?
+  // Pozisyonun NIHAI kapanis sebebi - istatistik/win-rate icin. STOP iki alt
+  // duruma ayrilir: TP1'den ONCE (gercek tam kayip) vs TP1'DEN SONRA basabas
+  // (TP1'in kari zaten bankaya yatmisti, bu bir kayip DEGIL) - scanner.service.ts
+  // computeSignalStats'taki ayni ayrim (bkz. TP1_BANKED_FRACTION yorumu).
+  closeReason     String? // 'TP3' | 'STOP_FULL_LOSS' | 'STOP_BREAKEVEN' | 'MANUAL_CLOSE'
+  // Binance'in /fapi/v1/income endpoint'inden cekilen GERCEK kirilim -
+  // bizim tahminimiz degil, borsanin kendi muhasebesi. Pozisyon tamamen
+  // kapaninca bir kez doldurulur. netPnl = realizedPnl + commission + funding
+  // (commission/funding zaten negatif isaretle gelir, bu yuzden toplama).
+  realizedPnl     Float?
+  commission      Float?
+  funding         Float?
+  netPnl          Float?
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([symbol])
+}
+
+// Terminal News Trade: X (Twitter) haber akisindan Claude ile siniflandirilip
+// Binance Futures market emrine cevrilen, Money Maker'dan (Orca ACS sinyalleri)
+// TAMAMEN bagimsiz yeni bir yurutme katmani - kullanici istegi 2026-08-20:
+// istatistigi scanner/money-maker'dan ayri tut. Sadece az sayida "surdurulebilir
+// hareket" gosteren kategoride (bkz. NewsCategory) gercek islem acar, geri
+// kalan her haber yine de NewsEvent olarak loglanir (kural ince ayari + audit
+// icin - kategori filtresinin neyi elediginin gorulmesi lazim).
+enum NewsCategory {
+  EXCHANGE_HACK_OR_INSOLVENCY
+  OFFICIAL_MA_ACQUISITION
+  MACRO_SURPRISE
+  VERIFIED_INFLUENCER
+  PARTNERSHIP_INTEGRATION
+  EXCHANGE_LISTING
+  MAINNET_UPGRADE
+  REGULATORY
+  TOKEN_UNLOCK
+  ETF_DECISION
+  UNVERIFIED_OTHER
+}
+
+enum NewsDirection {
+  LONG
+  SHORT
+  NEUTRAL
+}
+
+enum TerminalNewsTradeStatus {
+  PENDING_ENTRY
+  OPEN
+  CLOSED
+  FAILED
+  SHADOW_ONLY
+}
+
+// Tek satirlik "singleton" ayar tablosu - AutoTradeConfig'in News Trade
+// karsiligi ama BAGIMSIZ (Money Maker'i etkilemez, Money Maker'dan etkilenmez).
+// shadowMode varsayilan ACIK: hicbir gercek/testnet emir gitmez, sadece
+// "acilsaydi ne olurdu" kaydi tutulur - kullanici onayladigi "once gozlemle"
+// deseni (bkz. AutoTradeConfig.enabled=false varsayilani ile ayni mantik).
+model TerminalNewsTradeConfig {
+  id               String   @id @default(cuid())
+  enabled          Boolean  @default(false)
+  testnet          Boolean  @default(true)
+  shadowMode       Boolean  @default(true)
+  riskPerTradeUsdt Float    @default(10)
+  leverage         Int      @default(5)
+  updatedAt        DateTime @updatedAt
+}
+
+// Ham + siniflandirilmis her haber kaydi (islem acilsin acilmasin HEPSI
+// buraya loglanir). tradable=false olan kayitlar sadece bilgi amacli -
+// kategori filtresinin neyi elediginin gorulebilmesi icin panelde ayrica
+// listelenir.
+model NewsEvent {
+  id                String         @id @default(cuid())
+  sourceUrl         String         @unique
+  sourceAccount     String
+  rawText           String
+  publishedAt       DateTime
+  detectedAt        DateTime       @default(now())
+  category          NewsCategory?
+  direction         NewsDirection?
+  confidenceScore   Float?
+  // Kategori Filtresi'ndeki izinli listede mi VE guven skoru esigini asiyor mu -
+  // bu true olmadan hicbir NewsTrade (gercek ya da golge) acilmaz.
+  tradable          Boolean        @default(false)
+  // Kaynagin resmi/dogrulanmis hesap olup olmadigi + haberin gercekten yeni
+  // olup olmadigi (eski haberin yeniden servisi degil) - Orca AI'nin kendi
+  // degerlendirmesi.
+  verified          Boolean        @default(false)
+  verificationNotes String?
+  aiSummary         String?
+  classifiedAt      DateTime?
+  createdAt         DateTime       @default(now())
+  trade             NewsTrade?
+
+  @@index([publishedAt])
+  @@index([category])
+}
+
+// AutoTrade'in News Trade karsiligi - KASTEN ayri tablo (AutoTrade'e hic
+// dokunulmuyor), kullanicinin istedigi istatistik ayrimi bu sayede saglaniyor.
+model NewsTrade {
+  id               String                  @id @default(cuid())
+  newsEventId      String                  @unique
+  newsEvent        NewsEvent               @relation(fields: [newsEventId], references: [id])
+  symbol           String
+  direction        NewsDirection
+  status           TerminalNewsTradeStatus @default(PENDING_ENTRY)
+  entryOrderId     String?
+  slOrderId        String?
+  entryPrice       Float?
+  qty              Float?
+  // Haber oncesi N mumun swing high/low'undan turetilen stop seviyesi
+  // (bkz. news-trade.service.ts pivotStopFor) - "haberden onceki pivot
+  // altinda/ustunde" kullanici talebi.
+  pivotStopPrice   Float?
+  entryFilledAt    DateTime?
+  // NewsEvent.publishedAt ile emrin doldugu an arasindaki fark (ms) -
+  // kullanici istegi 2026-08-20: "haberden ne kadar zaman sonra islege
+  // girildigi de yazilsin, gecikmesi".
+  entryLatencyMs   Int?
+  // Ayni gecikmeyi Orca AI'nin kendi cumlesiyle aciklamasi.
+  entryLatencyNote String?
+  closeReason      String?
+  realizedPnl      Float?
+  commission       Float?
+  funding          Float?
+  netPnl           Float?
+  errorMessage     String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@index([status])
+  @@index([symbol])
+}
+
 model WinRateCache {
   id             String         @id @default(cuid())
   symbol         String

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AutoTradeService } from '../execution/auto-trade.service';
 
 interface Candle {
   time: number;
@@ -164,6 +165,20 @@ const FOREX_SIM_BALANCE = 500;
 const FOREX_SIM_LEVERAGE = 100;
 const CRYPTO_SIM_BALANCE = 250;
 const CRYPTO_SIM_LEVERAGE = 100;
+// Kripto istatistiklerini "temiz" (net) kara cevirmek icin dusulen borsa
+// maliyetleri (kullanici istegi 2026-08-19: acma/kapama ucreti + funding
+// R-multiple'a dahil degildi, brut hesap iyimser gosteriyordu). Forex'te
+// vadeli islem funding'i / bu tip taker ucreti yok, bu yuzden sadece
+// market === 'CRYPTO' icin uygulanir.
+// Binance USDT-M vadeli standart (VIP0) taker ucreti - giris ve cikis ayri
+// ayri islem sayilir, ikisi de worst-case taker varsayilir (limit/maker
+// oldugu bilinmiyor).
+const CRYPTO_TAKER_FEE_PCT = 0.0005; // %0.05 / islem tarafi
+// Gercek gecmis funding orani sinyal basina saklanmiyor (fetchBinanceFundingRate
+// sadece ANLIK orani cekiyor, backtest/kapanmis sinyallere uygulanamaz) - bu
+// yuzden Binance perpetual'larda gozlenen uzun donem ortalamaya yakin sabit
+// bir varsayim kullaniliyor. Pozisyon acikken her 8 saatte bir tahakkuk eder.
+const CRYPTO_FUNDING_RATE_PCT_PER_8H = 0.0001; // %0.01 / 8 saat (ortalama varsayim)
 // Seans tanimlari (UTC saat, standart/yaygin kabul gorern siniglar - kesin
 // degil, kullanici onayina acik).
 const FX_SESSIONS: { name: string; startHourUtc: number; endHourUtc: number }[] = [
@@ -204,6 +219,7 @@ export class ScannerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly autoTradeService: AutoTradeService,
   ) {}
 
   private async fetchTopBinanceSymbols(limit: number): Promise<string[]> {
@@ -263,6 +279,32 @@ export class ScannerService {
       if (!res.ok) return null;
       const data = await res.json();
       return parseFloat(data.lastFundingRate) * 100;
+    } catch {
+      return null;
+    }
+  }
+
+  // Kapanmis kripto sinyallerin GERCEK funding maliyetini hesaplamak icin -
+  // Binance her sembol icin 8 saatte bir (00:00/08:00/16:00 UTC) tahakkuk
+  // eden gecmis funding oranini herkese acik bu endpoint'ten sunuyor (kullanici
+  // istegi 2026-08-19: sabit varsayim yerine gercek deger). limit=1000 8
+  // saatlik periyotlarla ~11 ay kapsar, bizim sinyal pencerelerimiz (gun/hafta)
+  // icin fazlasiyla yeterli.
+  // null = istek basarisiz oldu (agdaki cagiran sabit varsayima dussun); []
+  // = istek basarili ama bu pencerede GERCEKTEN hic funding tahakkuku yok
+  // (8 saatlik siniri hic gecmemis kisa sureli DAY-trade pozisyonlari icin
+  // normal ve dogru bir durum - bu ikisi karistirilmamali).
+  private async fetchBinanceHistoricalFundingRates(
+    symbol: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<{ fundingTime: number; fundingRate: number }[] | null> {
+    try {
+      const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&startTime=${startTime}&endTime=${endTime}&limit=1000`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.map((r: any) => ({ fundingTime: r.fundingTime, fundingRate: parseFloat(r.fundingRate) }));
     } catch {
       return null;
     }
@@ -951,7 +993,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   }
   async createTrackedSignals(newActiveSignals: any[], style: string = 'DAY', market: string = 'CRYPTO') {
     for (const s of newActiveSignals) {
-      await this.prisma.trackedSignal.create({
+      const created = await this.prisma.trackedSignal.create({
         data: {
           symbol: s.symbol,
           direction: s.direction,
@@ -969,6 +1011,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
           strategyName: s.patternType ?? 'SUPPLY_DEMAND_ZONE',
         },
       });
+      // Otomatik islem kapaliysa (AutoTradeConfig.enabled=false, varsayilan)
+      // bu cagri hicbir sey yapmadan hemen doner - bkz. AutoTradeService.isActive.
+      await this.autoTradeService.onSignalCreated(created);
     }
   }
 
@@ -1016,6 +1061,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
             where: { id: sig.id },
             data: { status: 'EXPIRED', closedAt: new Date() },
           });
+          await this.autoTradeService.onSignalInvalidated(sig.id);
           continue;
         }
       }
@@ -1105,6 +1151,12 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
       if (Object.keys(updates).length > 0) {
         await this.prisma.trackedSignal.update({ where: { id: sig.id }, data: updates });
+        // Giris hic gerceklesmeden setup gecersizlesti/suresi doldu - gercek
+        // Binance emri acilmissa (bkz. AutoTradeService.onSignalCreated) iptal
+        // edilmesi gerekir, yoksa borsada sahipsiz bir bekleyen emir kalir.
+        if (updates.status === 'INVALIDATED' || updates.status === 'EXPIRED') {
+          await this.autoTradeService.onSignalInvalidated(sig.id);
+        }
       }
     }
   }
@@ -1143,19 +1195,80 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
             { status: { in: ['HIT_TP1', 'HIT_TP2', 'HIT_TP3'] }, closedAt: { not: null } },
           ],
         },
-        select: { status: true, rr: true, entry: true, tp1: true },
+        select: {
+          status: true, rr: true, entry: true, tp1: true,
+          symbol: true, direction: true, triggeredAt: true, closedAt: true,
+        },
       }),
     ]);
+
+    // Gercek gecmis funding: sembol basina, o sembolun bu sonuc kumesindeki
+    // en erken tetiklenme - en gec kapanis araligini kapsayacak TEK istekle
+    // Binance'ten cekilir (satir basina degil sembol basina - N sinyal ayni
+    // sembolde olabiliyor, gereksiz tekrar istek atilmasin diye).
+    const fundingBySymbol = new Map<string, { fundingTime: number; fundingRate: number }[] | null>();
+    if (market === 'CRYPTO') {
+      const rangeBySymbol = new Map<string, { start: number; end: number }>();
+      for (const row of closedRows) {
+        if (!row.triggeredAt || !row.closedAt) continue;
+        const start = row.triggeredAt.getTime();
+        const end = row.closedAt.getTime();
+        const existing = rangeBySymbol.get(row.symbol);
+        if (existing) {
+          existing.start = Math.min(existing.start, start);
+          existing.end = Math.max(existing.end, end);
+        } else {
+          rangeBySymbol.set(row.symbol, { start, end });
+        }
+      }
+      await Promise.all(
+        Array.from(rangeBySymbol.entries()).map(async ([symbol, { start, end }]) => {
+          const events = await this.fetchBinanceHistoricalFundingRates(symbol, start, end);
+          fundingBySymbol.set(symbol, events);
+        }),
+      );
+    }
 
     const tp1 = { count: 0, r: 0, d: 0 };
     const tp2 = { count: 0, r: 0, d: 0 };
     const tp3 = { count: 0, r: 0, d: 0 };
     const stopped = { count: 0, r: 0, d: 0 };
+    let totalFees = 0;
+    let totalFunding = 0;
     for (const row of closedRows) {
       // Bu islemin dolar/R orani - risk mesafesi (giris-tp1) fiyata gore ne
       // kadar genisse, ayni notional icin 1R o kadar fazla dolar eder.
       const riskPct = row.entry && row.tp1 != null && row.entry > 0 ? Math.abs(row.tp1 - row.entry) / row.entry : 0;
       const dollarPer1R = simNotional * riskPct;
+      // Ucret/funding kazanc-kayip farketmeksizin, pozisyon acildigi anda
+      // tahakkuk eder - bu yuzden win/loss dallarindan BAGIMSIZ, her kapanan
+      // sinyal icin bir kez hesaplanir.
+      if (market === 'CRYPTO') {
+        totalFees += simNotional * CRYPTO_TAKER_FEE_PCT * 2; // acilis + kapanis
+        if (row.triggeredAt && row.closedAt) {
+          const events = fundingBySymbol.get(row.symbol);
+          const startMs = row.triggeredAt.getTime();
+          const endMs = row.closedAt.getTime();
+          if (events === null || events === undefined) {
+            // Binance istegi basarisiz oldu (agdaki hata/bilinmeyen sembol) -
+            // sabit ortalama varsayima geri dus.
+            const openMs = endMs - startMs;
+            const fundingPeriods = Math.max(1, Math.ceil(openMs / (8 * 60 * 60 * 1000)));
+            totalFunding += simNotional * CRYPTO_FUNDING_RATE_PCT_PER_8H * fundingPeriods;
+          } else {
+            // Istek basarili - pencerede hic funding zamanina (00:00/08:00/16:00
+            // UTC) denk gelmemis olabilir (8 saatten kisa acik kalan DAY-trade
+            // pozisyonu) - bu durumda GERCEK maliyet gercekten sifirdir.
+            const inWindow = events.filter((e) => e.fundingTime >= startMs && e.fundingTime <= endMs);
+            // Funding orani pozitifse LONG oder/SHORT alir, negatifse tersi
+            // (Binance konvansiyonu) - bu yuzden yon isarete yansitilir.
+            const sideMult = row.direction === 'SHORT' ? -1 : 1;
+            for (const e of inWindow) {
+              totalFunding += simNotional * e.fundingRate * sideMult;
+            }
+          }
+        }
+      }
       if (row.status === 'HIT_STOP') {
         stopped.count += 1;
         stopped.r += 1;
@@ -1200,9 +1313,14 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       rWon: round2(rWon),
       rLost: round2(rLost),
       rNet: round2(rWon - rLost),
+      // dWon/dLost brut (ucret/funding oncesi). dNet artik NET - fees ve
+      // funding dusulmus (bkz. CRYPTO_TAKER_FEE_PCT/CRYPTO_FUNDING_RATE_PCT_PER_8H).
+      // Forex'te fees=funding=0 oldugundan dNet degismeden kalir.
       dWon: round2(dWon),
       dLost: round2(dLost),
-      dNet: round2(dWon - dLost),
+      dNet: round2(dWon - dLost - totalFees - totalFunding),
+      fees: round2(totalFees),
+      funding: round2(totalFunding),
       simBalance,
       simLeverage,
     };
@@ -1229,6 +1347,10 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   // degistirildiginde eski kripto sinyallerini/tarama snapshotlarini bir kez
   // temizlemek icin. FOREX'e (market: 'FOREX') hicbir kosulda dokunmaz.
   async clearCryptoSignals() {
+    // DB kayitlari silinmeden once borsadaki acik emirleri/pozisyonlari da
+    // temizle - yoksa "sinyal silindi ama Binance'te hala emir/pozisyon var"
+    // durumu olusur.
+    await this.autoTradeService.cancelAllOpenForMarket('CRYPTO');
     const deletedTracked = await this.prisma.trackedSignal.deleteMany({
       where: { market: 'CRYPTO' },
     });

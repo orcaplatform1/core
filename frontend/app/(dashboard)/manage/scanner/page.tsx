@@ -52,6 +52,8 @@ function StatsCard({
   stats: SignalStatsBlock;
 }) {
   const rNetColor = stats.rNet > 0 ? "#22C55E" : stats.rNet < 0 ? "#EF4444" : "#A8A6A0";
+  const dGross = stats.dWon - stats.dLost;
+  const dGrossColor = dGross > 0 ? "#22C55E" : dGross < 0 ? "#EF4444" : "#A8A6A0";
   const dNetColor = stats.dNet > 0 ? "#22C55E" : stats.dNet < 0 ? "#EF4444" : "#A8A6A0";
   return (
     <div className="rounded-xl border border-border bg-card-inner p-3 space-y-1.5">
@@ -92,13 +94,24 @@ function StatsCard({
         <span>
           Simüle bakiye (${stats.simBalance}, 1:{stats.simLeverage} kaldıraç):
         </span>
-        <span className="font-semibold" style={{ color: dNetColor }}>
-          {stats.dNet > 0 ? "+" : stats.dNet < 0 ? "-" : ""}${fmtUsd(Math.abs(stats.dNet))}
+        <span className="font-semibold" style={{ color: dGrossColor }}>
+          {dGross > 0 ? "+" : dGross < 0 ? "-" : ""}${fmtUsd(Math.abs(dGross))}
         </span>
         <span className="text-[#605D57]">
           (her işlem bu bakiyeyle sıfırdan açılmış varsayılır, kümülatif değildir)
         </span>
       </div>
+      {(stats.fees !== 0 || stats.funding !== 0) && (
+        <div className="flex items-center gap-3 text-body-xs text-[#605D57] flex-wrap border-t border-border pt-1.5">
+          <span>İşlem ücreti: -${fmtUsd(Math.abs(stats.fees))}</span>
+          <span>
+            Funding: {stats.funding >= 0 ? "-" : "+"}${fmtUsd(Math.abs(stats.funding))}
+          </span>
+          <span className="font-semibold" style={{ color: dNetColor }}>
+            Net kâr: {stats.dNet > 0 ? "+" : stats.dNet < 0 ? "-" : ""}${fmtUsd(Math.abs(stats.dNet))}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag, Gift, Rocket, Star, Handshake } from "lucide-react";
+import { ShieldAlert, Users, CreditCard, Layers, Award, Radio, Megaphone, BarChart3, Zap, Globe, FileText, UserPlus, MessageSquare, Mail, Activity, LifeBuoy, Flag, Gift, Rocket, Star, Handshake, Bot, Newspaper } from "lucide-react";
 export default function ManagePage() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -132,6 +132,30 @@ export default function ManagePage() {
           <div>
             <p className="text-card-title-sm text-[#F5F1EA]">Orca ACS</p>
             <p className="text-body-xs text-[#A8A6A0]">Kişisel kullanım — canlı sinyal taraması</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/money-maker"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EAB30822]">
+            <Bot size={20} color="#EAB308" />
+          </div>
+          <div>
+            <p className="text-card-title-sm text-[#F5F1EA]">Money Maker</p>
+            <p className="text-body-xs text-[#A8A6A0]">Orca ACS sinyallerini gerçek işleme çevirir</p>
+          </div>
+        </Link>
+        <Link
+          href="/manage/terminal-news-trade"
+          className="flex items-center gap-3 rounded-2xl border border-border bg-card p-5 hover:border-primary transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8A5CFF22]">
+            <Newspaper size={20} color="#8A5CFF" />
+          </div>
+          <div>
+            <p className="text-card-title-sm text-[#F5F1EA]">Terminal News Trade</p>
+            <p className="text-body-xs text-[#A8A6A0]">X haberini Orca AI ile okur, gerçek işleme çevirir — Money Maker'dan bağımsız</p>
           </div>
         </Link>
         <Link

@@ -5,7 +5,8 @@ import { ScannerService } from '../src/scanner/scanner.service';
   const prisma = new PrismaService();
   await prisma.onModuleInit();
   const notificationsServiceStub = {} as any;
-  const scanner = new ScannerService(prisma, notificationsServiceStub);
+  const autoTradeServiceStub = {} as any;
+  const scanner = new ScannerService(prisma, notificationsServiceStub, autoTradeServiceStub);
 
   console.log('scanDayTrade basliyor...');
   const results = await scanner.scanDayTrade();

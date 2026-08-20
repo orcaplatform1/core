@@ -83,6 +83,8 @@ export type SignalStatsBlock = {
   dWon: number;
   dLost: number;
   dNet: number;
+  fees: number;
+  funding: number;
   simBalance: number;
   simLeverage: number;
 };
@@ -95,5 +97,114 @@ export function useTrackedSignals(market: ScanMarket = "CRYPTO") {
     queryKey: ["admin", "scanner", "tracked", market],
     queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?market=${market}`),
     refetchInterval: 30000,
+  });
+}
+
+export type AutoTradeConfig = {
+  id: string;
+  enabled: boolean;
+  testnet: boolean;
+  cryptoEnabled: boolean;
+  forexEnabled: boolean;
+  riskPerTradeUsdt: number;
+  leverage: number;
+  updatedAt: string;
+  apiKeyConfigured: boolean;
+  testnetActive: boolean;
+};
+export type AutoTrade = {
+  id: string;
+  trackedSignalId: string;
+  symbol: string;
+  direction: string;
+  status: "PENDING_ENTRY" | "OPEN" | "BREAKEVEN_SET" | "CLOSED" | "EXPIRED" | "FAILED";
+  entryPrice: number | null;
+  qty: number | null;
+  closeReason: "TP3" | "STOP_BREAKEVEN" | "STOP_FULL_LOSS" | "MANUAL_CLOSE" | null;
+  realizedPnl: number | null;
+  commission: number | null;
+  funding: number | null;
+  netPnl: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+};
+export type AutoTradeStats = {
+  totalClosed: number;
+  wins: number;
+  losses: number;
+  winRate: number | null;
+  totalRealizedPnl: number;
+  totalCommission: number;
+  totalFunding: number;
+  totalNetPnl: number;
+};
+export function useAutoTradeStats() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "stats"],
+    queryFn: () => apiClient<AutoTradeStats>(`/scanner/auto-trade/stats`),
+    refetchInterval: 30000,
+  });
+}
+export function useAutoTradeConfig() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "config"],
+    queryFn: () => apiClient<AutoTradeConfig>(`/scanner/auto-trade/config`),
+    refetchInterval: 30000,
+  });
+}
+export function useUpdateAutoTradeConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Partial<Pick<AutoTradeConfig, "enabled" | "cryptoEnabled" | "riskPerTradeUsdt" | "leverage">>) =>
+      apiClient<AutoTradeConfig>(`/scanner/auto-trade/config`, { method: "PATCH", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade", "config"] }),
+  });
+}
+export type LiveAutoTradePosition = {
+  id: string;
+  symbol: string;
+  direction: string;
+  status: "OPEN" | "BREAKEVEN_SET";
+  entryPrice: number | null;
+  qty: number | null;
+  markPrice: number | null;
+  unrealizedProfit: number | null;
+  notional: number | null;
+  leverage: number | null;
+  liquidationPrice: number | null;
+  realizedSoFar: number;
+  commissionSoFar: number;
+  fundingSoFar: number;
+};
+export function useAutoTradePositions() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "positions"],
+    queryFn: () => apiClient<LiveAutoTradePosition[]>(`/scanner/auto-trade/positions`),
+    refetchInterval: 5000,
+  });
+}
+export function useCloseAutoTrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient<{ closed: boolean }>(`/scanner/auto-trade/${id}/close`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade"] });
+    },
+  });
+}
+export function useCloseAllAutoTrades() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient<{ closed: number }>(`/scanner/auto-trade/close-all`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade"] });
+    },
+  });
+}
+export function useAutoTrades() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "trades"],
+    queryFn: () => apiClient<AutoTrade[]>(`/scanner/auto-trade/trades`),
+    refetchInterval: 15000,
   });
 }
