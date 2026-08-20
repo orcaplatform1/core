@@ -30,6 +30,7 @@ import {
   useTerminalNewsTradeStats,
   useTerminalNewsTradePositions,
   useTerminalNewsEvents,
+  useSendTestNewsEvent,
   useCloseTerminalNewsTrade,
   useCloseAllTerminalNewsTrades,
   type LiveTerminalNewsTradePosition,
@@ -392,6 +393,55 @@ function PositionCard({
   );
 }
 
+function TestEventBox() {
+  const sendTest = useSendTestNewsEvent();
+  const [text, setText] = useState("");
+  const [account, setAccount] = useState("");
+
+  async function handleSend() {
+    if (!text.trim()) return;
+    try {
+      await sendTest.mutateAsync({ rawText: text, sourceAccount: account.trim() || undefined });
+      toast.success("Test haberi gönderildi — Orca AI sınıflandırıyor, birkaç saniye içinde aşağıdaki Haber Akışı'nda görünür");
+      setText("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Gönderilemedi");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-[#8A5CFF33] bg-[#8A5CFF0D] p-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <Sparkles size={16} className="text-[#8A5CFF]" />
+        <p className="text-body-sm font-semibold text-[#F5F1EA]">Test Haberi Gönder</p>
+      </div>
+      <p className="text-body-xs text-[#A8A6A0]">
+        X API bağlanmadan (X_API_BEARER_TOKEN boşken) tüm hattı — Orca AI sınıflandırma → gölge işlem — test etmek
+        için. X akışının ileteceği olayın aynısını elle tetikler. ANTHROPIC_API_KEY `.env`&apos;de dolu olmalı, aksi
+        halde sınıflandırma başarısız olur.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder='Örn: Binance confirms $500M exploit, has halted withdrawals while investigating'
+        rows={3}
+        className="w-full rounded-lg border border-border bg-card-inner px-3 py-2 text-body-sm text-[#F5F1EA]"
+      />
+      <div className="flex items-center gap-2 flex-wrap">
+        <input
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          placeholder="Kaynak hesap (opsiyonel, ör. binance)"
+          className="w-56 rounded-lg border border-border bg-card-inner px-2 py-1.5 text-body-sm text-[#F5F1EA]"
+        />
+        <Button onClick={handleSend} disabled={sendTest.isPending || !text.trim()} className="h-9">
+          Gönder
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // Terminal News Trade — Money Maker'dan (Orca ACS execution) TAMAMEN ayrı bir
 // sayfa/modül; sinyal kaynağı X (Twitter) haber akışı, istatistiği de ayrı
 // (kullanıcı isteği 2026-08-20: "istatistiği ayrı tutmalıyım").
@@ -491,6 +541,8 @@ export default function TerminalNewsTradePage() {
         </Link>
       </div>
       {showAbout && <AboutTerminalNewsTradePanel onClose={() => setShowAbout(false)} />}
+
+      <TestEventBox />
 
       {positions && positions.length > 0 && (
         <div className="rounded-2xl border border-[#EF444433] bg-[#EF44440D] p-4 space-y-3">

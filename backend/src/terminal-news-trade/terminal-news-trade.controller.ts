@@ -63,6 +63,22 @@ export class TerminalNewsTradeController {
     return this.service.getEvents(limit ? Number(limit) : 100);
   }
 
+  // X API henuz baglanmadan (X_API_BEARER_TOKEN bos) tum pipeline'i (Orca AI
+  // siniflandirma -> golge islem) test edebilmek icin - XStreamService'in
+  // gercekte iletecegi olayin AYNISINI elle tetikler. ANTHROPIC_API_KEY dolu
+  // olmadan siniflandirma basarisiz doner (bkz. NewsClassifierService).
+  @Post('test-event')
+  async testEvent(@Body() body: { rawText: string; sourceAccount?: string; publishedAt?: string }) {
+    if (!body.rawText?.trim()) throw new Error('rawText zorunlu');
+    await this.service.onNewsEvent({
+      sourceUrl: `https://x.com/test/status/${Date.now()}`,
+      sourceAccount: body.sourceAccount?.trim() || 'test-admin',
+      rawText: body.rawText,
+      publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
+    });
+    return { queued: true };
+  }
+
   @Get('trades')
   async getTrades() {
     return this.prisma.newsTrade.findMany({ orderBy: { createdAt: 'desc' }, take: 100, include: { newsEvent: true } });

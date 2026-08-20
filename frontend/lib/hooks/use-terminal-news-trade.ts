@@ -157,6 +157,16 @@ export function useCloseTerminalNewsTrade() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "terminal-news-trade"] }),
   });
 }
+// X API henuz baglanmadan (X_API_BEARER_TOKEN bos) tum pipeline'i test etmek
+// icin - X stream'in gercekte iletecegi olayin AYNISINI elle tetikler.
+export function useSendTestNewsEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { rawText: string; sourceAccount?: string }) =>
+      apiClient<{ queued: boolean }>(`/terminal-news-trade/test-event`, { method: "POST", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "terminal-news-trade"] }),
+  });
+}
 export function useCloseAllTerminalNewsTrades() {
   const qc = useQueryClient();
   return useMutation({
