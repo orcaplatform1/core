@@ -171,6 +171,22 @@ export class BinanceFuturesClientService {
     return rows.map((r) => ({ orderId: r.orderId, price: parseFloat(r.price) }));
   }
 
+  // Bir LIMIT emrin (TP1/TP2/TP3) GERCEKTEN dolup dolmadigini kontrol etmek
+  // icin - openOrders listesinden dusmus olmak FILLED anlamina gelmez, ayni
+  // sekilde CANCELED/EXPIRED/REJECTED de listeden duser (bkz. kullanici geri
+  // bildirimi 2026-08-21: APTUSDT'de basabas stop TP2/TP3'ten once tetiklenip
+  // pozisyonu kapatinca, artik karsiligi olmayan TP2/TP3 reduceOnly emirleri
+  // Binance tarafindan EXPIRED yapildi - ama panel "listede yok = doldu"
+  // sandigi icin hic dolmayan bu emirleri de "alindi" gosterdi).
+  async getOrderStatus(symbol: string, orderId: string | number): Promise<{ status: string } | null> {
+    try {
+      const row = await this.signedRequest<{ status: string }>('GET', '/fapi/v1/order', { symbol, orderId });
+      return { status: row.status };
+    } catch {
+      return null;
+    }
+  }
+
   // Sonraki funding kesintisinin pozisyona +/- yansiyacagini kartta gostermek
   // icin (kullanici istegi 2026-08-20: "funding + mı - mi de göreyim") -
   // public bir endpoint, imza gerekmiyor.

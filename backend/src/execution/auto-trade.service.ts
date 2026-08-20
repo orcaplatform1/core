@@ -422,10 +422,20 @@ export class AutoTradeService implements OnModuleInit {
   // Stop-loss artik bir "algo" (kosullu) emir - Binance'in ALGO_UPDATE
   // websocket eventi (2026-08-20 itibariyle) belgelenmedigi icin diger
   // emirler gibi anlik push bildirimine guvenilemiyor; bu yuzden SADECE stop
-  // emri icin 20sn'de bir /fapi/v1/algoOrder durumu sorgulanip TRIGGERED
-  // olunca pozisyon kapatma akisi (onPositionClosed) tetikleniyor. TP1/TP2/
-  // TP3/giris hala normal LIMIT emir oldugu icin onlar icin polling YOK,
-  // ORDER_TRADE_UPDATE websocket'i yeterli (bkz. handleFill).
+  // emri icin 20sn'de bir /fapi/v1/algoOrder durumu sorgulanip tetiklenince
+  // pozisyon kapatma akisi (onPositionClosed) tetikleniyor. TP1/TP2/TP3/giris
+  // hala normal LIMIT emir oldugu icin onlar icin polling YOK, ORDER_TRADE_UPDATE
+  // websocket'i yeterli (bkz. handleFill).
+  //
+  // algoStatus degeri 'TRIGGERED' DEGIL 'FINISHED' oluyor (bkz. kullanici
+  // geri bildirimi 2026-08-21: APTUSDT basabas stopa carpmis, algo GERCEKTEN
+  // tetiklenmis - triggerTime dolu, actualOrderId dolu - ama status kontrolu
+  // 'TRIGGERED' bekledigi icin hicbir zaman eslesmedi, AutoTrade sonsuza kadar
+  // BREAKEVEN_SET'te takili kaldi, panel "TP2 alindi" gibi yanlis/eski bir not
+  // gostermeye devam etti). Guvenilir sinyal algoStatus'un TAM ESLESMESI degil,
+  // actualOrderId'nin dolu olmasi - bu alan SADECE kosul gerceklesip GERCEK bir
+  // emir olusunca doluyor, Binance'in kullandigi terminal durum string'inden
+  // (TRIGGERED/FINISHED/vs.) bagimsiz.
   @Interval(20000)
   async pollPendingStopOrders() {
     if (!this.binance.isConfigured) return;
@@ -435,7 +445,8 @@ export class AutoTradeService implements OnModuleInit {
     for (const trade of trades) {
       try {
         const algo = await this.binance.getAlgoOrderStatus(trade.symbol, trade.slOrderId!);
-        if (algo.algoStatus === 'TRIGGERED') {
+        const hasTriggered = !!algo.actualOrderId && algo.actualOrderId !== '0';
+        if (hasTriggered) {
           await this.onPositionClosed(trade, 'STOP');
         }
       } catch (err: any) {
@@ -642,11 +653,26 @@ export class AutoTradeService implements OnModuleInit {
           ]);
           const isResting = (orderId: string | null) =>
             !!orderId && openOrders.some((o) => String(o.orderId) === orderId);
-          tp1Filled = !!trade.tp1OrderId && !isResting(trade.tp1OrderId);
-          tp2Filled = !!trade.tp2OrderId && !isResting(trade.tp2OrderId);
-          tp3Filled = !!trade.tp3OrderId && !isResting(trade.tp3OrderId);
+          // "Listede yok" = doldu DEGIL - CANCELED/EXPIRED/REJECTED de
+          // listeden duser (bkz. kullanici geri bildirimi 2026-08-21:
+          // basabas stop TP2/TP3'ten once tetiklenince artik karsiligi
+          // olmayan TP2/TP3 emirleri Binance tarafindan EXPIRED yapildi,
+          // panel bunlari da "alindi" gosterdi). Listede olmayan her TP icin
+          // gercek durumu tek tek sorgula - status FILLED ise gercekten
+          // doldu, degilse (EXPIRED/CANCELED) hic dolmadi.
+          const resolveFilled = async (orderId: string | null): Promise<boolean> => {
+            if (!orderId) return false;
+            if (isResting(orderId)) return false;
+            const status = await this.binance.getOrderStatus(trade.symbol, orderId).catch(() => null);
+            return status?.status === 'FILLED';
+          };
+          [tp1Filled, tp2Filled, tp3Filled] = await Promise.all([
+            resolveFilled(trade.tp1OrderId),
+            resolveFilled(trade.tp2OrderId),
+            resolveFilled(trade.tp3OrderId),
+          ]);
           stopPrice = algo ? parseFloat(algo.triggerPrice) : stopPrice;
-          stopTriggered = algo?.algoStatus === 'TRIGGERED';
+          stopTriggered = !!algo?.actualOrderId && algo.actualOrderId !== '0';
         }
 
         return {
