@@ -418,19 +418,15 @@ export class AutoTradeService implements OnModuleInit {
     }
   }
 
-  // Guvenlik agi: TrackedSignal'in kendi mum-bazli takibi (scanner.service.ts
-  // updateTrackedSignals, 1dk mum low/high'ina bakar) ile borsadaki GERCEK
-  // LIMIT giris emri BAZEN uyusmuyor - fiyat zonu bir mum icinde kisa bir
-  // fitille (wick) "dokunmus" gibi gorunup TrackedSignal'i TRIGGERED/HIT_TP*'e
-  // ilerletebiliyor, ama o anki likidite bizim spesifik emrimizi doldurmaya
-  // yetmemis olabilir (bkz. kullanici geri bildirimi 2026-08-20: ZECUSDT -
-  // sinyal HIT_TP2'ye kadar ilerledi ama giris emri hic dolmadi, fiyat 564'ten
-  // 593'e kacti). Boyle durumda gercek emir sonsuza kadar bekler ("kacan"
-  // fiyat asla geri gelmez varsayimi makul degil, riskli). Kural: sinyal TP1
-  // (veya sonrasi) seviyesine ulasmisken hala PENDING_ENTRY'deysek fırsat
-  // kacmis demektir - bekleyen emri iptal et, kart listeden dussun (kullanici
-  // istegi: "ilk tp fiyatına ulaşan bekleyen işlemi otomatik iptal et ve sil
-  // gözükmesin bile").
+  // Guvenlik agi: gercek LIMIT giris emri fiyati hic gormeden fırsat kacabilir
+  // (fiyat entry bolgesine hic donmeden TP1'i gecip gidebilir - bkz. kullanici
+  // geri bildirimi 2026-08-20: ZECUSDT, sonra TAOUSDT/XRPUSDT). Ilk versiyon
+  // bunu TrackedSignal.status (HIT_TP1+) uzerinden kontrol ediyordu, ama o
+  // sadece scanner'in 15dk'lik cron dongusunde guncelleniyor - fiyat TP1'i
+  // gectikten SONRAKI ilk cron'a kadar (en fazla ~15dk) emir gereksiz yere
+  // acik kaliyordu (kullanici geri bildirimi: "TAO'da mark fiyatı TP1'i
+  // geçti iptal edilmedi"). Artik dogrudan CANLI fiyati TP1 ile kiyaslıyor -
+  // scanner cron'unu beklemeden, en fazla 60sn icinde iptal ediyor.
   @Interval(60000)
   async pollStaleEntries() {
     if (!this.binance.isConfigured) return;
@@ -438,11 +434,14 @@ export class AutoTradeService implements OnModuleInit {
     for (const trade of pending) {
       const sig = await this.prisma.trackedSignal.findUnique({ where: { id: trade.trackedSignalId } });
       if (!sig) continue;
-      if (['HIT_TP1', 'HIT_TP2', 'HIT_TP3'].includes(sig.status)) {
-        this.logger.warn(`${trade.symbol}: TP1+ zaten vuruldu ama giris hic dolmadi - kacan firsat, bekleyen emir iptal ediliyor`);
+      const price = await this.binance.getTickerPrice(trade.symbol).catch(() => null);
+      if (price == null) continue;
+      const passedTp1 = trade.direction === 'LONG' ? price >= sig.tp1 : price <= sig.tp1;
+      if (passedTp1) {
+        this.logger.warn(`${trade.symbol}: fiyat (${price}) TP1'e (${sig.tp1}) ulasti ama giris hic dolmadi - kacan firsat, bekleyen emir iptal ediliyor`);
         await this.notifyAdmins(
           'Orca ACS: Kaçan giriş iptal edildi',
-          `${trade.symbol}: fiyat girmeden TP1 seviyesine ulaştı, giriş emri hiç dolmadı - fırsat kaçtı, bekleyen emir iptal edildi.`,
+          `${trade.symbol}: fiyat (${price}) girmeden TP1 seviyesine (${sig.tp1}) ulaştı, giriş emri hiç dolmadı - fırsat kaçtı, bekleyen emir iptal edildi.`,
         );
         await this.onSignalInvalidated(trade.trackedSignalId);
       }
