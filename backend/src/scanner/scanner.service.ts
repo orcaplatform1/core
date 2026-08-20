@@ -234,7 +234,10 @@ export class ScannerService {
 
   private async fetchTopBinanceSymbols(limit: number): Promise<string[]> {
     try {
-      const res = await this.fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr');
+      // FUTURES - kullanici SPOT islem yapmiyor, sadece Futures'ta aciyor
+      // (Money Maker). SPOT'ta olup Futures'ta kontrati olmayan bir sembol
+      // zaten hicbir zaman gercek emre donusturulemezdi.
+      const res = await this.fetchWithTimeout('https://fapi.binance.com/fapi/v1/ticker/24hr');
       if (!res.ok) return [];
       const data = await res.json();
       return data
@@ -255,7 +258,7 @@ export class ScannerService {
   // ICT/SMC Breakout & Retest modeli icin - interval=15m, limit=300, EMA200 +
   // hacim ortalamasi + MSB lookback icin yeterli gecmisi karsilar.
   private async fetchBinance15m(symbol: string, limit = 300): Promise<Candle[]> {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=${limit}`;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&limit=${limit}`;
     const res = await this.fetchWithTimeout(url);
     if (!res.ok) return [];
     const data = await res.json();
@@ -271,7 +274,7 @@ export class ScannerService {
   // tetikleniyordu); 1 saatlik EMA50 daha yuksek zaman diliminde, daha
   // istikrarli bir "piyasa rejimi" olcumu.
   private async fetchBinance1h(symbol: string, limit: number): Promise<Candle[]> {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
     const res = await this.fetchWithTimeout(url);
     if (!res.ok) return [];
     const data = await res.json();
@@ -813,7 +816,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   async getLivePrice(symbol: string, market: string = 'CRYPTO'): Promise<{ symbol: string; price: number | null }> {
     if (market === 'FOREX') return this.getLiveForexPrice(symbol);
     try {
-      const res = await this.fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+      const res = await this.fetchWithTimeout(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbol}`);
       if (!res.ok) return { symbol, price: null };
       const data = await res.json();
       return { symbol, price: parseFloat(data.price) };
@@ -851,15 +854,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       }
     }
     try {
-      // Bu fonksiyon updateTrackedSignals() icinde giris/TP/stop tespiti icin
-      // kullaniliyor - Money Maker gercek emirleri FUTURES'ta actigi icin
-      // (SPOT degil) burasi da Futures klines'a tasindi, aksi halde SPOT/
-      // FUTURES fiyat farki (basis) yuzunden sinyal durumu ile gercek emrin
-      // gordugu fiyat hafifce ayrisabilirdi (bkz. kullanici geri bildirimi
-      // 2026-08-21: scanner'daki diger riskli noktalar). Sinyal ureten
-      // fetchBinance15m/1h SPOT'ta kalmaya devam ediyor - o taraf gecmis
-      // backtest/istatistiklerle tutarliligi bozmamak icin bilincli olarak
-      // degistirilmedi.
+      // Money Maker gercek emirleri FUTURES'ta acar (SPOT hic kullanilmiyor) -
+      // giris/TP/stop tespiti de Futures klines uzerinden yapilir (bkz.
+      // kullanici geri bildirimi 2026-08-21: "spot yok bizde").
       const res = await this.fetchWithTimeout(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1m&limit=${limit}`);
       if (!res.ok) return [];
       const data = (await res.json()) as any[];
