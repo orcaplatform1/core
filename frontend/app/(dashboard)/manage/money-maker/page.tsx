@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PremiumGlowButton } from "@/components/ui/premium-glow-button";
+import { ExternalLink } from "@/components/ui/external-link";
 import { useAuth } from "@/context/auth-context";
 import {
   useAutoTradeConfig,
@@ -261,6 +262,43 @@ function fmtUsd(n: number) {
   return n.toFixed(2);
 }
 
+// scanner sayfasindaki CoinIcon deseniyle birebir ayni - iki farkli CDN
+// denenir, ikisi de basarisiz olursa yerine bir ok ikonu duser (bkz. onError).
+function CoinIcon({ symbol }: { symbol: string }) {
+  const [level, setLevel] = useState(0);
+  const base = symbol.replace(/USDT$/, "").toLowerCase();
+  const sources = [
+    `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/128/color/${base}.png`,
+    `https://assets.coincap.io/assets/icons/${base}@2x.png`,
+  ];
+  if (level >= sources.length) return null;
+  return (
+    <img
+      key={level}
+      src={sources[level]}
+      alt={symbol}
+      className="h-5 w-5 shrink-0 rounded-full object-contain"
+      onError={() => setLevel((l) => l + 1)}
+    />
+  );
+}
+
+// scanner sayfasindaki CoinIcon/Binance-link deseniyle birebir ayni - kullanici
+// istegi 2026-08-20: "logo coin adı yanına binance futures linki olsun".
+function BinanceFuturesLink({ symbol }: { symbol: string }) {
+  return (
+    <ExternalLink href={`https://www.binance.com/en/futures/${symbol}`} className="text-[#A8A6A0] hover:text-primary">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="#F0B90B">
+        <path d="M12 2 L15.5 5.5 L12 9 L8.5 5.5 Z" />
+        <path d="M5.5 8.5 L9 12 L5.5 15.5 L2 12 Z" />
+        <path d="M18.5 8.5 L22 12 L18.5 15.5 L15 12 Z" />
+        <path d="M12 15 L15.5 18.5 L12 22 L8.5 18.5 Z" />
+        <path d="M12 9 L14.5 11.5 L12 14 L9.5 11.5 Z" />
+      </svg>
+    </ExternalLink>
+  );
+}
+
 function PositionCard({ position, onClose, isClosing }: { position: LiveAutoTradePosition; onClose: () => void; isClosing: boolean }) {
   const fundingCountdown = useFundingCountdown();
   const unrealized = position.unrealizedProfit ?? 0;
@@ -272,7 +310,9 @@ function PositionCard({ position, onClose, isClosing }: { position: LiveAutoTrad
     <div className="rounded-xl border border-border bg-card-inner p-3 space-y-2">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
+          <CoinIcon symbol={position.symbol} />
           <span className="text-body-sm font-semibold text-[#F5F1EA]">{position.symbol}</span>
+          <BinanceFuturesLink symbol={position.symbol} />
           <span
             className="rounded-full px-2 py-0.5 text-badge uppercase"
             style={{ backgroundColor: position.direction === "LONG" ? "#22C55E22" : "#EF444422", color: position.direction === "LONG" ? "#22C55E" : "#EF4444" }}
