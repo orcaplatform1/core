@@ -114,6 +114,32 @@ export class AutoTradeService implements OnModuleInit {
       const riskDistance = Math.abs(entryPrice - sig.stop);
       if (riskDistance <= 0) return;
 
+      // Guvenlik agi: sinyal, kirilim mumunun kapanisindan hesaplaniyor - o
+      // andan emrin acilmasina kadar gecen surede (tarama dongusu + agirlik)
+      // fiyat setup'i zaten gecersiz kilmis olabilir (stop seviyesini kirmis
+      // olabilir). Bu kontrol olmadan entryZoneTop/Bottom'a konan LIMIT emri,
+      // guncel fiyat zaten bu seviyenin OTESINDEYSE (bullish icin stop'un
+      // altindaysa) Binance tarafindan aninda (piyasa emri gibi) doldurulur -
+      // yani zaten cokmus bir yapiya, canli fiyat kontrolu olmadan giriliyor
+      // olurdu (bkz. kullanici geri bildirimi 2026-08-21: Money Maker'da
+      // kacan islem analizi). Fiyat cekilemezse (agdaki hata) eski davranisa
+      // (kontrolsuz devam) dusuluyor - bu guvenlik agi olmadan da onceki
+      // durumdan daha kotu olmaz.
+      const livePriceCheck = await this.binance.getTickerPrice(sig.symbol).catch(() => null);
+      if (livePriceCheck != null) {
+        const alreadyInvalidated = bullish ? livePriceCheck <= sig.stop : livePriceCheck >= sig.stop;
+        if (alreadyInvalidated) {
+          this.logger.warn(
+            `${sig.symbol}: canli fiyat (${livePriceCheck}) zaten stop seviyesini (${sig.stop}) gecmis, giris emri acilmadan atlandi (setup gecersiz)`,
+          );
+          await this.notifyAdmins(
+            'Orca ACS: Geçersiz setup - emir açılmadı',
+            `${sig.symbol}: sinyal oluşturulduğu andan emir açılana kadar geçen sürede fiyat (${livePriceCheck}) zaten stop seviyesini (${sig.stop}) geçmiş, giriş emri hiç açılmadı.`,
+          );
+          return;
+        }
+      }
+
       const riskAmount = config.riskPerTradeUsdt;
       const filters = await this.binance.getSymbolFilters(sig.symbol);
       const rawQty = riskAmount / riskDistance;

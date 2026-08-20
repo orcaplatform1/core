@@ -222,9 +222,19 @@ export class ScannerService {
     private readonly autoTradeService: AutoTradeService,
   ) {}
 
+  // Bu dosyadaki TUM dis servis (Binance/Yahoo/Anthropic) cagrilari icin ortak
+  // zaman asimi - hicbirinde AbortController/timeout yoktu, agda takilan tek
+  // bir istek (75 sembollik dongude sirayla islenen) tum taramayi süresiz
+  // bekletebilirdi (bkz. kullanici geri bildirimi 2026-08-21: scanner'daki
+  // diger riskli noktalar). Cagiran taraflarin hepsi zaten try/catch icinde -
+  // AbortError de ayni sekilde yakalanip fail-safe (null/[]) donuyor.
+  private fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 10000): Promise<Response> {
+    return fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  }
+
   private async fetchTopBinanceSymbols(limit: number): Promise<string[]> {
     try {
-      const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+      const res = await this.fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr');
       if (!res.ok) return [];
       const data = await res.json();
       return data
@@ -246,7 +256,7 @@ export class ScannerService {
   // hacim ortalamasi + MSB lookback icin yeterli gecmisi karsilar.
   private async fetchBinance15m(symbol: string, limit = 300): Promise<Candle[]> {
     const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=${limit}`;
-    const res = await fetch(url);
+    const res = await this.fetchWithTimeout(url);
     if (!res.ok) return [];
     const data = await res.json();
     const closed = data.slice(0, -1);
@@ -262,7 +272,7 @@ export class ScannerService {
   // istikrarli bir "piyasa rejimi" olcumu.
   private async fetchBinance1h(symbol: string, limit: number): Promise<Candle[]> {
     const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=${limit}`;
-    const res = await fetch(url);
+    const res = await this.fetchWithTimeout(url);
     if (!res.ok) return [];
     const data = await res.json();
     const closed = data.slice(0, -1);
@@ -275,7 +285,7 @@ export class ScannerService {
   private async fetchBinanceFundingRate(symbol: string): Promise<number | null> {
     try {
       const url = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`;
-      const res = await fetch(url);
+      const res = await this.fetchWithTimeout(url);
       if (!res.ok) return null;
       const data = await res.json();
       return parseFloat(data.lastFundingRate) * 100;
@@ -301,7 +311,7 @@ export class ScannerService {
   ): Promise<{ fundingTime: number; fundingRate: number }[] | null> {
     try {
       const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&startTime=${startTime}&endTime=${endTime}&limit=1000`;
-      const res = await fetch(url);
+      const res = await this.fetchWithTimeout(url);
       if (!res.ok) return null;
       const data = await res.json();
       return data.map((r: any) => ({ fundingTime: r.fundingTime, fundingRate: parseFloat(r.fundingRate) }));
@@ -312,7 +322,7 @@ export class ScannerService {
 
   private async fetchYahoo(yahooSymbol: string, range: string, interval: string): Promise<Candle[]> {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=${range}&interval=${interval}`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await this.fetchWithTimeout(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (!res.ok) return [];
     const data = await res.json();
     const result = data?.chart?.result?.[0];
@@ -502,19 +512,25 @@ Tarihsel başarı oranı: ${setup.winRatePercent ?? 'yetersiz veri'}%
 Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
+      // Diger cagrilardan farkli olarak LLM yaniti icin ortak 10sn cok kisa
+      // olabilir - 30sn.
+      const response = await this.fetchWithTimeout(
+        'https://api.anthropic.com/v1/messages',
+        {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 400,
+            messages: [{ role: 'user', content: prompt }],
+          }),
         },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
+        30000,
+      );
 
       if (!response.ok) return null;
       const data = await response.json();
@@ -797,7 +813,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   async getLivePrice(symbol: string, market: string = 'CRYPTO'): Promise<{ symbol: string; price: number | null }> {
     if (market === 'FOREX') return this.getLiveForexPrice(symbol);
     try {
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+      const res = await this.fetchWithTimeout(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
       if (!res.ok) return { symbol, price: null };
       const data = await res.json();
       return { symbol, price: parseFloat(data.price) };
@@ -835,7 +851,16 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       }
     }
     try {
-      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&limit=${limit}`);
+      // Bu fonksiyon updateTrackedSignals() icinde giris/TP/stop tespiti icin
+      // kullaniliyor - Money Maker gercek emirleri FUTURES'ta actigi icin
+      // (SPOT degil) burasi da Futures klines'a tasindi, aksi halde SPOT/
+      // FUTURES fiyat farki (basis) yuzunden sinyal durumu ile gercek emrin
+      // gordugu fiyat hafifce ayrisabilirdi (bkz. kullanici geri bildirimi
+      // 2026-08-21: scanner'daki diger riskli noktalar). Sinyal ureten
+      // fetchBinance15m/1h SPOT'ta kalmaya devam ediyor - o taraf gecmis
+      // backtest/istatistiklerle tutarliligi bozmamak icin bilincli olarak
+      // degistirilmedi.
+      const res = await this.fetchWithTimeout(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1m&limit=${limit}`);
       if (!res.ok) return [];
       const data = (await res.json()) as any[];
       return data.map((k) => ({
@@ -1073,6 +1098,19 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
       for (const c of candles) {
         if (closed) break;
+
+        // Yeni olusturulan bir sinyal, ayni tarama dongusunde (scheduledDayTradeScan
+        // -> createTrackedSignals hemen ardindan updateTrackedSignals) burada da
+        // isleniyor - getRecentCandles son ~20 dakikalik 1dk mumu dondurdugu icin,
+        // sinyal SADECE BIRAZ once olusturulmus olsa bile bu pencere sinyalin
+        // olusturulmasindan ONCEKI fiyat hareketini icerebilir. O mumlarla
+        // entered/passedAnyTp/hitStopBeforeEntry kontrolu yapilirsa, gercek Binance
+        // emri borsada hic var olmadan sinyal WATCHING->TRIGGERED->HIT_TP3'e kadar
+        // tek pass'te "kazanmis" gorunebilir (bkz. kullanici geri bildirimi
+        // 2026-08-21: Money Maker'da kacan islem analizi - DB'de sinyal HIT_TP3
+        // derken gercek emir hic dolmamisti). Henuz tetiklenmemisken (WATCHING)
+        // sinyalin olusturulmasindan ONCE kapanan mumlar bu yuzden atlanir.
+        if (status === 'WATCHING' && c.time < sig.createdAt.getTime()) continue;
 
         if (status === 'WATCHING') {
           // Giris hic tetiklenmeden fiyat herhangi bir TP seviyesini gecmisse (ETCUSDT'de
