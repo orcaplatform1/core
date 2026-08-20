@@ -164,7 +164,8 @@ export type LiveAutoTradePosition = {
   id: string;
   symbol: string;
   direction: string;
-  status: "PENDING_ENTRY" | "OPEN" | "BREAKEVEN_SET";
+  status: "PENDING_ENTRY" | "OPEN" | "BREAKEVEN_SET" | "CLOSED";
+  closeReason: "TP3" | "STOP_BREAKEVEN" | "STOP_FULL_LOSS" | "MANUAL_CLOSE" | null;
   entryPrice: number | null;
   qty: number | null;
   markPrice: number | null;
@@ -178,6 +179,9 @@ export type LiveAutoTradePosition = {
   tp1Price: number | null;
   tp2Price: number | null;
   tp3Price: number | null;
+  tp1Filled: boolean;
+  tp2Filled: boolean;
+  tp3Filled: boolean;
   realizedSoFar: number;
   commissionSoFar: number;
   fundingSoFar: number;

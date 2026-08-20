@@ -512,12 +512,74 @@ export class AutoTradeService implements OnModuleInit {
   // gercek bir pozisyon yok (limit emir dolmadi), o yuzden mark/notional/
   // liquidation null doner, kart bunu "bekliyor" olarak gosterir.
   async getLivePositions() {
-    const openTrades = await this.prisma.autoTrade.findMany({
-      where: { status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] } },
-      orderBy: { createdAt: 'desc' },
+    const [activeTrades, recentClosed] = await Promise.all([
+      this.prisma.autoTrade.findMany({
+        where: { status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      // Kapanan islemler de kartta kalsin diye (kullanici istegi 2026-08-20:
+      // "tp ile kapananlar yeşil, stop olanlar kırmızı kenar - en altta
+      // olsun") - sinirsiz gecmis yerine son 48 saat + en fazla 15 kayit,
+      // panel sonsuza kadar buyumesin.
+      this.prisma.autoTrade.findMany({
+        where: { status: 'CLOSED', createdAt: { gt: new Date(Date.now() - 48 * 60 * 60 * 1000) } },
+        orderBy: { createdAt: 'desc' },
+        take: 15,
+      }),
+    ]);
+    const openTrades = [...activeTrades, ...recentClosed];
+    // Siralama: bekleyen (PENDING_ENTRY, turuncu) en ustte, acik pozisyonlar
+    // (OPEN/BREAKEVEN_SET, mavi) altinda, TP ile kapananlar (yesil) onun
+    // altinda, stop ile kapananlar (kirmizi) en altta - karisik siralaninca
+    // panel dagınık gorunuyordu (kullanici geri bildirimi 2026-08-20:
+    // "ortalık karışıyor"). Her grubun kendi icinde en yeni en ustte.
+    const rank = (t: (typeof openTrades)[number]) => {
+      if (t.status === 'PENDING_ENTRY') return 0;
+      if (t.status === 'OPEN' || t.status === 'BREAKEVEN_SET') return 1;
+      if (t.status === 'CLOSED' && t.closeReason === 'TP3') return 2;
+      if (t.status === 'CLOSED' && (t.closeReason === 'STOP_BREAKEVEN' || t.closeReason === 'STOP_FULL_LOSS')) return 3;
+      return 4;
+    };
+    openTrades.sort((a, b) => {
+      const diff = rank(a) - rank(b);
+      return diff !== 0 ? diff : b.createdAt.getTime() - a.createdAt.getTime();
     });
     const results = await Promise.all(
       openTrades.map(async (trade) => {
+        const isActive = trade.status !== 'CLOSED';
+
+        if (!isActive) {
+          // Kapanmis islem icin canli borsa sorgusu gerekmiyor - emirler
+          // zaten iptal/dolmus, sonuc AutoTrade uzerinde kayitli (bkz.
+          // onPositionClosed).
+          return {
+            id: trade.id,
+            symbol: trade.symbol,
+            direction: trade.direction,
+            status: trade.status,
+            closeReason: trade.closeReason,
+            entryPrice: trade.entryPrice,
+            qty: trade.qty,
+            markPrice: null,
+            unrealizedProfit: null,
+            notional: null,
+            leverage: null,
+            liquidationPrice: null,
+            fundingRate: null,
+            stopPrice: null,
+            stopTriggered: false,
+            tp1Price: null,
+            tp2Price: null,
+            tp3Price: null,
+            tp1Filled: false,
+            tp2Filled: false,
+            tp3Filled: false,
+            realizedSoFar: trade.realizedPnl ?? 0,
+            commissionSoFar: trade.commission ?? 0,
+            fundingSoFar: trade.funding ?? 0,
+          };
+        }
+
         const [risk, pnlSoFar, sig, fundingRate] = await Promise.all([
           this.binance.getPositionRisk(trade.symbol).catch(() => null),
           trade.entryFilledAt
@@ -529,16 +591,19 @@ export class AutoTradeService implements OnModuleInit {
           this.binance.getFundingRate(trade.symbol).catch(() => null),
         ]);
 
-        // PENDING_ENTRY'de SL/TP emirleri henuz acilmadi - kart, sinyaldeki
-        // PLANLANAN seviyeleri gosterir. OPEN/BREAKEVEN_SET'te ise gercek
-        // deger borsadaki bekleyen emirlerden okunur, cunku TP1 dolunca stop
-        // basabasa cekiliyor (bkz. onTp1Filled) - DB'deki sinyal statik kalir,
-        // gercek deger degisir. Bir TP orderId'si artik openOrders'ta yoksa
-        // (doldu) o alan null doner, kart "doldu" gosterir.
+        // TP1/TP2/TP3 fiyatlari HICBIR ZAMAN degismez (sadece STOP, TP1
+        // dolunca basabasa cekilir) - o yuzden sinyaldeki sabit deger her
+        // zaman dogru, "doldu mu" ayri bir bayrakla takip edilir. Onceden
+        // dolan TP'nin fiyati null donduruluyordu, bu da kart dolunca %/R
+        // bilgisini kaybediyordu (kullanici geri bildirimi 2026-08-20: "tp1
+        // tp2 doldu diyor ya rr ve yüzdeliği silme").
+        const tp1Price: number | null = sig?.tp1 ?? null;
+        const tp2Price: number | null = sig?.tp2 ?? null;
+        const tp3Price: number | null = sig?.tp3 ?? null;
         let stopPrice: number | null = sig?.stop ?? null;
-        let tp1Price: number | null = sig?.tp1 ?? null;
-        let tp2Price: number | null = sig?.tp2 ?? null;
-        let tp3Price: number | null = sig?.tp3 ?? null;
+        let tp1Filled = false;
+        let tp2Filled = false;
+        let tp3Filled = false;
         // pollPendingStopOrders 20sn'de bir kontrol ediyor - stop az once
         // tetiklenmis olabilir ama DB'deki status hala OPEN/BREAKEVEN_SET
         // gorunebilir (kapatma akisi henuz calismamis). Kart bu kisa pencerede
@@ -550,11 +615,11 @@ export class AutoTradeService implements OnModuleInit {
             this.binance.getOpenOrders(trade.symbol).catch(() => [] as { orderId: number; price: number }[]),
             trade.slOrderId ? this.binance.getAlgoOrderStatus(trade.symbol, trade.slOrderId).catch(() => null) : Promise.resolve(null),
           ]);
-          const findPrice = (orderId: string | null) =>
-            orderId ? openOrders.find((o) => String(o.orderId) === orderId)?.price ?? null : null;
-          tp1Price = findPrice(trade.tp1OrderId);
-          tp2Price = findPrice(trade.tp2OrderId);
-          tp3Price = findPrice(trade.tp3OrderId);
+          const isResting = (orderId: string | null) =>
+            !!orderId && openOrders.some((o) => String(o.orderId) === orderId);
+          tp1Filled = !!trade.tp1OrderId && !isResting(trade.tp1OrderId);
+          tp2Filled = !!trade.tp2OrderId && !isResting(trade.tp2OrderId);
+          tp3Filled = !!trade.tp3OrderId && !isResting(trade.tp3OrderId);
           stopPrice = algo ? parseFloat(algo.triggerPrice) : stopPrice;
           stopTriggered = algo?.algoStatus === 'TRIGGERED';
         }
@@ -564,6 +629,7 @@ export class AutoTradeService implements OnModuleInit {
           symbol: trade.symbol,
           direction: trade.direction,
           status: trade.status,
+          closeReason: trade.closeReason,
           // PENDING_ENTRY'de trade.entryPrice henuz null (emir dolmadi) -
           // kart "Giriş: —" gibi bos gorunmesin diye LIMIT emrin hedefledigi
           // planlanan fiyata (onSignalCreated'daki ayni hesap: bullish ise
@@ -583,6 +649,9 @@ export class AutoTradeService implements OnModuleInit {
           tp1Price,
           tp2Price,
           tp3Price,
+          tp1Filled,
+          tp2Filled,
+          tp3Filled,
           // Simdiye kadar (TP1/TP2 kismi kapanislarindan) bankaya yatmis kar +
           // o ana kadar tahakkuk etmis komisyon/funding - hala acik olan
           // dilimin unrealizedProfit'i BUNA DAHIL DEGIL, ayri gosteriliyor.

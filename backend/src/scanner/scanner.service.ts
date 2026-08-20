@@ -1338,6 +1338,16 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
+    // Henuz girilmemis (WATCHING - giris emri/pozisyon yok) sinyaller en
+    // ustte, zaten tetiklenmis/ilerlemis olanlar (TRIGGERED/HIT_TP*) altta -
+    // ikisi createdAt'e gore karisik siralaninca panel karisik gorunuyordu
+    // (kullanici geri bildirimi 2026-08-20: "ortalık karışıyor"). Her grubun
+    // KENDI ICINDE createdAt'e gore en yeni en ustte kalmaya devam eder.
+    signals.sort((a, b) => {
+      const rank = (s: string) => (s === 'WATCHING' ? 0 : 1);
+      const diff = rank(a.status) - rank(b.status);
+      return diff !== 0 ? diff : b.createdAt.getTime() - a.createdAt.getTime();
+    });
     const stats = await this.computeSignalStats(style, market);
     return { signals, stats };
   }

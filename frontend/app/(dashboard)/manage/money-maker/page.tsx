@@ -421,14 +421,44 @@ function PositionCard({
 }) {
   const fundingCountdown = useFundingCountdown();
   const isPending = position.status === "PENDING_ENTRY";
+  const isClosed = position.status === "CLOSED";
   const isLong = position.direction === "LONG";
   const unrealized = position.unrealizedProfit ?? 0;
   // Su ana kadar bankaya yatmis (TP1/TP2 kismi kapanislari) kar + acik kalan
   // dilimin anlik kari + o ana kadar odenen komisyon/funding - toplam "su an
   // elde cepte ne var" gorunumu.
   const liveNet = unrealized + position.realizedSoFar + position.commissionSoFar + position.fundingSoFar;
-  const statusColor = position.status === "BREAKEVEN_SET" ? "#22C55E" : isPending ? "#F5A623" : "#3B5BFF";
-  const statusLabel = position.status === "BREAKEVEN_SET" ? "TP1 ALINDI — BAŞABAŞ" : isPending ? "BEKLİYOR — LİMİT EMİR DOLMADI" : "AÇIK";
+  // Kart kenar rengi: bekleyen turuncu, acik pozisyon mavi, TP ile kapanan
+  // yesil, stop ile kapanan (basabas dahil - HANGI EMIR TIPININ kapattigina
+  // bakilir, kar/zarar yonune degil) kirmizi - kullanici istegi 2026-08-20:
+  // "bekleyen emirlerin kart kenarları turuncu olsun işlemdekiler mavi olsun
+  // tp ile kapananlar yeşil ... stop olanlar kırmızı kenar olsun".
+  const borderColor = isPending
+    ? "#F5A623"
+    : isClosed
+      ? position.closeReason === "TP3"
+        ? "#22C55E"
+        : position.closeReason === "STOP_BREAKEVEN" || position.closeReason === "STOP_FULL_LOSS"
+          ? "#EF4444"
+          : "#605D57"
+      : "#3B5BFF";
+  // "AÇIK" etiketi TP1/breakeven sonrasi da SABIT kalir - TP1 dolunca ozel
+  // bir "TP1 ALINDI — BAŞABAŞ" metnine gecmiyoruz artik, o bilgi zaten TP1
+  // kutusunda (dolu/yesil) ayrica gosteriliyor, ustte tekrar yazmak kafa
+  // karistiriyordu (kullanici geri bildirimi 2026-08-20: "açık etiketi
+  // kalkmış o kalkmasın... TP1 ALINDI BAŞABAŞ hiç yazmasın").
+  const statusColor = isClosed ? borderColor : isPending ? "#F5A623" : "#3B5BFF";
+  const statusLabel = isClosed
+    ? position.closeReason === "TP3"
+      ? "TP3 İLE KAPANDI"
+      : position.closeReason === "STOP_BREAKEVEN"
+        ? "BAŞABAŞ STOP İLE KAPANDI"
+        : position.closeReason === "STOP_FULL_LOSS"
+          ? "STOP İLE KAPANDI"
+          : "ELLE KAPATILDI"
+    : isPending
+      ? "BEKLİYOR — LİMİT EMİR DOLMADI"
+      : "AÇIK";
 
   // R-multiple: risk mesafesi, pozisyon acilirken kullanilan sabit dolar
   // riski / miktar'dan turetiliyor (config.riskPerTradeUsdt / qty). TP1
@@ -447,25 +477,34 @@ function PositionCard({
   const tp1Meta = position.tp1Price != null ? levelMeta(position.tp1Price) : null;
   const tp2Meta = position.tp2Price != null ? levelMeta(position.tp2Price) : null;
   const tp3Meta = position.tp3Price != null ? levelMeta(position.tp3Price) : null;
-  // Bir TP'nin resting-order fiyati openOrders'ta bulunamiyorsa (null) o TP
-  // dolmus demektir (bkz. getLivePositions yorumu) - kutuyu yesil "buton"a
-  // ceviriyoruz (kullanici istegi 2026-08-20: "tp1 olunca yeşil butona al").
-  const tp1Filled = !isPending && position.tp1Price == null;
-  const tp2Filled = !isPending && position.tp2Price == null;
-  const tp3Filled = !isPending && position.tp3Price == null;
-  // Alt bildirim notu - en ileri asamayi gosterir (stop > TP2 > TP1).
-  const noteText = position.stopTriggered
-    ? "NOT: İşlem Stop Oldu."
-    : tp2Filled
-      ? "NOT: TP2 Alındı. Stop zaten girişte (değişmedi)."
-      : tp1Filled
-        ? "NOT: TP1 Alındı, Giriş Stopa Çekildi."
-        : null;
+  // Backend'den gelen dolu bayraklari - fiyat artik dolduktan sonra da sabit
+  // kaliyor (bkz. getLivePositions yorumu), sadece bu bayraklar "doldu mu"yu
+  // gosteriyor (kullanici istegi 2026-08-20: "tp1 tp2 dolmuş diyor ya rr ve
+  // yüzdeliği silme").
+  const tp1Filled = position.tp1Filled;
+  const tp2Filled = position.tp2Filled;
+  const tp3Filled = position.tp3Filled;
+  // Alt bildirim notu - en ileri asamayi gosterir (stop > TP2 > TP1). Kapanmis
+  // islemlerde gosterilmez - o durum zaten statusLabel/kenar renginde var,
+  // ayrica tp1Filled/tp2Filled kapanmis islemde (tum fiyatlar null oldugu
+  // icin) her zaman true doner, yanlis notu tetikler.
+  const noteText = isClosed
+    ? null
+    : position.stopTriggered
+      ? "NOT: İşlem Stop Oldu."
+      : tp2Filled
+        ? "NOT: TP2 Alındı. Stop zaten girişte (değişmedi)."
+        : tp1Filled
+          ? "NOT: TP1 Alındı, Giriş Stopa Çekildi."
+          : null;
 
   return (
     <div
-      className="premium-glow-card relative overflow-hidden p-4 sm:p-5 space-y-3"
-      style={{ background: "radial-gradient(120% 140% at 0% 0%, #1B1F3B 0%, #11142A 45%, #0A0C1B 100%)" }}
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5 space-y-3"
+      style={{
+        background: "radial-gradient(120% 140% at 0% 0%, #1B1F3B 0%, #11142A 45%, #0A0C1B 100%)",
+        border: `1.5px solid ${borderColor}`,
+      }}
     >
       <div
         className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full blur-3xl opacity-25"
@@ -493,15 +532,17 @@ function PositionCard({
             {statusLabel}
           </span>
         </div>
-        <Button
-          onClick={onClose}
-          disabled={isClosing}
-          className="h-8 gap-1.5 text-badge"
-          style={{ backgroundColor: "#EF4444" }}
-        >
-          <XCircle size={13} />
-          {isPending ? "Emri İptal Et" : "Kapat"}
-        </Button>
+        {!isClosed && (
+          <Button
+            onClick={onClose}
+            disabled={isClosing}
+            className="h-8 gap-1.5 text-badge"
+            style={{ backgroundColor: "#EF4444" }}
+          >
+            <XCircle size={13} />
+            {isPending ? "Emri İptal Et" : "Kapat"}
+          </Button>
+        )}
       </div>
 
       <div className="relative grid grid-cols-2 gap-x-4 gap-y-1.5 text-body-xs text-[#A8A6A0] sm:grid-cols-4">
@@ -511,7 +552,7 @@ function PositionCard({
         </span>
         <span>Mark: <b className="text-[#F5F1EA]">{fmtPrice(position.markPrice)}</b></span>
         <span>Miktar: <b className="text-[#F5F1EA]">{position.qty ?? "—"}</b></span>
-        {!isPending && (
+        {!isPending && !isClosed && (
           <>
             <span>Notional: <b className="text-[#F5F1EA]">${position.notional != null ? fmtUsd(position.notional) : "—"}</b></span>
             <span>Kaldıraç: <b className="text-[#F5F1EA]">{position.leverage ?? "—"}x</b></span>
@@ -542,18 +583,21 @@ function PositionCard({
         )}
       </div>
 
+      {!isClosed && (
       <div className="relative grid grid-cols-2 gap-2 text-body-xs sm:grid-cols-4 border-t border-white/10 pt-2.5">
         <div
           className="rounded-lg px-2.5 py-1.5"
           style={
             position.stopTriggered
-              ? { backgroundColor: "#EF4444", color: "#0A0C1B" }
-              : { backgroundColor: "transparent", border: "1px solid #EF444466", color: "#EF4444" }
+              ? { backgroundColor: "#EF44441A", border: "1px solid #EF444488", boxShadow: "0 0 10px -4px #EF444480" }
+              : { backgroundColor: "transparent", border: "1px solid #EF444455" }
           }
         >
-          <div className="text-[10px] font-semibold uppercase tracking-wide opacity-80">Stop</div>
-          <div className="font-semibold" style={position.stopTriggered ? undefined : { color: "#F5F1EA" }}>{fmtPrice(position.stopPrice)}</div>
-          {stopMeta && <div className="opacity-70">{stopMeta}</div>}
+          <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#EF4444" }}>
+            Stop{position.stopTriggered ? " ✓" : ""}
+          </div>
+          <div className="font-semibold" style={{ color: "#F5F1EA" }}>{fmtPrice(position.stopPrice)}</div>
+          {stopMeta && <div style={{ color: "#EF444499" }}>{stopMeta}</div>}
         </div>
         {([
           { label: "TP1", price: position.tp1Price, meta: tp1Meta, filled: tp1Filled },
@@ -565,18 +609,19 @@ function PositionCard({
             className="rounded-lg px-2.5 py-1.5"
             style={
               tp.filled
-                ? { backgroundColor: "#22C55E", color: "#0A0C1B" }
-                : { backgroundColor: "transparent", border: "1px solid #22C55E55", color: "#22C55E" }
+                ? { backgroundColor: "#22C55E1A", border: "1px solid #22C55E88", boxShadow: "0 0 10px -4px #22C55E80" }
+                : { backgroundColor: "transparent", border: "1px solid #22C55E55" }
             }
           >
-            <div className="text-[10px] font-semibold uppercase tracking-wide opacity-80">{tp.label}</div>
-            <div className="font-semibold" style={tp.filled ? undefined : { color: "#F5F1EA" }}>
-              {tp.price != null ? fmtPrice(tp.price) : isPending ? "—" : "✓ Doldu"}
+            <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#22C55E" }}>
+              {tp.label}{tp.filled ? " ✓" : ""}
             </div>
-            {tp.meta && <div className="opacity-70">{tp.meta}</div>}
+            <div className="font-semibold" style={{ color: "#F5F1EA" }}>{fmtPrice(tp.price)}</div>
+            {tp.meta && <div style={{ color: "#22C55E99" }}>{tp.meta}</div>}
           </div>
         ))}
       </div>
+      )}
 
       {noteText && (
         <div
