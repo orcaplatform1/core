@@ -15,6 +15,14 @@ const DESIRED_BUCKET_COUNT = 80;
 
 type HeatmapRow = { time: number; bid: Map<number, number>; ask: Map<number, number>; midPrice: number };
 
+export type HeatmapTrade = {
+  price: number;
+  qty: number;
+  quoteQty: number;
+  side: 'BUY' | 'SELL';
+  time: string;
+};
+
 interface HeatmapSession {
   symbol: string;
   ws: WebSocket | null;
@@ -30,6 +38,12 @@ interface HeatmapSession {
   reconnectTimer: NodeJS.Timeout | null;
   lastRequestedAt: number;
   rows: HeatmapRow[];
+  // aggTrade websocket'i bu ortamda veri vermiyor (bkz. proje notu) — bu yüzden
+  // baloncuklar için işlem geçmişi REST polling ile (fromId artışlı) toplanıyor,
+  // duvarla aynı 5dk'lık kayan pencerede tutuluyor ("kaydı tutulmuyor" şikayeti).
+  trades: HeatmapTrade[];
+  lastTradeId: number | null;
+  tradePollInFlight: boolean;
 }
 
 export type HeatmapResponse = {
@@ -38,6 +52,7 @@ export type HeatmapResponse = {
   bucketSize: number;
   priceLevels: number[];
   rows: { time: string; bid: number[]; ask: number[]; midPrice: number }[];
+  trades: HeatmapTrade[];
   midPrice: number | null;
   updatedAt: string;
 };
@@ -91,6 +106,9 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
       reconnectTimer: null,
       lastRequestedAt: Date.now(),
       rows: [],
+      trades: [],
+      lastTradeId: null,
+      tradePollInFlight: false,
     };
   }
 
@@ -197,7 +215,54 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
 
     session.synced = true;
     if (!session.snapshotTimer) {
-      session.snapshotTimer = setInterval(() => this.captureRow(session), SNAPSHOT_INTERVAL_MS);
+      session.snapshotTimer = setInterval(() => {
+        this.captureRow(session);
+        this.pollTrades(session).catch((err) => {
+          this.logger.warn(`[heatmap] ${session.symbol} trade poll hatasi: ${err}`);
+        });
+      }, SNAPSHOT_INTERVAL_MS);
+      // Ekran acilir acilmaz baloncuklar bos kalmasin diye ilk dolguyu hemen cek.
+      this.pollTrades(session).catch((err) => {
+        this.logger.warn(`[heatmap] ${session.symbol} ilk trade poll hatasi: ${err}`);
+      });
+    }
+  }
+
+  private async pollTrades(session: HeatmapSession) {
+    if (!session.synced || session.tradePollInFlight) return;
+    session.tradePollInFlight = true;
+    try {
+      const url =
+        session.lastTradeId == null
+          ? `${REST_BASE}/fapi/v1/aggTrades?symbol=${session.symbol}&limit=200`
+          : `${REST_BASE}/fapi/v1/aggTrades?symbol=${session.symbol}&fromId=${session.lastTradeId + 1}`;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      for (const t of data) {
+        const price = parseFloat(t.p);
+        const qty = parseFloat(t.q);
+        session.trades.push({
+          price,
+          qty,
+          quoteQty: price * qty,
+          side: t.m === true ? 'SELL' : 'BUY',
+          time: new Date(t.T).toISOString(),
+        });
+        session.lastTradeId = t.a;
+      }
+
+      // Duvarla ayni 5dk'lik kayan pencerede tut - daha eskisini at.
+      const cutoff = Date.now() - MAX_ROWS * SNAPSHOT_INTERVAL_MS;
+      while (session.trades.length > 0 && new Date(session.trades[0].time).getTime() < cutoff) {
+        session.trades.shift();
+      }
+      // Çok yoğun sembollerde diziyi sınırla (güvenlik payı).
+      if (session.trades.length > 6000) session.trades.splice(0, session.trades.length - 6000);
+    } finally {
+      session.tradePollInFlight = false;
     }
   }
 
@@ -275,6 +340,7 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
         bucketSize: session.bucketSize,
         priceLevels: [],
         rows: [],
+        trades: [],
         midPrice: null,
         updatedAt: new Date().toISOString(),
       };
@@ -300,6 +366,7 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
       bucketSize: session.bucketSize,
       priceLevels,
       rows,
+      trades: session.trades,
       midPrice: rows[rows.length - 1]?.midPrice ?? null,
       updatedAt: new Date().toISOString(),
     };

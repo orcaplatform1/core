@@ -213,6 +213,7 @@ export type HeatmapResponse = {
   bucketSize: number;
   priceLevels: number[];
   rows: HeatmapRow[];
+  trades: LargeTrade[];
   midPrice: number | null;
   updatedAt: string;
 };

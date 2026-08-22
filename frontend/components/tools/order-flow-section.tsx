@@ -332,7 +332,7 @@ export function OrderFlowSection() {
         </div>
       )}
 
-      <HeatmapWall data={heatmap} trades={data?.recentTrades} />
+      <HeatmapWall data={heatmap} trades={heatmap?.trades} />
 
       <div className="mt-3 border-t border-border pt-3">
         <CvdChart history={data?.cvdHistory ?? []} cumulativeDelta={data?.cumulativeDelta ?? 0} />
