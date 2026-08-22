@@ -19,6 +19,8 @@ import type {
   StablecoinFlowData,
   AltcoinSeasonData,
   EtfFlowsResponse,
+  OrderFlowData,
+  HeatmapResponse,
 } from "@/lib/types/tools";
 
 export function useCryptoMovers() {
@@ -146,5 +148,29 @@ export function useEtfFlows() {
     queryKey: ["tools", "crypto", "etf-flows"],
     queryFn: () => apiClient<EtfFlowsResponse>("/tools/crypto/etf-flows"),
     refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useOrderFlow(symbol: string) {
+  return useQuery({
+    queryKey: ["tools", "crypto", "order-flow", symbol],
+    queryFn: () => apiClient<OrderFlowData>(`/tools/crypto/order-flow?symbol=${symbol}`),
+    refetchInterval: 4000,
+  });
+}
+
+export function useOrderFlowSymbols() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "order-flow", "symbols"],
+    queryFn: () => apiClient<string[]>("/tools/crypto/order-flow/symbols"),
+    refetchInterval: 15 * 60_000,
+  });
+}
+
+export function useOrderFlowHeatmap(symbol: string) {
+  return useQuery({
+    queryKey: ["tools", "crypto", "order-flow", "heatmap", symbol],
+    queryFn: () => apiClient<HeatmapResponse>(`/tools/crypto/order-flow/heatmap?symbol=${symbol}`),
+    refetchInterval: 2000,
   });
 }

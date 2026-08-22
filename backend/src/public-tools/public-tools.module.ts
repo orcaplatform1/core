@@ -8,6 +8,8 @@ import { ForexToolsService } from './forex-tools.service';
 import { EconomicToolsService } from './economic-tools.service';
 import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
+import { OrderFlowToolsService } from './order-flow-tools.service';
+import { OrderFlowHeatmapService } from './order-flow-heatmap.service';
 
 @Module({
   imports: [BullModule.registerQueue({ name: 'public-tools' })],
@@ -18,6 +20,8 @@ import { OnchainToolsService } from './onchain-tools.service';
     EconomicToolsService,
     BistToolsService,
     OnchainToolsService,
+    OrderFlowToolsService,
+    OrderFlowHeatmapService,
     PublicToolsProcessor,
     PublicToolsScheduler,
   ],

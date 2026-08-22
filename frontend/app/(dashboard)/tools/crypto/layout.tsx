@@ -9,6 +9,7 @@ const CRYPTO_NAV_ITEMS = [
   { label: "Balina Hareketleri", href: "/tools/crypto/whales" },
   { label: "Onchain", href: "/tools/crypto/onchain" },
   { label: "Haber Sentiment", href: "/tools/crypto/sentiment" },
+  { label: "Order Flow", href: "/tools/crypto/order-flow" },
 ];
 
 export default function CryptoToolsLayout({ children }: { children: React.ReactNode }) {

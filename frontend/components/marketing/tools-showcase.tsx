@@ -5,7 +5,7 @@ import type { ToolItemData, ToolPreviewKey } from "@/lib/marketing/site-content-
 
 function ScannerPreview() {
   const rows = [
-    { symbol: "BTC", side: "BUY", price: "67.842", change: "+2.4%" },
+    { symbol: "XBT", side: "BUY", price: "67.842", change: "+2.4%" },
     { symbol: "ETH", side: "SELL", price: "3.512", change: "-1.1%" },
     { symbol: "SOL", side: "BUY", price: "178,3", change: "+5.7%" },
   ];
@@ -97,7 +97,7 @@ function CalendarPreview() {
 // yeşil/kırmızı yoğunluğunu temsil ediyor (gerçek heatmap araçlarına referansla).
 function LiveAnalysisPreview() {
   const cells = [
-    { symbol: "BTC", change: 2.4 },
+    { symbol: "XBT", change: 2.4 },
     { symbol: "ETH", change: 1.1 },
     { symbol: "SOL", change: 5.7 },
     { symbol: "BNB", change: -0.8 },

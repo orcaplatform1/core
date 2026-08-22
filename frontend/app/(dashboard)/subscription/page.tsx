@@ -199,7 +199,7 @@ export default function SubscriptionPage() {
               <span className="text-card-title-sm text-foreground">Kripto</span>
               <div className="flex gap-1">
                 <span className="rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
-                  BTC
+                  XBT
                 </span>
                 <span className="rounded-full bg-purple/15 px-1.5 py-0.5 text-[10px] font-semibold text-purple">
                   ETH
@@ -392,7 +392,7 @@ export default function SubscriptionPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Kripto Ödeme Şu An Aktif Değil</AlertDialogTitle>
             <AlertDialogDescription>
-              Altyapımız BTC/ETH/BNB ile ödeme almaya uygun şekilde dizayn edilmiştir. Fakat, henüz
+              Altyapımız XBT/ETH/BNB ile ödeme almaya uygun şekilde dizayn edilmiştir. Fakat, henüz
               ülkemizdeki regülasyonlar kripto para ile ödeme almanın önüne yasal engel
               oluşturmaktadır. Bu nedenle şimdilik Kart veya EFT/Havale yolu ile satın alım
               gerçekleştirebilirsiniz.

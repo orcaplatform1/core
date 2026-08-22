@@ -55,7 +55,7 @@ function SummaryStrip({ addresses }: { addresses: WhaleAddressActivity[] }) {
       <span className="text-muted-foreground">
         Toplam Bakiye:{" "}
         <span className="text-financial text-foreground">
-          {satToBtc(totalSat).toLocaleString("en-US", { maximumFractionDigits: 2 })} BTC
+          {satToBtc(totalSat).toLocaleString("en-US", { maximumFractionDigits: 2 })} XBT
         </span>
       </span>
     </div>
@@ -77,7 +77,7 @@ function MovementCard({ movement }: { movement: WhaleMovementActivity }) {
       <div className="flex shrink-0 items-center gap-3">
         <span className={`text-financial ${isIn ? "text-success" : "text-danger"}`}>
           {isIn ? "+" : "-"}
-          {fmtBtc(movement.amountSat)} BTC
+          {fmtBtc(movement.amountSat)} XBT
         </span>
         <ExternalLinkConfirm
           href={`https://mempool.space/tx/${movement.txid}`}
@@ -120,7 +120,7 @@ export function WhaleTrackerSection() {
               {a.rank != null && <span className="text-muted-foreground">#{a.rank} · </span>}
               {a.label} · {CATEGORY_LABEL[a.category]}
               {a.latestBalanceSat != null && (
-                <span className="ml-1 text-muted-foreground">({fmtBtc(a.latestBalanceSat)} BTC)</span>
+                <span className="ml-1 text-muted-foreground">({fmtBtc(a.latestBalanceSat)} XBT)</span>
               )}
             </span>
           ))}

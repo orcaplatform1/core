@@ -198,7 +198,7 @@ export default function MentorCreditsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Kripto Ödeme Şu An Aktif Değil</AlertDialogTitle>
             <AlertDialogDescription>
-              Altyapımız BTC/ETH/BNB ile ödeme almaya uygun şekilde dizayn edilmiştir. Fakat, henüz
+              Altyapımız XBT/ETH/BNB ile ödeme almaya uygun şekilde dizayn edilmiştir. Fakat, henüz
               ülkemizdeki regülasyonlar kripto para ile ödeme almanın önüne yasal engel
               oluşturmaktadır. Bu nedenle şimdilik Kart veya EFT/Havale yolu ile satın alım
               gerçekleştirebilirsiniz.

@@ -440,7 +440,7 @@ export default function SponsorPage() {
           <Field label="Kripto Varlık">
             <select className={inputClass()} value={asset} onChange={(e) => setAsset(e.target.value as CryptoAsset)}>
               <option value="USDT">USDT</option>
-              <option value="BTC">BTC</option>
+              <option value="BTC">XBT</option>
               <option value="ETH">ETH</option>
               <option value="BNB">BNB</option>
             </select>

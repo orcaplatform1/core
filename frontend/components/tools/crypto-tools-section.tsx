@@ -24,6 +24,7 @@ import {
   useEtfFlows,
 } from "@/lib/hooks/use-tools";
 import type { TickerRow } from "@/lib/types/tools";
+import { displayTicker } from "@/lib/utils";
 import { ToolCard, type ToolAccent } from "./tool-card";
 import { Sparkline } from "./sparkline";
 import { CircularProgress } from "./circular-progress";
@@ -71,7 +72,7 @@ function TickerTable({
             className="flex items-center justify-between gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-card-hover"
           >
             <span className="w-16 shrink-0 truncate text-financial text-foreground/90">
-              {r.symbol.replace("USDT", "")}
+              {displayTicker(r.symbol)}
             </span>
             <Sparkline data={r.sparkline} positive={r.changePercent >= 0} />
             <span className="w-20 shrink-0 text-right text-financial text-muted-foreground">${fmtPrice(r.price)}</span>
@@ -114,13 +115,13 @@ function DominanceCard() {
   const btcDom = data?.btcDominance;
   const ethDom = data?.ethDominance;
   return (
-    <ToolCard title="BTC / ETH Dominansı" icon={PieChart} accent="purple">
+    <ToolCard title="XBT / ETH Dominansı" icon={PieChart} accent="purple">
       {btcDom == null || ethDom == null ? (
         <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
       ) : (
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <CircularProgress value={Math.round(btcDom)} color="var(--purple)" label="BTC" />
+            <CircularProgress value={Math.round(btcDom)} color="var(--purple)" label="XBT" />
             <p className="text-num-sm text-foreground">%{btcDom.toFixed(1)}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -146,7 +147,7 @@ function TrendingCard() {
             className="flex items-center gap-1.5 rounded-full card-inner px-3 py-1.5 text-tag text-foreground/90"
           >
             <Flame className="size-3 text-warning" />
-            {c.symbol}
+            {displayTicker(c.symbol)}
             {c.marketCapRank && <span className="text-muted-foreground">#{c.marketCapRank}</span>}
           </span>
         ))}
@@ -205,7 +206,7 @@ function AltcoinSeasonCard() {
         <div>
           <p className="text-card-title-md text-foreground">{data.classification}</p>
           <p className="text-body-xs text-muted-foreground">
-            Top {data.totalCount} coinin {data.outperformingCount} tanesi son 90 günde BTC&apos;yi geçti
+            Top {data.totalCount} coinin {data.outperformingCount} tanesi son 90 günde XBT&apos;yi geçti
           </p>
         </div>
       </div>
@@ -218,14 +219,14 @@ function EtfFlowCard() {
   const btcLatest = data?.btc?.[0];
   const ethLatest = data?.eth?.[0];
   return (
-    <ToolCard title="BTC / ETH Spot ETF Net Akışları" icon={Landmark} accent="purple">
+    <ToolCard title="XBT / ETH Spot ETF Net Akışları" icon={Landmark} accent="purple">
       {!btcLatest && !ethLatest ? (
         <p className="text-body-xs text-muted-foreground">Veri yok (SoSoValue API anahtarı gerekli).</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {btcLatest && (
             <div className="rounded-lg card-inner p-3 text-body-xs">
-              <p className="text-muted-foreground">BTC ETF ({btcLatest.date})</p>
+              <p className="text-muted-foreground">XBT ETF ({btcLatest.date})</p>
               <p className={`mt-1 text-num-sm ${btcLatest.netFlow >= 0 ? "text-success" : "text-danger"}`}>
                 {btcLatest.netFlow >= 0 ? "+" : ""}${(btcLatest.netFlow / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 })}M
               </p>
@@ -278,7 +279,7 @@ function HeatmapCard() {
               style={{ backgroundColor: `rgba(${rgb},${alpha})` }}
               title={c.name}
             >
-              <span className={normalized > 0.82 ? "text-card-title-sm" : ""}>{c.symbol}</span>
+              <span className={normalized > 0.82 ? "text-card-title-sm" : ""}>{displayTicker(c.symbol)}</span>
               <span className="opacity-90">
                 {c.changePercent24h > 0 ? "+" : ""}
                 {c.changePercent24h.toFixed(1)}%
@@ -300,7 +301,7 @@ function FundingRateTable() {
         {rows.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
         {rows.map((r) => (
           <div key={r.symbol} className="flex items-center justify-between rounded-lg px-2 py-2 transition-colors hover:bg-card-hover">
-            <span className="text-financial text-foreground/90">{r.symbol.replace("USDT", "")}</span>
+            <span className="text-financial text-foreground/90">{displayTicker(r.symbol)}</span>
             <ChangePill value={r.fundingRatePercent} />
           </div>
         ))}
@@ -330,7 +331,7 @@ function LiquidationZonesCard() {
         {zones.map((z) => (
           <div key={z.symbol} className="rounded-lg card-inner p-3 text-body-xs">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-financial text-foreground/90">{z.symbol.replace("USDT", "")}</span>
+              <span className="text-financial text-foreground/90">{displayTicker(z.symbol)}</span>
               <span className="text-financial text-muted-foreground">${fmtPrice(z.price)}</span>
             </div>
             <div className="space-y-1">

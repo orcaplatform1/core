@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CryptoToolsService } from './crypto-tools.service';
@@ -6,6 +6,8 @@ import { ForexToolsService } from './forex-tools.service';
 import { EconomicToolsService } from './economic-tools.service';
 import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
+import { OrderFlowToolsService } from './order-flow-tools.service';
+import { OrderFlowHeatmapService } from './order-flow-heatmap.service';
 
 // Anonim ziyaretciler de erisebilir (2 dakikalik deneme suresi, bkz.
 // frontend VisitorTrialGate + backend visitor-trial modulu) - giris yapmis
@@ -21,6 +23,8 @@ export class PublicToolsController {
     private readonly economicTools: EconomicToolsService,
     private readonly bistTools: BistToolsService,
     private readonly onchainTools: OnchainToolsService,
+    private readonly orderFlowTools: OrderFlowToolsService,
+    private readonly orderFlowHeatmap: OrderFlowHeatmapService,
   ) {}
 
   @Get('crypto/movers')
@@ -112,5 +116,31 @@ export class PublicToolsController {
   @Get('crypto/onchain')
   getOnchain() {
     return this.onchainTools.getOnchain();
+  }
+
+  @Get('crypto/order-flow')
+  async getOrderFlow(@Query('symbol') symbol?: string) {
+    const sym = (symbol ?? 'BTCUSDT').toUpperCase();
+    const allowedSymbols = await this.orderFlowTools.getAllowedSymbols();
+    if (!allowedSymbols.includes(sym)) {
+      return { error: 'unsupported_symbol', allowedSymbols };
+    }
+    const data = await this.orderFlowTools.getOrderFlow(sym);
+    return data ?? { error: 'unavailable' };
+  }
+
+  @Get('crypto/order-flow/symbols')
+  getOrderFlowSymbols() {
+    return this.orderFlowTools.getAllowedSymbols();
+  }
+
+  @Get('crypto/order-flow/heatmap')
+  async getOrderFlowHeatmap(@Query('symbol') symbol?: string) {
+    const sym = (symbol ?? 'BTCUSDT').toUpperCase();
+    const allowedSymbols = await this.orderFlowTools.getAllowedSymbols();
+    if (!allowedSymbols.includes(sym)) {
+      return { error: 'unsupported_symbol', allowedSymbols };
+    }
+    return this.orderFlowHeatmap.getHeatmap(sym);
   }
 }

@@ -147,3 +147,72 @@ export type EtfFlowsResponse = {
   btc: EtfFlowRow[];
   eth: EtfFlowRow[];
 };
+
+export type OrderFlowLevel = {
+  price: number;
+  bidQty: number;
+  askQty: number;
+  buyVolume: number;
+  sellVolume: number;
+};
+
+export type CvdBucket = {
+  time: string;
+  delta: number;
+  cumulative: number;
+};
+
+export type LargeTrade = {
+  price: number;
+  qty: number;
+  quoteQty: number;
+  side: "BUY" | "SELL";
+  time: string;
+};
+
+export type OrderFlowData = {
+  symbol: string;
+  updatedAt: string;
+
+  midPrice: number;
+  bestBid: number;
+  bestAsk: number;
+  spreadPercent: number;
+  levels: OrderFlowLevel[];
+  totalBidQty: number;
+  totalAskQty: number;
+  bidAskImbalancePercent: number;
+
+  cumulativeDelta: number;
+  cvdHistory: CvdBucket[];
+  largeTrades: LargeTrade[];
+  recentTrades: LargeTrade[];
+
+  markPrice: number | null;
+  fundingRatePercent: number | null;
+  nextFundingTime: string | null;
+  openInterest: number | null;
+  openInterestValueUsd: number | null;
+  priceChangePercent24h: number | null;
+  quoteVolume24h: number | null;
+  globalLongShortAccountRatio: number | null;
+  topTraderLongShortPositionRatio: number | null;
+  takerBuySellRatio: number | null;
+};
+
+export type HeatmapRow = {
+  time: string;
+  bid: number[];
+  ask: number[];
+  midPrice: number;
+};
+
+export type HeatmapResponse = {
+  symbol: string;
+  ready: boolean;
+  bucketSize: number;
+  priceLevels: number[];
+  rows: HeatmapRow[];
+  midPrice: number | null;
+  updatedAt: string;
+};
