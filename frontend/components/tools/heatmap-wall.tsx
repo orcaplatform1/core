@@ -16,7 +16,7 @@ const HEAT_STOPS: { t: number; rgb: [number, number, number] }[] = [
   { t: 1.0, rgb: [225, 45, 45] },
 ];
 
-function heatColor(t: number): string {
+function heatColor(t: number): [number, number, number] {
   const clamped = Math.max(0, Math.min(1, t));
   let lo = HEAT_STOPS[0];
   let hi = HEAT_STOPS[HEAT_STOPS.length - 1];
@@ -32,7 +32,7 @@ function heatColor(t: number): string {
   const r = Math.round(lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * f);
   const g = Math.round(lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * f);
   const b = Math.round(lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * f);
-  return `rgb(${r}, ${g}, ${b})`;
+  return [r, g, b];
 }
 
 const BUY_SHADES = { light: "187, 247, 208", mid: "34, 197, 94", dark: "21, 128, 61" };
@@ -98,15 +98,19 @@ export function HeatmapWall({
       const colW = plotWidth / Math.max(rows.length, 1);
       const rowH = height / priceLevels.length;
 
-      // Kontrast icin normalize referansi: gorunur penceredeki en yuksek tek hucre miktari.
-      let maxQty = 1e-9;
+      // Referans normal ("çoğunluk") seviyeyi bulmak için tüm dolu hücrelerin ~85.
+      // yüzdelik dilimini kullanıyoruz — tek bir uç değer (en büyük hücre) referans
+      // alınırsa sıradan likidite bile "sıcak" görünüyordu, ekran baştan sona renkli
+      // oluyordu. Sadece gerçekten kalabalık (destek/direnç gibi) bölgeler parlasın diye
+      // referansı düşük tutup üstüne 2.4 kuvvetli bir eğri uyguluyoruz.
+      const allQty: number[] = [];
       for (const row of rows) {
-        for (const q of row.bid) if (q > maxQty) maxQty = q;
-        for (const q of row.ask) if (q > maxQty) maxQty = q;
+        for (const q of row.bid) if (q > 0) allQty.push(q);
+        for (const q of row.ask) if (q > 0) allQty.push(q);
       }
-      // Gama düzeltmesi: dogrusal olcek cogu hucreyi "soguk" tarafta sıkıştırır -
-      // koklu (sqrt) olcekle orta buyuklukteki duvarlar da sarı/turuncuya tasar.
-      const normalize = (qty: number) => Math.sqrt(qty / maxQty);
+      allQty.sort((a, b) => a - b);
+      const refQty = allQty.length > 0 ? allQty[Math.floor(allQty.length * 0.85)] || allQty[allQty.length - 1] : 1e-9;
+      const normalize = (qty: number) => Math.pow(Math.min(1, qty / (refQty * 1.4)), 2.4);
 
       // priceLevels ascending (dusukten yukari) - canvas'ta yukarisi = yuksek fiyat.
       const levelIndexToY = (levelIdx: number) => height - (levelIdx + 0.5) * rowH;
@@ -117,7 +121,12 @@ export function HeatmapWall({
         for (let li = 0; li < priceLevels.length; li++) {
           const qty = row.bid[li] + row.ask[li];
           if (qty <= 0) continue;
-          ctx.fillStyle = heatColor(normalize(qty));
+          const t = normalize(qty);
+          const [r, g, b] = heatColor(t);
+          // Düşük yoğunluklu hücreler arka planla karışsın (neredeyse görünmesin),
+          // sadece gerçekten kalabalık bölgeler belirgin şekilde parlasın.
+          const alpha = 0.04 + t * 0.94;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
           const y = levelIndexToY(li) - rowH / 2;
           ctx.fillRect(x, y, colW + 0.5, rowH + 0.5);
         }
