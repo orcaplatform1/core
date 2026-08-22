@@ -208,9 +208,14 @@ export class OrderFlowToolsService {
         }
       }
 
+      // Önce fiyata göre azalan sırayla kesmek (slice) bid tarafını (mid'in altı) tamamen
+      // atabiliyordu — trade geçmişinden gelen üst seviyeler payı doldurunca alttaki
+      // gerçek bid defteri hiç payload'a girmiyordu. Mid'e en yakın N seviyeyi tutup
+      // SONRA fiyata göre sıralıyoruz, iki taraf da simetrik korunuyor.
       const levels = Array.from(levelMap.values())
-        .sort((a, b) => b.price - a.price)
-        .slice(0, MAX_LEVELS_RETURNED);
+        .sort((a, b) => Math.abs(a.price - midPrice) - Math.abs(b.price - midPrice))
+        .slice(0, MAX_LEVELS_RETURNED)
+        .sort((a, b) => b.price - a.price);
 
       // Zaman bazlı kümülatif delta geçmişi (CVD) — aggTrade penceresini eşit sayıda
       // parçaya bölüp her parçanın net delta'sını hesaplıyoruz, sonra kümülatif alıyoruz.

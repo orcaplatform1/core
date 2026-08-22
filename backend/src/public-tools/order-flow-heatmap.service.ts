@@ -7,7 +7,10 @@ const SNAPSHOT_INTERVAL_MS = 1000;
 const MAX_ROWS = 300; // 1sn çözünürlükte 5 dakikalık kayan pencere
 const IDLE_TIMEOUT_MS = 60_000;
 const SWEEP_INTERVAL_MS = 15_000;
-const VISIBLE_RANGE_PERCENT = 0.015;
+// Derinlik yakalama aralığı — dar tutuluyor çünkü fiyat 5dk içinde genelde bunun
+// çok altında hareket ediyor; genişse (ör. %1.5) fiyat/baloncuk hareketi eksenin
+// küçük bir kısmına sıkışıp düz bir çizgi gibi görünüyordu (kullanıcı gözlemi).
+const VISIBLE_RANGE_PERCENT = 0.004;
 const DESIRED_BUCKET_COUNT = 80;
 
 type HeatmapRow = { time: number; bid: Map<number, number>; ask: Map<number, number>; midPrice: number };
