@@ -906,15 +906,24 @@ model AutoTradeConfig {
   enabled         Boolean  @default(false)
   testnet         Boolean  @default(true)
   cryptoEnabled   Boolean  @default(true)
-  // Binance Futures'ta forex parite kontrati yok (EURUSD vb.) - bu alan ileride
-  // farkli bir forex brokeri baglanirsa diye duruyor, su an hicbir yerde
-  // kullanilmiyor (AutoTradeService sadece market===CRYPTO'da islem acar).
+  // Henuz gercek bir forex brokeri baglanmadigi icin (kullanici istegi
+  // 2026-08-22: "api şimdilik kalsın, daha sonra kuracağız") forexEnabled
+  // acilinca ForexAutoTradeService GERCEK EMIR ACMAZ - TrackedSignal'in kendi
+  // fiyat-bazli WATCHING->TRIGGERED->HIT_TP/HIT_STOP gecislerini birebir
+  // izleyip ayni AutoTrade tablosuna "golge" (shadow) pozisyon olarak yazar.
   forexEnabled    Boolean  @default(false)
   // Bakiyenin yuzdesi DEGIL, sabit dolar tutari (kullanici istegi 2026-08-20:
   // "yüzdelik olmasın, USDT olsun, işlem başına kaç dolarla açacağımı yazayım").
   // Kayip = giris-stop mesafesi TP1'e ulasmadan kirilirsa TAM bu tutar (1R).
   riskPerTradeUsdt Float   @default(10)
   leverage        Int      @default(10)
+  // Forex tarafi kripto'nun risk-bazli modelinden FARKLI: sabit teminat x
+  // sabit kaldirac (kullanici istegi 2026-08-22: "her işlem otomatik 250
+  // dolar 1:100 kaldıraç olsun") - riskPerTradeUsdt/leverage gibi panelden
+  // degistirilebilir degil, su an icin sabit (ileride broker baglaninca
+  // gerekirse acilir).
+  forexMarginUsdt Float    @default(250)
+  forexLeverage   Int      @default(100)
   updatedAt       DateTime @updatedAt
 }
 
@@ -938,6 +947,12 @@ model AutoTrade {
   trackedSignalId String          @unique
   symbol          String
   direction       String
+  // FOREX satirlarinda entryOrderId/slOrderId/tp*OrderId HER ZAMAN null kalir
+  // (henuz bir broker baglantisi yok) - bu, ForexAutoTradeService'in "bu bir
+  // golge pozisyon mu" kontrolunde kullandigi ayirt edici (bkz. ilgili servis
+  // yorumu). market alani sadece sorgu kolayligi icin (TrackedSignal join'ine
+  // gerek kalmadan filtreleme).
+  market          AssetType       @default(CRYPTO)
   status          AutoTradeStatus @default(PENDING_ENTRY)
   entryOrderId    String?
   slOrderId       String?
@@ -946,6 +961,11 @@ model AutoTrade {
   tp3OrderId      String?
   entryPrice      Float?
   qty             Float?
+  // SADECE forex golge pozisyonlarinda dolu: acilis anindaki sabit teminat x
+  // kaldirac (AutoTradeConfig.forexMarginUsdt x forexLeverage) - ileride config
+  // degisse bile zaten acik/kapanmis bir islemin kar/zarar hesabi degismesin
+  // diye o an ki deger burada donduruluyor (snapshot).
+  simNotional     Float?
   entryFilledAt   DateTime?
   // Pozisyonun NIHAI kapanis sebebi - istatistik/win-rate icin. STOP iki alt
   // duruma ayrilir: TP1'den ONCE (gercek tam kayip) vs TP1'DEN SONRA basabas

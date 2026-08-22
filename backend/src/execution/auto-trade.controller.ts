@@ -5,6 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { BinanceFuturesClientService } from './binance-futures-client.service';
 import { AutoTradeService } from './auto-trade.service';
+import { ForexAutoTradeService } from './forex-auto-trade.service';
 
 // Otomatik islem (gercek Binance emirleri) acma/kapama ve risk ayarlari -
 // SADECE SUPER_ADMIN. "enabled" varsayilan false gelir (bkz. AutoTradeConfig
@@ -17,6 +18,7 @@ export class AutoTradeController {
     private readonly prisma: PrismaService,
     private readonly binance: BinanceFuturesClientService,
     private readonly autoTradeService: AutoTradeService,
+    private readonly forexAutoTradeService: ForexAutoTradeService,
   ) {}
 
   private async getOrCreateConfig() {
@@ -44,6 +46,7 @@ export class AutoTradeController {
       cryptoEnabled: boolean;
       riskPerTradeUsdt: number;
       leverage: number;
+      forexEnabled: boolean;
     }>,
   ) {
     const config = await this.getOrCreateConfig();
@@ -54,6 +57,10 @@ export class AutoTradeController {
         ...(body.cryptoEnabled !== undefined ? { cryptoEnabled: body.cryptoEnabled } : {}),
         ...(body.riskPerTradeUsdt !== undefined ? { riskPerTradeUsdt: body.riskPerTradeUsdt } : {}),
         ...(body.leverage !== undefined ? { leverage: body.leverage } : {}),
+        // forexMarginUsdt/forexLeverage BILEREK burada yok - kullanici istegi
+        // 2026-08-22: "otomatik 250 dolar 1:100 kaldıraç olsun", panelden
+        // degistirilebilir degil (bkz. schema.prisma AutoTradeConfig yorumu).
+        ...(body.forexEnabled !== undefined ? { forexEnabled: body.forexEnabled } : {}),
       },
     });
   }
@@ -88,5 +95,34 @@ export class AutoTradeController {
   @Post('close-all')
   async closeAll() {
     return this.autoTradeService.closeAllPositions();
+  }
+
+  // --- Forex (golge/simule pozisyonlar - bkz. ForexAutoTradeService basi) ---
+
+  @Get('forex/stats')
+  async getForexStats() {
+    return this.forexAutoTradeService.getStats();
+  }
+
+  @Get('forex/positions')
+  async getForexPositions() {
+    return this.forexAutoTradeService.getLivePositions();
+  }
+
+  @Get('forex/market-context')
+  async getForexMarketContext(@Query('symbols') symbols?: string) {
+    const list = symbols ? symbols.split(',').filter(Boolean) : [];
+    return this.forexAutoTradeService.getMarketContext(list);
+  }
+
+  @Post('forex/:id/close')
+  async closeForexOne(@Param('id') id: string) {
+    await this.forexAutoTradeService.closePosition(id);
+    return { closed: true };
+  }
+
+  @Post('forex/close-all')
+  async closeForexAll() {
+    return this.forexAutoTradeService.closeAllPositions();
   }
 }

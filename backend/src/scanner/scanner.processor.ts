@@ -12,6 +12,8 @@ export class ScannerProcessor extends WorkerHost {
         return this.scannerService.scheduledDayTradeScan();
       case 'forex-day-trade-scan':
         return this.scannerService.scheduledForexDayTradeScan();
+      case 'update-tracked':
+        return this.scannerService.updateTrackedSignals();
       case 'cleanup-tracked':
         return this.scannerService.cleanupTrackedSignals();
       default:

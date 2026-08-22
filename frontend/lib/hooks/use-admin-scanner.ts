@@ -108,6 +108,8 @@ export type AutoTradeConfig = {
   forexEnabled: boolean;
   riskPerTradeUsdt: number;
   leverage: number;
+  forexMarginUsdt: number;
+  forexLeverage: number;
   updatedAt: string;
   apiKeyConfigured: boolean;
   testnetActive: boolean;
@@ -155,8 +157,11 @@ export function useAutoTradeConfig() {
 export function useUpdateAutoTradeConfig() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<Pick<AutoTradeConfig, "enabled" | "cryptoEnabled" | "riskPerTradeUsdt" | "leverage">>) =>
-      apiClient<AutoTradeConfig>(`/scanner/auto-trade/config`, { method: "PATCH", body }),
+    mutationFn: (
+      body: Partial<
+        Pick<AutoTradeConfig, "enabled" | "cryptoEnabled" | "riskPerTradeUsdt" | "leverage" | "forexEnabled">
+      >,
+    ) => apiClient<AutoTradeConfig>(`/scanner/auto-trade/config`, { method: "PATCH", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade", "config"] }),
   });
 }
@@ -230,6 +235,53 @@ export function useMarketContext(symbols: string[]) {
   return useQuery({
     queryKey: ["admin", "scanner", "auto-trade", "market-context", key],
     queryFn: () => apiClient<MarketContext>(`/scanner/auto-trade/market-context?symbols=${encodeURIComponent(key)}`),
+    refetchInterval: 5000,
+  });
+}
+
+// --- Forex (golge/simule pozisyonlar - bkz. backend ForexAutoTradeService
+// basindaki aciklama: gercek broker emri YOK, henuz sadece TrackedSignal'i
+// izleyen bir simulasyon) ---
+export function useForexAutoTradeStats() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "forex", "stats"],
+    queryFn: () => apiClient<AutoTradeStats>(`/scanner/auto-trade/forex/stats`),
+    refetchInterval: 30000,
+  });
+}
+export function useForexAutoTradePositions() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "forex", "positions"],
+    queryFn: () => apiClient<LiveAutoTradePosition[]>(`/scanner/auto-trade/forex/positions`),
+    refetchInterval: 5000,
+  });
+}
+export function useCloseForexAutoTrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient<{ closed: boolean }>(`/scanner/auto-trade/forex/${id}/close`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade", "forex"] }),
+  });
+}
+export function useCloseAllForexAutoTrades() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient<{ closed: number }>(`/scanner/auto-trade/forex/close-all`, { method: "POST" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade", "forex"] }),
+  });
+}
+export type ForexMarketContext = {
+  dxyCandles: BtcCandle[];
+  dxyPrice: number | null;
+  dxyChangePercent: number | null;
+  correlations: Record<string, number | null>;
+};
+export function useForexMarketContext(symbols: string[]) {
+  const key = Array.from(new Set(symbols)).sort().join(",");
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "forex", "market-context", key],
+    queryFn: () =>
+      apiClient<ForexMarketContext>(`/scanner/auto-trade/forex/market-context?symbols=${encodeURIComponent(key)}`),
     refetchInterval: 5000,
   });
 }

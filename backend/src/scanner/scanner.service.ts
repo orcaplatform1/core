@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AutoTradeService } from '../execution/auto-trade.service';
+import { ForexAutoTradeService } from '../execution/forex-auto-trade.service';
 
 interface Candle {
   time: number;
@@ -220,6 +221,7 @@ export class ScannerService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly autoTradeService: AutoTradeService,
+    private readonly forexAutoTradeService: ForexAutoTradeService,
   ) {}
 
   // Bu dosyadaki TUM dis servis (Binance/Yahoo/Anthropic) cagrilari icin ortak
@@ -1036,6 +1038,10 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       // Otomatik islem kapaliysa (AutoTradeConfig.enabled=false, varsayilan)
       // bu cagri hicbir sey yapmadan hemen doner - bkz. AutoTradeService.isActive.
       await this.autoTradeService.onSignalCreated(created);
+      // Forex golge pozisyon - bkz. ForexAutoTradeService basindaki aciklama
+      // (gercek broker emri YOK, sadece forexEnabled acikken TrackedSignal'i
+      // izleyen bir simulasyon).
+      await this.forexAutoTradeService.onSignalCreated(created);
     }
   }
 
@@ -1084,6 +1090,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
             data: { status: 'EXPIRED', closedAt: new Date() },
           });
           await this.autoTradeService.onSignalInvalidated(sig.id);
+          if (sig.market === 'FOREX') await this.forexAutoTradeService.onSignalExpired(sig.id);
           continue;
         }
       }
@@ -1191,6 +1198,9 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         // edilmesi gerekir, yoksa borsada sahipsiz bir bekleyen emir kalir.
         if (updates.status === 'INVALIDATED' || updates.status === 'EXPIRED') {
           await this.autoTradeService.onSignalInvalidated(sig.id);
+        }
+        if (sig.market === 'FOREX') {
+          await this.forexAutoTradeService.onSignalProgress(sig.id, updates);
         }
       }
     }

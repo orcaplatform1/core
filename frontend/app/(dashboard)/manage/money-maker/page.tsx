@@ -12,6 +12,7 @@ import {
   Shield,
   BarChart3,
   Coins,
+  Globe2,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,10 +28,18 @@ import {
   useCloseAutoTrade,
   useCloseAllAutoTrades,
   useMarketContext,
+  useForexAutoTradeStats,
+  useForexAutoTradePositions,
+  useCloseForexAutoTrade,
+  useCloseAllForexAutoTrades,
+  useForexMarketContext,
   type LiveAutoTradePosition,
   type BtcCandle,
   type MarketContext,
+  type ForexMarketContext,
 } from "@/lib/hooks/use-admin-scanner";
+
+type MMMarket = "CRYPTO" | "FOREX";
 
 // Binance funding'i her 8 saatte bir (00:00/08:00/16:00 UTC) tahakkuk eder -
 // bu sabit takvimden hesaplaniyor, API'ye gerek yok. Kullanici istegi
@@ -355,10 +364,28 @@ function CandleChart({ candles }: { candles: BtcCandle[] }) {
 // olarak standart/sabit kose kullanir - donen premium-glow-card cercevesi
 // BİLEREK kullanılmadı (kullanici istegi: "köşesi standart olsun, hoverlı
 // animasyonlu olmasın açık pozisyonlar gibi").
-function BtcChartCard({ context, positions }: { context: MarketContext | undefined; positions: LiveAutoTradePosition[] | undefined }) {
-  const positive = (context?.btcChangePercent ?? 0) >= 0;
+// BTC (kripto) ve DXY (forex - kullanici istegi 2026-08-22: "dxy koy xbt
+// gibi") korelasyon kartlari ayni gorsel/veri sekline sahip - tek bir genel
+// bilesen olarak tutuluyor, sadece etiket/ikon/veri kaynagi farkli.
+function MarketRefChartCard({
+  label,
+  icon,
+  price,
+  changePercent,
+  candles,
+  correlations,
+  positions,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  price: number | null | undefined;
+  changePercent: number | null | undefined;
+  candles: BtcCandle[];
+  correlations: Record<string, number | null> | undefined;
+  positions: LiveAutoTradePosition[] | undefined;
+}) {
+  const positive = (changePercent ?? 0) >= 0;
   const color = positive ? "#22C55E" : "#EF4444";
-  const candles = context?.btcCandles ?? [];
   return (
     <div
       className="relative overflow-hidden rounded-2xl border border-border p-4 sm:p-5 space-y-2"
@@ -366,18 +393,18 @@ function BtcChartCard({ context, positions }: { context: MarketContext | undefin
     >
       <div className="relative flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <CoinIcon symbol="BTCUSDT" />
-          <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">XBT/USDT</span>
+          {icon}
+          <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">{label}</span>
           <span className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#A8A6A0]" style={{ backgroundColor: "#A8A6A022" }}>
             Korelasyon
           </span>
         </div>
-        {context?.btcPrice != null ? (
+        {price != null ? (
           <div className="text-right">
-            <div className="text-body-md font-bold text-[#F5F1EA]">${fmtPrice(context.btcPrice)}</div>
-            {context.btcChangePercent != null && (
+            <div className="text-body-md font-bold text-[#F5F1EA]">${fmtPrice(price)}</div>
+            {changePercent != null && (
               <div className="text-badge font-semibold" style={{ color }}>
-                {positive ? "+" : ""}{context.btcChangePercent.toFixed(2)}% (24s)
+                {positive ? "+" : ""}{changePercent.toFixed(2)}%
               </div>
             )}
           </div>
@@ -386,24 +413,28 @@ function BtcChartCard({ context, positions }: { context: MarketContext | undefin
         )}
       </div>
       <CandleChart candles={candles} />
-      {positions && positions.length > 0 && (
-        <div className="relative space-y-1 border-t border-white/10 pt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A8A6A0]">XBT korelasyonu (açık/bekleyen işlemler)</p>
-          {positions.map((p) => {
-            const corr = context?.correlations?.[p.symbol];
-            const corrColor = corr == null ? "#605D57" : corr >= 0.5 ? "#22C55E" : corr <= -0.5 ? "#EF4444" : "#F5A623";
-            const corrLabel = corr == null ? "veri yetersiz" : corr >= 0.5 ? "güçlü aynı yönlü" : corr <= -0.5 ? "güçlü ters yönlü" : "zayıf/nötr";
-            return (
-              <div key={p.id} className="flex items-center justify-between text-body-xs">
-                <span className="text-[#F5F1EA] font-semibold">{p.symbol}</span>
-                <span style={{ color: corrColor }}>
-                  {corr != null ? `${corr >= 0 ? "+" : ""}${(corr * 100).toFixed(0)}%` : "—"} <span className="text-[#605D57]">({corrLabel})</span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {(() => {
+        const openPositions = (positions ?? []).filter((p) => p.status !== "CLOSED");
+        if (openPositions.length === 0) return null;
+        return (
+          <div className="relative space-y-1 border-t border-white/10 pt-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#A8A6A0]">{label} korelasyonu (açık/bekleyen işlemler)</p>
+            {openPositions.map((p) => {
+              const corr = correlations?.[p.symbol];
+              const corrColor = corr == null ? "#605D57" : corr >= 0.5 ? "#22C55E" : corr <= -0.5 ? "#EF4444" : "#F5A623";
+              const corrLabel = corr == null ? "veri yetersiz" : corr >= 0.5 ? "güçlü aynı yönlü" : corr <= -0.5 ? "güçlü ters yönlü" : "zayıf/nötr";
+              return (
+                <div key={p.id} className="flex items-center justify-between text-body-xs">
+                  <span className="text-[#F5F1EA] font-semibold">{p.symbol}</span>
+                  <span style={{ color: corrColor }}>
+                    {corr != null ? `${corr >= 0 ? "+" : ""}${(corr * 100).toFixed(0)}%` : "—"} <span className="text-[#605D57]">({corrLabel})</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -413,11 +444,13 @@ function PositionCard({
   onClose,
   isClosing,
   riskPerTradeUsdt,
+  market,
 }: {
   position: LiveAutoTradePosition;
   onClose: () => void;
   isClosing: boolean;
   riskPerTradeUsdt: number | null;
+  market: MMMarket;
 }) {
   const fundingCountdown = useFundingCountdown();
   const isPending = position.status === "PENDING_ENTRY";
@@ -448,24 +481,31 @@ function PositionCard({
   // karistiriyordu (kullanici geri bildirimi 2026-08-20: "açık etiketi
   // kalkmış o kalkmasın... TP1 ALINDI BAŞABAŞ hiç yazmasın").
   const statusColor = isClosed ? borderColor : isPending ? "#F5A623" : "#3B5BFF";
+  // Kapanis sebebi (TP3/stop/basabas) artik ustteki etikette degil, alttaki
+  // Not kutusunda yaziyor - kullanici istegi 2026-08-22: "kısmı etiket olarak
+  // yazmasın hepsi Not kısmında yazsın". Etiket kapanmis islemler icin sadece
+  // "KAPANDI" der, renk (kenar/statusColor) zaten TP/stop ayrimini tasir.
   const statusLabel = isClosed
-    ? position.closeReason === "TP3"
-      ? "TP3 İLE KAPANDI"
-      : position.closeReason === "STOP_BREAKEVEN"
-        ? "BAŞABAŞ STOP İLE KAPANDI"
-        : position.closeReason === "STOP_FULL_LOSS"
-          ? "STOP İLE KAPANDI"
-          : "ELLE KAPATILDI"
+    ? "KAPANDI"
     : isPending
       ? "BEKLİYOR — LİMİT EMİR DOLMADI"
       : "AÇIK";
 
-  // R-multiple: risk mesafesi, pozisyon acilirken kullanilan sabit dolar
-  // riski / miktar'dan turetiliyor (config.riskPerTradeUsdt / qty). TP1
-  // sonrasi stop basabasa cekilse bile ORIJINAL risk sabit kalir - "1R" her
-  // zaman ayni anlama gelir (kullanici istegi 2026-08-20: "yüzdelik ve
-  // RR'ları da parantez içinde yaz").
-  const riskDistance = riskPerTradeUsdt && position.qty ? riskPerTradeUsdt / position.qty : null;
+  // R-multiple: risk mesafesi. Kripto'da sabit dolar riski/miktardan turetilir
+  // (config.riskPerTradeUsdt / qty) - TP1 sonrasi stop basabasa cekilse bile
+  // ORIJINAL risk sabit kalir. Forex'te sabit dolar riski yok (bkz. backend
+  // ForexAutoTradeService - marj x kaldirac modeli), ama TP1 tanim geregi HER
+  // ZAMAN girisin tam 1R uzaginda oldugu icin |TP1-giris| direkt 1R mesafesidir -
+  // "1R" her iki markette de ayni anlama gelir (kullanici istegi 2026-08-20:
+  // "yüzdelik ve RR'ları da parantez içinde yaz").
+  const riskDistance =
+    market === "FOREX"
+      ? position.tp1Price != null && position.entryPrice != null
+        ? Math.abs(position.tp1Price - position.entryPrice)
+        : null
+      : riskPerTradeUsdt && position.qty
+        ? riskPerTradeUsdt / position.qty
+        : null;
   const levelMeta = (level: number | null) => {
     if (level == null || position.entryPrice == null) return null;
     const signedMove = isLong ? level - position.entryPrice : position.entryPrice - level;
@@ -485,11 +525,16 @@ function PositionCard({
   const tp2Filled = position.tp2Filled;
   const tp3Filled = position.tp3Filled;
   // Alt bildirim notu - en ileri asamayi gosterir (stop > TP2 > TP1). Kapanmis
-  // islemlerde gosterilmez - o durum zaten statusLabel/kenar renginde var,
-  // ayrica tp1Filled/tp2Filled kapanmis islemde (tum fiyatlar null oldugu
-  // icin) her zaman true doner, yanlis notu tetikler.
+  // islemlerde kapanis sebebi (TP3/stop/basabas) burada yaziyor - ustteki
+  // etiket artik sadece "KAPANDI" diyor (kullanici istegi 2026-08-22).
   const noteText = isClosed
-    ? null
+    ? position.closeReason === "TP3"
+      ? "NOT: TP3 ile kapandı."
+      : position.closeReason === "STOP_BREAKEVEN"
+        ? "NOT: Başabaş stop ile kapandı."
+        : position.closeReason === "STOP_FULL_LOSS"
+          ? "NOT: Stop ile kapandı."
+          : "NOT: Elle kapatıldı."
     : position.stopTriggered
       ? "NOT: İşlem Stop Oldu."
       : tp2Filled
@@ -497,6 +542,16 @@ function PositionCard({
         : tp1Filled
           ? "NOT: TP1 Alındı, Giriş Stopa Çekildi."
           : null;
+  // Not kutusu rengi: stop'a bagli (acik pozisyonda stopTriggered, kapanmis
+  // pozisyonda STOP_BREAKEVEN/STOP_FULL_LOSS) durumlarda kirmizi, digerlerinde
+  // (TP3, TP1/TP2, elle kapatma) pembe - kullanici istegi 2026-08-22: "notun
+  // rengi pembe olsun yeşil değil".
+  const noteIsStop = isClosed
+    ? position.closeReason === "STOP_BREAKEVEN" || position.closeReason === "STOP_FULL_LOSS"
+    : position.stopTriggered;
+  // "Şeker pembesi" - kullanici istegi 2026-08-22: "premium dizayn" (diger
+  // kartlardaki glow/boxShadow desenine uygun canli pembe, soluk degil).
+  const noteColor = noteIsStop ? "#EF4444" : "#FF4FA3";
 
   return (
     <div
@@ -512,9 +567,9 @@ function PositionCard({
       />
       <div className="relative flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <CoinIcon symbol={position.symbol} />
+          {market === "CRYPTO" ? <CoinIcon symbol={position.symbol} /> : <Globe2 size={18} className="shrink-0 text-[#A8A6A0]" />}
           <span className="text-body-md font-bold tracking-tight text-[#F5F1EA]">{position.symbol}</span>
-          <BinanceFuturesLink symbol={position.symbol} />
+          {market === "CRYPTO" && <BinanceFuturesLink symbol={position.symbol} />}
           <span
             className="rounded-full px-2.5 py-1 text-badge font-semibold uppercase"
             style={{
@@ -556,7 +611,11 @@ function PositionCard({
           <>
             <span>Notional: <b className="text-[#F5F1EA]">${position.notional != null ? fmtUsd(position.notional) : "—"}</b></span>
             <span>Kaldıraç: <b className="text-[#F5F1EA]">{position.leverage ?? "—"}x</b></span>
-            <span>Likidasyon: <b className="text-[#F5F1EA]">{fmtPrice(position.liquidationPrice)}</b></span>
+            <span>
+              Likidasyon: <b className="text-[#F5F1EA]">{fmtPrice(position.liquidationPrice)}</b>
+              {market === "FOREX" && <span className="text-[#605D57]"> (tahmini)</span>}
+            </span>
+            {market === "CRYPTO" && (
             <span className="col-span-2 sm:col-span-4 whitespace-nowrap">
               Sonraki funding: <b className="text-[#F5A623]">{fundingCountdown}</b>
               {position.fundingRate != null && (() => {
@@ -579,6 +638,7 @@ function PositionCard({
                 );
               })()}
             </span>
+            )}
           </>
         )}
       </div>
@@ -625,12 +685,13 @@ function PositionCard({
 
       {noteText && (
         <div
-          className="relative rounded-lg px-3 py-2 text-body-xs font-medium"
-          style={
-            position.stopTriggered
-              ? { backgroundColor: "#EF444422", color: "#EF4444" }
-              : { backgroundColor: "#22C55E22", color: "#22C55E" }
-          }
+          className="relative rounded-lg px-3 py-2 text-body-xs font-semibold"
+          style={{
+            backgroundColor: `${noteColor}1F`,
+            color: noteColor,
+            border: `1px solid ${noteColor}55`,
+            boxShadow: `0 0 14px -4px ${noteColor}80`,
+          }}
         >
           {noteText}
         </div>
@@ -666,6 +727,10 @@ function PositionCard({
 export default function MoneyMakerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [showAbout, setShowAbout] = useState(false);
+  // Kripto/Forex ayrimi - Orca ACS'teki (scanner sayfasi) Piyasa toggle'iyla
+  // birebir ayni gorsel dil (kullanici istegi 2026-08-22: "toggle ile
+  // ayrılsın... tıpkı orca acs ekranındaki gibi").
+  const [market, setMarket] = useState<MMMarket>("CRYPTO");
   const { data: config, isLoading } = useAutoTradeConfig();
   const { data: stats } = useAutoTradeStats();
   const { data: positions } = useAutoTradePositions();
@@ -675,6 +740,14 @@ export default function MoneyMakerPage() {
   const closeAll = useCloseAllAutoTrades();
   const [riskUsdt, setRiskUsdt] = useState<string>("");
   const [leverage, setLeverage] = useState<string>("");
+
+  // Forex - bkz. backend ForexAutoTradeService basindaki aciklama: gercek
+  // broker emri YOK, henuz sadece TrackedSignal'i izleyen bir simulasyon.
+  const { data: forexStats } = useForexAutoTradeStats();
+  const { data: forexPositions } = useForexAutoTradePositions();
+  const { data: forexMarketContext } = useForexMarketContext(forexPositions?.map((p) => p.symbol) ?? []);
+  const closeOneForex = useCloseForexAutoTrade();
+  const closeAllForex = useCloseAllForexAutoTrades();
 
   if (authLoading) {
     return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
@@ -733,6 +806,34 @@ export default function MoneyMakerPage() {
     }
   }
 
+  async function handleForexToggle() {
+    if (!config) return;
+    try {
+      await updateConfig.mutateAsync({ forexEnabled: !config.forexEnabled });
+      toast.success(!config.forexEnabled ? "Money Maker (Forex) AÇILDI — simülasyon başlıyor" : "Money Maker (Forex) kapatıldı");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Ayar güncellenemedi");
+    }
+  }
+
+  async function handleCloseOneForex(id: string, symbol: string) {
+    try {
+      await closeOneForex.mutateAsync(id);
+      toast.success(`${symbol} anlık fiyattan kapatıldı (simülasyon)`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Pozisyon kapatılamadı");
+    }
+  }
+
+  async function handleCloseAllForex() {
+    try {
+      const res = await closeAllForex.mutateAsync();
+      toast.success(`${res.closed} işlem kapatıldı (simülasyon)`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "İşlemler kapatılamadı");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -762,11 +863,61 @@ export default function MoneyMakerPage() {
       </div>
       {showAbout && <AboutMoneyMakerPanel onClose={() => setShowAbout(false)} />}
 
-      <BtcChartCard context={marketContext} positions={positions} />
+      <div>
+        <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Piyasa</p>
+        <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-md">
+          <button
+            type="button"
+            onClick={() => setMarket("CRYPTO")}
+            className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
+              market === "CRYPTO"
+                ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            }`}
+          >
+            <Coins size={16} />
+            Kripto
+          </button>
+          <button
+            type="button"
+            onClick={() => setMarket("FOREX")}
+            className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
+              market === "FOREX"
+                ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+            }`}
+          >
+            <Globe2 size={16} />
+            Forex
+          </button>
+        </div>
+      </div>
+
+      {market === "CRYPTO" ? (
+        <MarketRefChartCard
+          label="XBT/USDT"
+          icon={<CoinIcon symbol="BTCUSDT" />}
+          price={marketContext?.btcPrice}
+          changePercent={marketContext?.btcChangePercent}
+          candles={marketContext?.btcCandles ?? []}
+          correlations={marketContext?.correlations}
+          positions={positions}
+        />
+      ) : (
+        <MarketRefChartCard
+          label="DXY"
+          icon={<Globe2 size={18} className="text-[#A8A6A0]" />}
+          price={forexMarketContext?.dxyPrice}
+          changePercent={forexMarketContext?.dxyChangePercent}
+          candles={forexMarketContext?.dxyCandles ?? []}
+          correlations={forexMarketContext?.correlations}
+          positions={forexPositions}
+        />
+      )}
 
       {isLoading || !config ? (
         <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
-      ) : (
+      ) : market === "CRYPTO" ? (
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
@@ -863,9 +1014,68 @@ export default function MoneyMakerPage() {
             </div>
           )}
         </div>
+      ) : (
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Power size={16} color={config.forexEnabled ? "#22C55E" : "#A8A6A0"} />
+              <span className="text-body-sm font-semibold text-[#F5F1EA]">Durum</span>
+              <span
+                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
+                style={{
+                  backgroundColor: config.forexEnabled ? "#22C55E22" : "#A8A6A022",
+                  color: config.forexEnabled ? "#22C55E" : "#A8A6A0",
+                }}
+              >
+                {config.forexEnabled ? "AÇIK" : "KAPALI"}
+              </span>
+              <span
+                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
+                style={{ backgroundColor: "#F5A62322", color: "#F5A623" }}
+              >
+                SİMÜLASYON — BROKER BAĞLI DEĞİL
+              </span>
+            </div>
+            <Button onClick={handleForexToggle} disabled={updateConfig.isPending} className="h-9" style={{ backgroundColor: config.forexEnabled ? "#EF4444" : undefined }}>
+              {config.forexEnabled ? "Kapat" : "Aç"}
+            </Button>
+          </div>
+
+          <p className="text-body-xs text-[#A8A6A0]">
+            Forex için henüz gerçek bir broker bağlantısı yok — Orca ACS'in ürettiği forex sinyallerini gerçek zamanlı fiyatla izleyip{" "}
+            <b className="text-[#F5F1EA]">simüle edilmiş</b> bir pozisyon (giriş/TP/stop, anlık kâr/zarar) olarak gösterir, borsada/broker'da hiçbir emir açılmaz. Broker bağlanınca bu anahtar gerçek emirlere geçecek.
+          </p>
+
+          <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
+            <span className="text-body-xs text-[#A8A6A0]">
+              İşlem başına: <b className="text-[#F5F1EA]">{config.forexMarginUsdt} USD marj × 1:{config.forexLeverage} kaldıraç</b> <span className="text-[#605D57]">(şu an sabit, panelden değiştirilemez)</span>
+            </span>
+          </div>
+
+          {forexStats && forexStats.totalClosed > 0 && (
+            <div className="border-t border-border pt-3 space-y-1.5">
+              <p className="text-badge uppercase tracking-wider text-[#A8A6A0]">Simülasyon işlem istatistiği (gerçek fiyat, gerçek emir değil)</p>
+              <div className="flex items-center gap-3 text-body-xs text-[#A8A6A0] flex-wrap">
+                <span>Kapanan: {forexStats.totalClosed}</span>
+                <span className="text-[#22C55E]">Kazandı: {forexStats.wins}</span>
+                <span className="text-[#EF4444]">Stop (tam kayıp): {forexStats.losses}</span>
+                <span className="font-semibold text-[#F5F1EA]">
+                  Başarı: {forexStats.winRate !== null ? `%${forexStats.winRate}` : "Yetersiz veri"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-body-xs text-[#A8A6A0] flex-wrap">
+                <span>İşlem kârı/zararı: ${forexStats.totalRealizedPnl.toFixed(2)}</span>
+                <span>Komisyon (tahmini spread): ${forexStats.totalCommission.toFixed(2)}</span>
+                <span className="font-semibold" style={{ color: forexStats.totalNetPnl >= 0 ? "#22C55E" : "#EF4444" }}>
+                  Net kâr: {forexStats.totalNetPnl >= 0 ? "+" : ""}${forexStats.totalNetPnl.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {positions && positions.length > 0 && (
+      {market === "CRYPTO" && positions && positions.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <p className="text-body-sm font-semibold text-[#F5F1EA]">
@@ -884,6 +1094,33 @@ export default function MoneyMakerPage() {
                 onClose={() => handleCloseOne(p.id, p.symbol)}
                 isClosing={closeOne.isPending}
                 riskPerTradeUsdt={config?.riskPerTradeUsdt ?? null}
+                market="CRYPTO"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {market === "FOREX" && forexPositions && forexPositions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-body-sm font-semibold text-[#F5F1EA]">
+              Açık Pozisyonlar ({forexPositions.length})
+            </p>
+            <Button onClick={handleCloseAllForex} disabled={closeAllForex.isPending} className="h-8 gap-1.5 text-badge" style={{ backgroundColor: "#EF4444" }}>
+              <XCircle size={13} />
+              Tüm İşlemleri Kapat
+            </Button>
+          </div>
+          <div className="-mx-8 grid grid-cols-1 gap-3 px-3 sm:mx-0 sm:px-0 md:grid-cols-2">
+            {forexPositions.map((p) => (
+              <PositionCard
+                key={p.id}
+                position={p}
+                onClose={() => handleCloseOneForex(p.id, p.symbol)}
+                isClosing={closeOneForex.isPending}
+                riskPerTradeUsdt={null}
+                market="FOREX"
               />
             ))}
           </div>
