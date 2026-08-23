@@ -871,6 +871,19 @@ model ScanResult {
   createdAt    DateTime  @default(now())
 }
 
+// ORCA ACS'nin kripto ICT/SMC kural motorunun BIREBIR ayni calisan, tek farki
+// kirilim onaylandiktan sonra order flow (agresif alim baskisi) teyidi de
+// arayan test varyanti - hangisi daha iyi performans gosterirse o kalir
+// (kullanici istegi 2026-08-23: iki strateji paralel/es zamanli test edilsin,
+// Money Maker'a (gercek Binance emirleri) KESINLIKLE baglanmaz, sadece
+// TrackedSignal/ScanResult uzerinden win-rate karsilastirmasi icin var).
+// Tek satirlik "singleton" tablo, AutoTradeConfig ile ayni desen.
+model ScannerConfig {
+  id                   String   @id @default(cuid())
+  orderFlowTestEnabled Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+}
+
 model TrackedSignal {
   id              String    @id @default(cuid())
   symbol          String
@@ -902,29 +915,29 @@ model TrackedSignal {
 // acacak). API key/secret DB'de DEGIL, sadece .env'de (BINANCE_API_KEY/
 // BINANCE_API_SECRET) tutulur - sifrelenmemis DB alani riskli olur.
 model AutoTradeConfig {
-  id              String   @id @default(cuid())
-  enabled         Boolean  @default(false)
-  testnet         Boolean  @default(true)
-  cryptoEnabled   Boolean  @default(true)
+  id               String   @id @default(cuid())
+  enabled          Boolean  @default(false)
+  testnet          Boolean  @default(true)
+  cryptoEnabled    Boolean  @default(true)
   // Henuz gercek bir forex brokeri baglanmadigi icin (kullanici istegi
   // 2026-08-22: "api şimdilik kalsın, daha sonra kuracağız") forexEnabled
   // acilinca ForexAutoTradeService GERCEK EMIR ACMAZ - TrackedSignal'in kendi
   // fiyat-bazli WATCHING->TRIGGERED->HIT_TP/HIT_STOP gecislerini birebir
   // izleyip ayni AutoTrade tablosuna "golge" (shadow) pozisyon olarak yazar.
-  forexEnabled    Boolean  @default(false)
+  forexEnabled     Boolean  @default(false)
   // Bakiyenin yuzdesi DEGIL, sabit dolar tutari (kullanici istegi 2026-08-20:
   // "yüzdelik olmasın, USDT olsun, işlem başına kaç dolarla açacağımı yazayım").
   // Kayip = giris-stop mesafesi TP1'e ulasmadan kirilirsa TAM bu tutar (1R).
-  riskPerTradeUsdt Float   @default(10)
-  leverage        Int      @default(10)
+  riskPerTradeUsdt Float    @default(10)
+  leverage         Int      @default(10)
   // Forex tarafi kripto'nun risk-bazli modelinden FARKLI: sabit teminat x
   // sabit kaldirac (kullanici istegi 2026-08-22: "her işlem otomatik 250
   // dolar 1:100 kaldıraç olsun") - riskPerTradeUsdt/leverage gibi panelden
   // degistirilebilir degil, su an icin sabit (ileride broker baglaninca
   // gerekirse acilir).
-  forexMarginUsdt Float    @default(250)
-  forexLeverage   Int      @default(100)
-  updatedAt       DateTime @updatedAt
+  forexMarginUsdt  Float    @default(250)
+  forexLeverage    Int      @default(100)
+  updatedAt        DateTime @updatedAt
 }
 
 enum AutoTradeStatus {

@@ -109,6 +109,23 @@ export class AutoTradeService implements OnModuleInit {
       const config = await this.getConfig();
       if (!config.cryptoEnabled) return;
 
+      // Guvenlik agi: ayni sembol icin zaten aktif (PENDING_ENTRY/OPEN/
+      // BREAKEVEN_SET) bir AutoTrade varsa ikinci bir gercek Binance emri
+      // ACMA. TrackedSignal tarafindaki blokSymbols kontrolu (scanner.service.ts)
+      // yaziyla-okuma arasinda yarisa acik (iki concurrent scan job'i ayni
+      // sembolu bos gorup ikisi de sinyal uretebiliyordu) - burasi son
+      // savunma hatti, hangi yoldan gelirse gelsin ayni sembolde iki gercek
+      // pozisyon acilmasini engeller (bkz. kullanici geri bildirimi
+      // 2026-08-23: OPUSDT'de 2dk arayla iki ayri trade acilip biri
+      // digerinin korumali pozisyonunu piyasadan kapatmisti).
+      const existingActiveTrade = await this.prisma.autoTrade.findFirst({
+        where: { symbol: sig.symbol, status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] } },
+      });
+      if (existingActiveTrade) {
+        this.logger.warn(`${sig.symbol}: zaten aktif bir AutoTrade var (id=${existingActiveTrade.id}, status=${existingActiveTrade.status}) - yeni sinyal icin emir acilmadi (duplicate guard)`);
+        return;
+      }
+
       const bullish = sig.direction === 'LONG';
       const entryPrice = bullish ? sig.entryZoneTop : sig.entryZoneBottom;
       const riskDistance = Math.abs(entryPrice - sig.stop);
@@ -204,6 +221,32 @@ export class AutoTradeService implements OnModuleInit {
       // borsada gercekten korumasiz (SL'siz) bir pozisyon kaldiysa hemen
       // piyasa fiyatindan kapat, "gece uyurken korumasiz pozisyon" riskini
       // sifirla.
+      //
+      // getPositionAmt sembol BAZINDA (Binance one-way modda tek net pozisyon)
+      // deger dondurur, bu trade'e ozel degil. Ayni sembolde baska bir AKTIF
+      // trade varken (orn. neredeyse ayni anda acilan iki ayni-sembol sinyali)
+      // bu kontrol o DIGER trade'in zaten SL/TP ile KORUNAN pozisyonunu da
+      // gorup piyasadan kapatabiliyordu - ve o trade'in DB kaydi hic
+      // guncellenmiyordu (bkz. kullanici geri bildirimi 2026-08-23: OPUSDT
+      // stopun altina dustu ama pozisyon "acik" gorunmeye devam etti - kok
+      // sebep buydu). Baska aktif trade varsa piyasa kapatmasini atla, sadece
+      // uyar - o trade'in kendi SL/TP zinciri zaten calisiyor olmali.
+      const otherActiveTrade = await this.prisma.autoTrade.findFirst({
+        where: {
+          symbol: trade.symbol,
+          id: { not: trade.id },
+          status: { in: ['PENDING_ENTRY', 'OPEN', 'BREAKEVEN_SET'] },
+        },
+      });
+      if (otherActiveTrade) {
+        await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { status: 'EXPIRED' } });
+        await this.notifyAdmins(
+          'Orca ACS: Kısmi dolan emir güvenlik ağı atlandı',
+          `${trade.symbol}: setup geçersizleşti ama aynı sembolde başka aktif bir trade (${otherActiveTrade.id}) var - piyasa kapatma güvenlik ağı çakışmayı önlemek için atlandı, bu diğer trade'in kendi SL/TP zinciri korumada.`,
+        );
+        return;
+      }
+
       const positionAmt = await this.binance.getPositionAmt(trade.symbol);
       if (Math.abs(positionAmt) > 0) {
         await this.binance.placeOrder({
@@ -448,6 +491,29 @@ export class AutoTradeService implements OnModuleInit {
         const hasTriggered = !!algo.actualOrderId && algo.actualOrderId !== '0';
         if (hasTriggered) {
           await this.onPositionClosed(trade, 'STOP');
+          continue;
+        }
+
+        // algoStatus REJECTED ("Reduce only reject") = borsada bu sembol icin
+        // artik kapatilacak pozisyon yok (baska bir yolla - orn. onSignalInvalidated
+        // guvenlik agi - zaten kapanmis), ama actualOrderId bos kaldigi icin
+        // yukaridaki hasTriggered kontrolu hicbir zaman true olmuyordu ve kayit
+        // sonsuza kadar OPEN/BREAKEVEN_SET'te takili kaliyordu (bkz. kullanici
+        // geri bildirimi 2026-08-23: OPUSDT fiyat stopun altinda ama pozisyon
+        // hala "acik" gorunuyordu). Gercek pozisyonu dogrudan sorgulayip, borsada
+        // gercekten pozisyon kalmamissa DB'yi kapali olarak isaretle.
+        if (algo.algoStatus === 'REJECTED') {
+          const positionAmt = await this.binance.getPositionAmt(trade.symbol);
+          if (Math.abs(positionAmt) === 0) {
+            this.logger.warn(`${trade.symbol}: stop emri REJECTED ama pozisyon zaten yok - kayit kapatiliyor (onPositionClosed)`);
+            await this.onPositionClosed(trade, 'STOP');
+          } else {
+            this.logger.error(`${trade.symbol}: stop emri REJECTED VE pozisyon hala acik (${positionAmt}) - KORUMASIZ, elle kontrol gerekiyor`);
+            await this.notifyAdmins(
+              'Orca ACS: KRİTİK - stop emri reddedildi, pozisyon korumasız',
+              `${trade.symbol}: stop-loss emri Binance tarafından reddedildi ("Reduce only reject") ve pozisyon (${positionAmt}) hâlâ açık. Elle kontrol et.`,
+            );
+          }
         }
       } catch (err: any) {
         this.logger.warn(`pollPendingStopOrders (${trade.symbol}): ${err.message}`);

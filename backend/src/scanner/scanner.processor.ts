@@ -10,6 +10,8 @@ export class ScannerProcessor extends WorkerHost {
     switch (job.name) {
       case 'day-trade-scan':
         return this.scannerService.scheduledDayTradeScan();
+      case 'day-trade-order-flow-scan':
+        return this.scannerService.scheduledDayTradeOrderFlowScan();
       case 'forex-day-trade-scan':
         return this.scannerService.scheduledForexDayTradeScan();
       case 'update-tracked':
