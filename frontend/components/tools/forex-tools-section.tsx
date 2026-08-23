@@ -135,7 +135,9 @@ function GoldAndTlCard() {
 
 function CotReportCard() {
   const { data } = useCotReport();
-  const rows = data ?? [];
+  const rows = useMemo(() => [...(data ?? [])].sort((a, b) => b.netPosition - a.netPosition), [data]);
+  const maxVal = Math.max(...rows.map((r) => Math.max(r.leveragedLong, r.leveragedShort)), 1);
+
   return (
     <ToolCard
       title="COT Raporu (Kurumsal Pozisyonlanma)"
@@ -146,27 +148,52 @@ function CotReportCard() {
       }
     >
       <p className="mb-3 text-body-xs text-muted-foreground">
-        Büyük kurumsal fonların (Leveraged Money) net pozisyonu — pozitif net = net uzun, negatif = net kısa.
+        Büyük kurumsal fonların (Leveraged Money) uzun/kısa pozisyon dağılımı — solda kısa, sağda uzun kontrat sayısı.
       </p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        {rows.length === 0 && <p className="col-span-full text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
-        {rows.map((r) => (
-          <div key={r.currency} className="rounded-lg card-inner p-3 text-body-xs">
-            <p className="text-financial text-foreground/90">{r.currency}</p>
-            <p className={`mt-1 text-financial ${r.netPosition >= 0 ? "text-success" : "text-danger"}`}>
-              {r.netPosition >= 0 ? "+" : ""}
-              {r.netPosition.toLocaleString("en-US")}
-            </p>
-            {r.netPositionChange != null && (
-              <p className={`text-financial ${r.netPositionChange >= 0 ? "text-success" : "text-danger"}`}>
-                {r.netPositionChange >= 0 ? "+" : ""}
-                {r.netPositionChange.toLocaleString("en-US")} (haftalık)
-              </p>
-            )}
-            <p className="mt-1 text-body-xs text-muted-foreground">{r.reportDate}</p>
-          </div>
-        ))}
+      {rows.length === 0 && <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>}
+      <div className="space-y-2.5">
+        {rows.map((r) => {
+          const shortPct = (r.leveragedShort / maxVal) * 100;
+          const longPct = (r.leveragedLong / maxVal) * 100;
+          const changeUp = r.netPositionChange != null && r.netPositionChange >= 0;
+          return (
+            <div key={r.currency} className="flex items-center gap-2">
+              <span className="w-9 shrink-0 text-financial text-foreground/90">{r.currency}</span>
+              <span className="w-14 shrink-0 text-right text-body-xs text-danger/80">
+                {r.leveragedShort.toLocaleString("en-US")}
+              </span>
+              <div className="flex h-4 flex-1 items-center">
+                <div className="flex h-full flex-1 items-center justify-end overflow-hidden rounded-l bg-black/10">
+                  <div className="h-full min-w-[2px] bg-danger/70" style={{ width: `${shortPct}%` }} />
+                </div>
+                <div className="h-5 w-px shrink-0 bg-border" />
+                <div className="flex h-full flex-1 items-center justify-start overflow-hidden rounded-r bg-black/10">
+                  <div className="h-full min-w-[2px] bg-success/70" style={{ width: `${longPct}%` }} />
+                </div>
+              </div>
+              <span className="w-14 shrink-0 text-body-xs text-success/80">
+                {r.leveragedLong.toLocaleString("en-US")}
+              </span>
+              <div className="w-24 shrink-0 text-right">
+                <p className={`text-financial ${r.netPosition >= 0 ? "text-success" : "text-danger"}`}>
+                  {r.netPosition >= 0 ? "+" : ""}
+                  {r.netPosition.toLocaleString("en-US")}
+                </p>
+                {r.netPositionChange != null && (
+                  <p className={`text-body-xs ${changeUp ? "text-success" : "text-danger"}`}>
+                    {changeUp ? "▲" : "▼"} {Math.abs(r.netPositionChange).toLocaleString("en-US")}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+      {rows[0] && (
+        <p className="mt-3 border-t border-border pt-2 text-body-xs text-muted-foreground">
+          Rapor tarihi: {rows[0].reportDate} · solda kısa / sağda uzun kontrat adedi, sağ sütun net pozisyon ve haftalık değişim
+        </p>
+      )}
     </ToolCard>
   );
 }
