@@ -18,11 +18,26 @@ export class ScannerScheduler {
   // iki kez calismasini engeller - bkz. kullanici geri bildirimi 2026-08-23:
   // restart sonrasi OPUSDT icin 2 dakika arayla iki ayri sinyal/trade acilmisti
   // (kanit: pm2 loglarinda ayni [scanDayTrade] blogu art arda iki kez, ayni
-  // qty/price ile). Job tamamlaninca ID serbest kalir, bir sonraki cron
-  // tick'i normal calismaya devam eder.
+  // qty/price ile).
+  //
+  // removeOnComplete/removeOnFail ZORUNLU: BullMQ'da sabit jobId'li bir job
+  // tamamlaninca Redis'teki hash SILINMEZSE (varsayilan), o jobId sonsuza
+  // kadar "dolu" sayilir - sonraki HER add() cagrisi (yeni cron tick'i dahil)
+  // mevcut (tamamlanmis) job'u sessizce geri dondurur, YENI bir job hic
+  // olusmaz. Bu yuzden 2026-08-23 sabahi tek bir basarili calismadan sonra
+  // uc tarama da (day-trade-scan/day-trade-order-flow-scan/forex-day-trade-scan)
+  // saatlerce hic tetiklenmedi - kullanici "tarama durmus" diye bildirdi,
+  // kok sebep buydu (bkz. redis'teki bull:scanner:day-trade-scan hash'inin
+  // saatlerdir ayni finishedOn degerinde donmus olmasi).
   @Cron('*/15 * * * *')
   async queueDayTradeScan() {
-    await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-scan' });
+    await this.scannerQueue.add('day-trade-scan', {}, {
+      attempts: 3,
+      backoff: { type: 'fixed', delay: 10000 },
+      jobId: 'day-trade-scan',
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
   }
   // Test Flow (Order Flow varyanti) - sadece ScannerConfig.orderFlowTestEnabled
   // acikken periyodik olarak taranir (admin panelden kapatilabilir); manuel
@@ -32,11 +47,23 @@ export class ScannerScheduler {
   async queueDayTradeOrderFlowScan() {
     const enabled = await this.scannerService.isOrderFlowTestEnabled();
     if (!enabled) return;
-    await this.scannerQueue.add('day-trade-order-flow-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-order-flow-scan' });
+    await this.scannerQueue.add('day-trade-order-flow-scan', {}, {
+      attempts: 3,
+      backoff: { type: 'fixed', delay: 10000 },
+      jobId: 'day-trade-order-flow-scan',
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
   }
   @Cron('*/15 * * * *')
   async queueForexDayTradeScan() {
-    await this.scannerQueue.add('forex-day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'forex-day-trade-scan' });
+    await this.scannerQueue.add('forex-day-trade-scan', {}, {
+      attempts: 3,
+      backoff: { type: 'fixed', delay: 10000 },
+      jobId: 'forex-day-trade-scan',
+      removeOnComplete: true,
+      removeOnFail: true,
+    });
   }
   // Acik TrackedSignal'lerin WATCHING->TRIGGERED->HIT_TP/HIT_STOP gecisi
   // eskiden SADECE kripto tarama dongusune (yukarida, 15dk'da bir) bagliydi -
