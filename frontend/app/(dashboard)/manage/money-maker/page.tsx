@@ -918,7 +918,12 @@ export default function MoneyMakerPage() {
       {isLoading || !config ? (
         <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : market === "CRYPTO" ? (
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <div className="relative rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div className="money-rain-wrap" aria-hidden="true">
+            <span className="money-rain-dollar">$</span>
+            <span className="money-rain-dollar">$</span>
+            <span className="money-rain-dollar">$</span>
+          </div>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               <Power size={16} color={config.enabled ? "#22C55E" : "#A8A6A0"} />
@@ -936,7 +941,7 @@ export default function MoneyMakerPage() {
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
                 style={{ backgroundColor: "#F0B90B14", border: "1px solid #F0B90B55", color: "#F0B90B" }}
               >
-                <Coins size={12} className="money-pulse-icon" style={{ color: "#22C55E" }} />
+                <Coins size={12} style={{ color: "#F0B90B" }} />
                 Binance Futures
               </span>
               {!config.apiKeyConfigured && (
