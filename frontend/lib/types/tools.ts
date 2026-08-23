@@ -207,6 +207,24 @@ export type HeatmapRow = {
   midPrice: number;
 };
 
+export type FootprintLevel = {
+  price: number;
+  buyVol: number;
+  sellVol: number;
+};
+
+export type FootprintCandle = {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  levels: FootprintLevel[];
+  totalBuyVol: number;
+  totalSellVol: number;
+  closed: boolean;
+};
+
 export type HeatmapResponse = {
   symbol: string;
   ready: boolean;
@@ -216,4 +234,6 @@ export type HeatmapResponse = {
   trades: LargeTrade[];
   midPrice: number | null;
   updatedAt: string;
+  footprintIntervalMs: number;
+  footprint: FootprintCandle[];
 };

@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, ArrowDownCircle, ArrowUpCircle, ChevronDown } from "lucide-react";
-import { useOrderFlow, useOrderFlowHeatmap, useOrderFlowSymbols } from "@/lib/hooks/use-tools";
-import type { CvdBucket, LargeTrade, OrderFlowData, OrderFlowLevel } from "@/lib/types/tools";
+import { useState } from "react";
+import { Activity, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { useOrderFlow, useOrderFlowHeatmap } from "@/lib/hooks/use-tools";
+import type { CvdBucket, LargeTrade, OrderFlowData } from "@/lib/types/tools";
 import { displayTicker } from "@/lib/utils";
 import { PremiumGlowCard } from "./premium-glow-card";
 import { HeatmapWall } from "./heatmap-wall";
+import { FootprintChart } from "./footprint-chart";
 
-const DEFAULT_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
+// Eğitim amaçlı terminal — top50 yerine sadece en çok izlenen iki sembol,
+// arama gerektirmeyen sabit etiket/pill seçici.
+const SYMBOLS = ["BTCUSDT", "ETHUSDT"];
 
 function fmtPrice(n: number) {
   if (n >= 100) return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -36,7 +39,7 @@ function relativeTime(iso: string): string {
   return `${diffMin}dk önce`;
 }
 
-function SymbolPicker({
+function SymbolTabs({
   symbols,
   value,
   onChange,
@@ -45,68 +48,22 @@ function SymbolPicker({
   value: string;
   onChange: (s: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
-
-  const filtered = query
-    ? symbols.filter((s) => displayTicker(s).toLowerCase().includes(query.toLowerCase()))
-    : symbols;
-
   return (
-    <div ref={rootRef} className="relative w-full max-w-[180px]">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-purple/25 bg-card px-3 py-1.5 text-tag text-foreground transition-colors hover:bg-card-hover"
-      >
-        <span>{displayTicker(value)}</span>
-        <ChevronDown className={`size-3.5 text-purple transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-full overflow-hidden rounded-lg border border-purple/25 bg-card shadow-lg">
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Sembol ara..."
-            className="w-full border-b border-border bg-transparent px-3 py-2 text-body-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
-          />
-          <div className="max-h-[260px] overflow-y-auto">
-            {filtered.length === 0 && (
-              <div className="px-3 py-2 text-body-xs text-muted-foreground">Eşleşme yok</div>
-            )}
-            {filtered.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  onChange(s);
-                  setOpen(false);
-                  setQuery("");
-                }}
-                className={`block w-full px-3 py-1.5 text-left text-tag transition-colors ${
-                  s === value ? "bg-purple/15 text-purple" : "text-foreground/90 hover:bg-card-hover"
-                }`}
-              >
-                {displayTicker(s)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="flex items-center gap-1.5">
+      {symbols.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onChange(s)}
+          className={`rounded-full border px-3 py-1 text-tag transition-colors ${
+            s === value
+              ? "border-purple/40 bg-purple/15 text-purple"
+              : "border-purple/20 text-foreground/70 hover:bg-card-hover"
+          }`}
+        >
+          {displayTicker(s)}
+        </button>
+      ))}
     </div>
   );
 }
@@ -186,68 +143,6 @@ function CvdChart({ history, cumulativeDelta }: { history: CvdBucket[]; cumulati
   );
 }
 
-function FootprintLadder({ levels, midPrice }: { levels: OrderFlowLevel[]; midPrice: number }) {
-  const nearby = useMemo(() => {
-    return [...levels]
-      .sort((a, b) => Math.abs(a.price - midPrice) - Math.abs(b.price - midPrice))
-      .slice(0, 30)
-      .sort((a, b) => b.price - a.price);
-  }, [levels, midPrice]);
-
-  if (nearby.length === 0) {
-    return <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>;
-  }
-
-  const maxQty = Math.max(...nearby.map((l) => Math.max(l.bidQty, l.askQty)), 1e-9);
-  const maxVol = Math.max(...nearby.map((l) => Math.max(l.buyVolume, l.sellVolume)), 1e-9);
-
-  return (
-    <div className="max-h-[360px] overflow-y-auto rounded-lg card-inner">
-      <div className="sticky top-0 z-10 grid grid-cols-[1fr_1fr_auto_1fr_1fr] gap-1 bg-card px-2 py-1.5 text-body-xs text-muted-foreground">
-        <span className="text-right">Bid</span>
-        <span className="text-right">Sat</span>
-        <span className="text-center">Fiyat</span>
-        <span>Al</span>
-        <span>Ask</span>
-      </div>
-      {nearby.map((l) => {
-        const isMid = Math.abs(l.price - midPrice) < (nearby[0].price - nearby[nearby.length - 1].price) / (nearby.length * 2 || 1);
-        return (
-          <div
-            key={l.price}
-            className={`grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-center gap-1 px-2 py-0.5 text-body-xs ${isMid ? "bg-purple/8" : ""}`}
-          >
-            <div className="flex items-center justify-end gap-1">
-              <span className="text-financial text-muted-foreground">{l.bidQty > 0 ? l.bidQty.toFixed(2) : ""}</span>
-              <div className="h-3 w-8 overflow-hidden rounded-sm bg-black/10">
-                <div className="h-full bg-success/60" style={{ width: `${(l.bidQty / maxQty) * 100}%`, marginLeft: "auto" }} />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-1">
-              <div className="h-3 w-8 overflow-hidden rounded-sm bg-black/10">
-                <div className="h-full bg-danger/50" style={{ width: `${(l.sellVolume / maxVol) * 100}%`, marginLeft: "auto" }} />
-              </div>
-              <span className="text-financial text-danger/90">{l.sellVolume > 0 ? l.sellVolume.toFixed(2) : ""}</span>
-            </div>
-            <span className="px-2 text-center text-financial text-foreground/90">${fmtPrice(l.price)}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-financial text-success/90">{l.buyVolume > 0 ? l.buyVolume.toFixed(2) : ""}</span>
-              <div className="h-3 w-8 overflow-hidden rounded-sm bg-black/10">
-                <div className="h-full bg-success/50" style={{ width: `${(l.buyVolume / maxVol) * 100}%` }} />
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-8 overflow-hidden rounded-sm bg-black/10">
-                <div className="h-full bg-danger/60" style={{ width: `${(l.askQty / maxQty) * 100}%` }} />
-              </div>
-              <span className="text-financial text-muted-foreground">{l.askQty > 0 ? l.askQty.toFixed(2) : ""}</span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function LargeTradesFeed({ trades }: { trades: LargeTrade[] }) {
   if (trades.length === 0) {
@@ -281,8 +176,6 @@ function isValidData(data: unknown): data is OrderFlowData {
 
 export function OrderFlowSection() {
   const [symbol, setSymbol] = useState("BTCUSDT");
-  const { data: symbolList } = useOrderFlowSymbols();
-  const symbols = symbolList && symbolList.length > 0 ? symbolList : DEFAULT_SYMBOLS;
   const { data: raw } = useOrderFlow(symbol);
   const data = isValidData(raw) ? raw : null;
   const { data: heatmap } = useOrderFlowHeatmap(symbol);
@@ -290,7 +183,7 @@ export function OrderFlowSection() {
   return (
     <PremiumGlowCard title="Order Flow — Emir Akışı Terminali" icon={Activity}>
       <div className="mb-3">
-        <SymbolPicker symbols={symbols} value={symbol} onChange={setSymbol} />
+        <SymbolTabs symbols={SYMBOLS} value={symbol} onChange={setSymbol} />
       </div>
 
       {data && (
@@ -335,22 +228,18 @@ export function OrderFlowSection() {
       <HeatmapWall data={heatmap} trades={heatmap?.trades} />
 
       <div className="mt-3 border-t border-border pt-3">
+        <FootprintChart data={heatmap} />
+      </div>
+
+      <div className="mt-3 border-t border-border pt-3">
         <CvdChart history={data?.cvdHistory ?? []} cumulativeDelta={data?.cumulativeDelta ?? 0} />
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 border-t border-border pt-3 lg:grid-cols-[1fr_280px]">
-        <div>
-          <p className="mb-1.5 text-body-xs text-muted-foreground">Footprint / DOM merdiveni</p>
-          {data ? <FootprintLadder levels={data.levels} midPrice={data.midPrice} /> : (
-            <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
-          )}
-        </div>
-        <div>
-          <p className="mb-1.5 text-body-xs text-muted-foreground">Büyük emirler</p>
-          {data ? <LargeTradesFeed trades={data.largeTrades} /> : (
-            <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
-          )}
-        </div>
+      <div className="mt-3 border-t border-border pt-3">
+        <p className="mb-1.5 text-body-xs text-muted-foreground">Büyük emirler</p>
+        {data ? <LargeTradesFeed trades={data.largeTrades} /> : (
+          <p className="text-body-xs text-muted-foreground">Veri yükleniyor...</p>
+        )}
       </div>
     </PremiumGlowCard>
   );

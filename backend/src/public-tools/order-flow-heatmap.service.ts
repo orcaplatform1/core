@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import WebSocket from 'ws';
 
 const WS_BASE = 'wss://fstream.binance.com';
@@ -12,6 +12,18 @@ const SWEEP_INTERVAL_MS = 15_000;
 // küçük bir kısmına sıkışıp düz bir çizgi gibi görünüyordu (kullanıcı gözlemi).
 const VISIBLE_RANGE_PERCENT = 0.004;
 const DESIRED_BUCKET_COUNT = 80;
+// Footprint mumları — Bookmap/Quantum'daki gibi her mum kapandığında o dakika
+// içindeki agresif alım/satım hacmini fiyat seviyesi başına biriktiriyoruz.
+// 1dk: scalp/order-flow teyidi için yeterince ince, top50 evreninde tek sembol
+// akışına ekleniyor olsa da CPU/bellek yükü ihmal edilebilir (aynı trade akışı
+// zaten baloncuklar için toplanıyor, sadece ek bir Map'e agregasyon yapılıyor).
+const FOOTPRINT_INTERVAL_MS = 60_000;
+const FOOTPRINT_MAX_CANDLES = 30;
+// Order Flow terminali artık top50 yerine sadece bu iki sembole sabitlendi —
+// kullanıcı sayfayı her açtığında boş tampondan başlamasın diye bu ikisi arka
+// planda SÜREKLİ açık tutulur (boşta kimse izlemese de kapanmaz), diğer tüm
+// semboller hâlâ eski lazy/60sn-idle davranışını kullanır.
+const ALWAYS_ON_SYMBOLS = ['BTCUSDT', 'ETHUSDT'];
 
 type HeatmapRow = { time: number; bid: Map<number, number>; ask: Map<number, number>; midPrice: number };
 
@@ -21,6 +33,31 @@ export type HeatmapTrade = {
   quoteQty: number;
   side: 'BUY' | 'SELL';
   time: string;
+};
+
+type FootprintLevel = { buyVol: number; sellVol: number };
+
+type FootprintCandle = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  levels: Map<number, FootprintLevel>;
+  totalBuyVol: number;
+  totalSellVol: number;
+};
+
+export type FootprintResponseCandle = {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  levels: { price: number; buyVol: number; sellVol: number }[];
+  totalBuyVol: number;
+  totalSellVol: number;
+  closed: boolean;
 };
 
 interface HeatmapSession {
@@ -44,6 +81,8 @@ interface HeatmapSession {
   trades: HeatmapTrade[];
   lastTradeId: number | null;
   tradePollInFlight: boolean;
+  footprintCandles: FootprintCandle[];
+  footprintCurrent: FootprintCandle | null;
 }
 
 export type HeatmapResponse = {
@@ -55,22 +94,34 @@ export type HeatmapResponse = {
   trades: HeatmapTrade[];
   midPrice: number | null;
   updatedAt: string;
+  footprintIntervalMs: number;
+  footprint: FootprintResponseCandle[];
 };
 
 // Bookmap tarzı "kayan zaman duvarı" — Binance Futures'ın diff-depth websocket'ini
 // resmi senkronizasyon akışıyla (REST snapshot + buffered event replay + pu zinciri
 // kontrolü) yerel bir order book'a uygulayıp saniyede bir fiyat-bucket'lı satır
-// (heatmap row) biriktiriyoruz. Sadece o an istek gelen sembol için akış açılır,
-// ~60sn kimse bakmazsa otomatik kapanır (kullanıcı isteği: "bakarken toplansın,
-// geçmiş veri incelemeye gerek yok" - CPU'ya sabit bir yük binmesin).
+// (heatmap row) biriktiriyoruz. BTCUSDT/ETHUSDT (ALWAYS_ON_SYMBOLS) için akış
+// modül açılışında başlar ve hiç durmaz — kullanıcı sayfayı açtığında tampon
+// zaten dolu olsun diye. Başka bir sembol istenirse (ör. API'ye doğrudan istek)
+// eski davranış geçerli: sadece istek geldiğinde açılır, ~60sn kimse bakmazsa kapanır.
 @Injectable()
-export class OrderFlowHeatmapService implements OnModuleDestroy {
+export class OrderFlowHeatmapService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OrderFlowHeatmapService.name);
   private readonly sessions = new Map<string, HeatmapSession>();
   private readonly sweepTimer: NodeJS.Timeout;
 
   constructor() {
     this.sweepTimer = setInterval(() => this.sweepIdleSessions(), SWEEP_INTERVAL_MS);
+  }
+
+  onModuleInit() {
+    for (const symbol of ALWAYS_ON_SYMBOLS) {
+      const session = this.createSession(symbol);
+      this.sessions.set(symbol, session);
+      this.connectStream(session);
+      this.logger.log(`[heatmap] ${symbol} icin surekli akis baslatildi (always-on)`);
+    }
   }
 
   onModuleDestroy() {
@@ -109,6 +160,8 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
       trades: [],
       lastTradeId: null,
       tradePollInFlight: false,
+      footprintCandles: [],
+      footprintCurrent: null,
     };
   }
 
@@ -244,14 +297,16 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
       for (const t of data) {
         const price = parseFloat(t.p);
         const qty = parseFloat(t.q);
+        const side: 'BUY' | 'SELL' = t.m === true ? 'SELL' : 'BUY';
         session.trades.push({
           price,
           qty,
           quoteQty: price * qty,
-          side: t.m === true ? 'SELL' : 'BUY',
+          side,
           time: new Date(t.T).toISOString(),
         });
         session.lastTradeId = t.a;
+        this.absorbTradeIntoFootprint(session, t.T, price, qty, side);
       }
 
       // Duvarla ayni 5dk'lik kayan pencerede tut - daha eskisini at.
@@ -269,6 +324,72 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
   private bucketOf(session: HeatmapSession, price: number): number {
     if (!session.bucketSize) return price;
     return Number((Math.round(price / session.bucketSize) * session.bucketSize).toPrecision(10));
+  }
+
+  // Her trade'i o anki 1dk'lık mumun içine, fiyat seviyesine göre (aynı bucket
+  // boyutuyla) agresif alım/satım hacmi olarak biriktirir. Mum sınırı geçildiğinde
+  // öncekini kapatıp listeye ekler — ekranda "canlı büyüyen son mum + kapanmış
+  // geçmiş mumlar" olarak gösterilir.
+  private absorbTradeIntoFootprint(session: HeatmapSession, timeMs: number, price: number, qty: number, side: 'BUY' | 'SELL') {
+    const candleTime = Math.floor(timeMs / FOOTPRINT_INTERVAL_MS) * FOOTPRINT_INTERVAL_MS;
+    if (!session.footprintCurrent || session.footprintCurrent.time !== candleTime) {
+      if (session.footprintCurrent) {
+        session.footprintCandles.push(session.footprintCurrent);
+        if (session.footprintCandles.length > FOOTPRINT_MAX_CANDLES) session.footprintCandles.shift();
+      }
+      session.footprintCurrent = {
+        time: candleTime,
+        open: price,
+        high: price,
+        low: price,
+        close: price,
+        levels: new Map(),
+        totalBuyVol: 0,
+        totalSellVol: 0,
+      };
+    }
+
+    const candle = session.footprintCurrent;
+    candle.high = Math.max(candle.high, price);
+    candle.low = Math.min(candle.low, price);
+    candle.close = price;
+
+    const bucket = this.bucketOf(session, price);
+    let level = candle.levels.get(bucket);
+    if (!level) {
+      level = { buyVol: 0, sellVol: 0 };
+      candle.levels.set(bucket, level);
+    }
+    if (side === 'BUY') {
+      level.buyVol += qty;
+      candle.totalBuyVol += qty;
+    } else {
+      level.sellVol += qty;
+      candle.totalSellVol += qty;
+    }
+  }
+
+  private serializeFootprintCandle(candle: FootprintCandle, closed: boolean): FootprintResponseCandle {
+    const levels = Array.from(candle.levels.entries())
+      .map(([price, v]) => ({ price, buyVol: v.buyVol, sellVol: v.sellVol }))
+      .sort((a, b) => b.price - a.price);
+    return {
+      time: new Date(candle.time).toISOString(),
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+      levels,
+      totalBuyVol: candle.totalBuyVol,
+      totalSellVol: candle.totalSellVol,
+      closed,
+    };
+  }
+
+  private formatFootprint(session: HeatmapSession): FootprintResponseCandle[] {
+    const closed = session.footprintCandles.map((c) => this.serializeFootprintCandle(c, true));
+    const current = session.footprintCurrent ? [this.serializeFootprintCandle(session.footprintCurrent, false)] : [];
+    return [...closed, ...current];
   }
 
   private applyDiff(session: HeatmapSession, e: any) {
@@ -343,6 +464,8 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
         trades: [],
         midPrice: null,
         updatedAt: new Date().toISOString(),
+        footprintIntervalMs: FOOTPRINT_INTERVAL_MS,
+        footprint: [],
       };
     }
 
@@ -369,6 +492,8 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
       trades: session.trades,
       midPrice: rows[rows.length - 1]?.midPrice ?? null,
       updatedAt: new Date().toISOString(),
+      footprintIntervalMs: FOOTPRINT_INTERVAL_MS,
+      footprint: this.formatFootprint(session),
     };
   }
 
@@ -387,6 +512,7 @@ export class OrderFlowHeatmapService implements OnModuleDestroy {
   private sweepIdleSessions() {
     const now = Date.now();
     for (const session of [...this.sessions.values()]) {
+      if (ALWAYS_ON_SYMBOLS.includes(session.symbol)) continue;
       if (now - session.lastRequestedAt > IDLE_TIMEOUT_MS) {
         this.logger.log(`[heatmap] ${session.symbol} izleyici kalmadi, akis kapatiliyor`);
         this.stopSession(session);
