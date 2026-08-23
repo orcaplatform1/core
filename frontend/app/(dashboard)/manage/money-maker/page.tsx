@@ -190,9 +190,9 @@ function AboutMoneyMakerPanel({ onClose }: { onClose: () => void }) {
                 olmalı. İkisinden biri eksikse hiçbir gerçek emir gönderilmez.
               </p>
               <p>
-                <b className="text-[#F5F1EA]">Testnet varsayılan:</b> <code>BINANCE_TESTNET</code> env değişkeni
-                elle <code>false</code> yapılmadığı sürece tüm emirler Binance'in test ortamına gider, gerçek
-                para riski olmaz.
+                <b className="text-[#F5F1EA]">Mainnet aktif:</b> <code>BINANCE_TESTNET</code> env değişkeni{" "}
+                <code>false</code> olarak ayarlı — bu hesap gerçek (mainnet) Binance USDT-M Futures'a bağlı,
+                açılan tüm emirler gerçek parayla çalışır.
               </p>
               <p>
                 <b className="text-[#F5F1EA]">Kısmi dolum güvenlik ağı:</b> Bir sinyal, giriş emri kısmen dolmuş
@@ -932,12 +932,17 @@ export default function MoneyMakerPage() {
               >
                 {config.enabled ? "AÇIK" : "KAPALI"}
               </span>
-              <span
-                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
-                style={{ backgroundColor: config.testnetActive ? "#F5A62322" : "#EF444422", color: config.testnetActive ? "#F5A623" : "#EF4444" }}
+              <div
+                className="why-orca-badge-glow"
+                style={{ "--why-orca-glow": "#F0B90B" } as React.CSSProperties}
               >
-                {config.testnetActive ? "TESTNET" : "GERÇEK PARA"}
-              </span>
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
+                  style={{ color: "#F0B90B" }}
+                >
+                  Binance Futures
+                </span>
+              </div>
               {!config.apiKeyConfigured && (
                 <span className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider" style={{ backgroundColor: "#EF444422", color: "#EF4444" }}>
                   API key tanımlı değil
@@ -963,7 +968,7 @@ export default function MoneyMakerPage() {
 
           <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
             <label className="flex flex-col gap-1 text-body-xs text-[#A8A6A0]">
-              İşlem başına risk (USDT)
+              Risk (USDT)
               <input
                 type="number"
                 step="1"
@@ -974,7 +979,7 @@ export default function MoneyMakerPage() {
               />
             </label>
             <label className="flex flex-col gap-1 text-body-xs text-[#A8A6A0]">
-              Kaldıraç (istenen)
+              Kaldıraç
               <input
                 type="number"
                 step="1"
@@ -985,7 +990,7 @@ export default function MoneyMakerPage() {
               />
             </label>
             <Button onClick={handleSaveRisk} disabled={updateConfig.isPending} className="h-9">
-              Kaydet
+              Başla
             </Button>
             <span className="text-body-xs text-[#605D57]">
               Giriş-stop arası kırılırsa (TP1'e hiç ulaşmadan) kaybedilecek sabit dolar tutarı. Kaldıraç, Binance'in o sembol için izin verdiği tavanı aşarsa otomatik kırpılır (ör. 100x istenip sembol 50x'e izinliyse 50x uygulanır).
@@ -994,7 +999,7 @@ export default function MoneyMakerPage() {
 
           {stats && stats.totalClosed > 0 && (
             <div className="border-t border-border pt-3 space-y-1.5">
-              <p className="text-badge uppercase tracking-wider text-[#A8A6A0]">Gerçek işlem istatistiği (Binance kayıtlarından)</p>
+              <p className="text-badge uppercase tracking-wider text-[#A8A6A0]">Futures İstatistiği</p>
               <div className="flex items-center gap-3 text-body-xs text-[#A8A6A0] flex-wrap">
                 <span>Kapanan: {stats.totalClosed}</span>
                 <span className="text-[#22C55E]">Kazandı: {stats.wins}</span>
@@ -1075,31 +1080,59 @@ export default function MoneyMakerPage() {
         </div>
       )}
 
-      {market === "CRYPTO" && positions && positions.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <p className="text-body-sm font-semibold text-[#F5F1EA]">
-              Açık Pozisyonlar ({positions.length})
-            </p>
-            <Button onClick={handleCloseAll} disabled={closeAll.isPending} className="h-8 gap-1.5 text-badge" style={{ backgroundColor: "#EF4444" }}>
-              <XCircle size={13} />
-              Tüm İşlemleri Kapat
-            </Button>
-          </div>
-          <div className="-mx-8 grid grid-cols-1 gap-3 px-3 sm:mx-0 sm:px-0 md:grid-cols-2">
-            {positions.map((p) => (
-              <PositionCard
-                key={p.id}
-                position={p}
-                onClose={() => handleCloseOne(p.id, p.symbol)}
-                isClosing={closeOne.isPending}
-                riskPerTradeUsdt={config?.riskPerTradeUsdt ?? null}
-                market="CRYPTO"
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {market === "CRYPTO" && positions && positions.length > 0 && (() => {
+        const openOnly = positions.filter((p) => p.status !== "CLOSED");
+        const closedOnly = positions.filter((p) => p.status === "CLOSED");
+        return (
+          <>
+            {openOnly.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <p className="text-body-sm font-semibold text-[#F5F1EA]">
+                    Açık Pozisyonlar ({openOnly.length})
+                  </p>
+                  <Button onClick={handleCloseAll} disabled={closeAll.isPending} className="h-8 gap-1.5 text-badge" style={{ backgroundColor: "#EF4444" }}>
+                    <XCircle size={13} />
+                    Tüm İşlemleri Kapat
+                  </Button>
+                </div>
+                <div className="-mx-8 grid grid-cols-1 gap-3 px-3 sm:mx-0 sm:px-0 md:grid-cols-2">
+                  {openOnly.map((p) => (
+                    <PositionCard
+                      key={p.id}
+                      position={p}
+                      onClose={() => handleCloseOne(p.id, p.symbol)}
+                      isClosing={closeOne.isPending}
+                      riskPerTradeUsdt={config?.riskPerTradeUsdt ?? null}
+                      market="CRYPTO"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {closedOnly.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-body-sm font-semibold text-[#F5F1EA]">
+                  Kapanan Pozisyonlar ({closedOnly.length})
+                </p>
+                <div className="-mx-8 grid grid-cols-1 gap-3 px-3 sm:mx-0 sm:px-0 md:grid-cols-2">
+                  {closedOnly.map((p) => (
+                    <PositionCard
+                      key={p.id}
+                      position={p}
+                      onClose={() => handleCloseOne(p.id, p.symbol)}
+                      isClosing={closeOne.isPending}
+                      riskPerTradeUsdt={config?.riskPerTradeUsdt ?? null}
+                      market="CRYPTO"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {market === "FOREX" && forexPositions && forexPositions.length > 0 && (
         <div className="space-y-3">
