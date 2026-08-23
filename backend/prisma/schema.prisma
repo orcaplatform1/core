@@ -881,6 +881,13 @@ model ScanResult {
 model ScannerConfig {
   id                   String   @id @default(cuid())
   orderFlowTestEnabled Boolean  @default(true)
+  // "Yeni sinyal bulundu" bildirimleri (ORCA ACS + Test Flow, ikisi ayni
+  // runScheduledDayTradeScan yolundan gectigi icin tek anahtar yeter) -
+  // kullanici istegi 2026-08-23: Money Maker'a adapte olurken bir sure bu
+  // bildirimleri kapatip paneli manuel kontrol edecek. Taramanin KENDISINI
+  // durdurmaz, sadece admin bildirimini keser. Forex bildirimleri BUNA
+  // baglanmiyor - kullanici sadece kripto/ORCA ACS+Test Flow icin istedi.
+  cryptoSignalNotificationsEnabled Boolean  @default(true)
   updatedAt            DateTime @updatedAt
 }
 

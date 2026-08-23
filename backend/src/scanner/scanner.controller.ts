@@ -81,7 +81,7 @@ export class ScannerController {
     return this.scannerService.getScannerConfig();
   }
   @Patch('config')
-  updateScannerConfig(@Body() body: { orderFlowTestEnabled?: boolean }) {
+  updateScannerConfig(@Body() body: { orderFlowTestEnabled?: boolean; cryptoSignalNotificationsEnabled?: boolean }) {
     return this.scannerService.updateScannerConfig(body);
   }
 }

@@ -1029,6 +1029,13 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
 
     if (newDetectedSignals.length === 0) return;
 
+    // Kullanici istegi 2026-08-23: Money Maker'a adapte olurken ORCA ACS +
+    // Test Flow "yeni sinyal" bildirimlerini bir sure kapatip paneli manuel
+    // kontrol edecek - tarama/sinyal olusturma bundan ETKILENMEZ, sadece
+    // admin bildirimi kesiliyor.
+    const notifConfig = await this.getScannerConfig();
+    if (!notifConfig.cryptoSignalNotificationsEnabled) return;
+
     const admins = await this.prisma.user.findMany({
       where: { role: 'SUPER_ADMIN' },
       select: { id: true },
@@ -1518,7 +1525,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return this.prisma.scannerConfig.create({ data: {} });
   }
 
-  async updateScannerConfig(data: { orderFlowTestEnabled?: boolean }) {
+  async updateScannerConfig(data: { orderFlowTestEnabled?: boolean; cryptoSignalNotificationsEnabled?: boolean }) {
     const config = await this.getScannerConfig();
     return this.prisma.scannerConfig.update({ where: { id: config.id }, data });
   }
@@ -1526,6 +1533,36 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
   async isOrderFlowTestEnabled(): Promise<boolean> {
     const config = await this.getScannerConfig();
     return config.orderFlowTestEnabled;
+  }
+
+  // Saglik kontrolu icin (bkz. ScannerScheduler.checkScannerHealth) - kripto
+  // taramasi (ORCA ACS veya Test Flow, ikisi de ScanResult'a yazar) en son
+  // ne zaman calisti. 2026-08-23 sabahi tarama saatlerce sessizce durmustu
+  // (bkz. commit e7ad4cf - BullMQ sabit jobId + removeOnComplete eksikligi)
+  // kullanici bunu ancak elle fark etmisti - bu yuzden bu bildirim eklendi.
+  async getLatestCryptoScanTime(): Promise<Date | null> {
+    const latest = await this.prisma.scanResult.findFirst({
+      where: { market: 'CRYPTO' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    return latest?.createdAt ?? null;
+  }
+
+  // Bu bildirim BILEREK cryptoSignalNotificationsEnabled'a baglanmiyor -
+  // o anahtar "yeni sinyal bulundu" gibi rutin bildirimleri susturmak icin,
+  // bu ise "tarama tamamen durmus olabilir" turunden bir sistem/ops uyarisi,
+  // kullanici sinyal bildirimlerini kapatsa bile bunu almak istiyor.
+  async notifyScannerStale(minutesAgo: number) {
+    const admins = await this.prisma.user.findMany({ where: { role: 'SUPER_ADMIN' }, select: { id: true } });
+    await this.notificationsService.createForManyUsers(
+      admins.map((a) => a.id),
+      {
+        type: 'SYSTEM',
+        title: 'Tarayıcı durmuş olabilir',
+        message: `Son ${minutesAgo} dakikadır yeni bir kripto taraması kaydedilmedi (beklenen: 15 dakikada bir). Backend/Redis/BullMQ kontrol edilmeli.`,
+      },
+    );
   }
 
   // ORCA ACS (ICT_BREAKOUT_RETEST) ve Test Flow (ICT_BREAKOUT_RETEST_OF)

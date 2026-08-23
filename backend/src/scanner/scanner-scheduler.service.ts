@@ -82,4 +82,22 @@ export class ScannerScheduler {
   async queueDailyCleanup() {
     await this.scannerQueue.add('cleanup-tracked', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 } });
   }
+
+  // Kullanici istegi 2026-08-23: "bu boyle mi durucak arada bir kendi
+  // kendine" - tarama saatlerce sessizce durmustu (bkz. jobId removeOnComplete
+  // fix'i), kullanici ancak elle fark etmisti. 30dk (2 tarama) hicbir kripto
+  // ScanResult yazilmamissa admin'e bildirim gider. Dogrudan queue'ya is
+  // eklemez (BullMQ worker'a bagimli olmasin diye kendi baslar), 5dk'da bir
+  // kontrol eder. minutesAgo 30-35 arasindaki DAR pencerede tetiklenir ki
+  // ayni "durmus" durumu icin her 5 dakikada bir tekrar tekrar bildirim
+  // gitmesin (5dk'lik kontrol araligi -> pencere disina cikinca sessiz kalir).
+  @Cron('*/5 * * * *')
+  async checkScannerHealth() {
+    const latest = await this.scannerService.getLatestCryptoScanTime();
+    if (!latest) return;
+    const minutesAgo = (Date.now() - latest.getTime()) / 60000;
+    if (minutesAgo >= 30 && minutesAgo < 35) {
+      await this.scannerService.notifyScannerStale(Math.round(minutesAgo));
+    }
+  }
 }
