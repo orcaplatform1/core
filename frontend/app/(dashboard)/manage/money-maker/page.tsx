@@ -924,32 +924,30 @@ export default function MoneyMakerPage() {
             <span className="money-rain-dollar">$</span>
             <span className="money-rain-dollar">$</span>
           </div>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Power size={16} color={config.enabled ? "#22C55E" : "#A8A6A0"} />
-              <span className="text-body-sm font-semibold text-[#F5F1EA]">Durum</span>
-              <span
-                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
-                style={{
-                  backgroundColor: config.enabled ? "#22C55E22" : "#A8A6A022",
-                  color: config.enabled ? "#22C55E" : "#A8A6A0",
-                }}
-              >
-                {config.enabled ? "AÇIK" : "KAPALI"}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Power size={16} color={config.enabled ? "#22C55E" : "#A8A6A0"} />
+            <span className="text-body-sm font-semibold text-[#F5F1EA]">Durum</span>
+            <span
+              className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
+              style={{
+                backgroundColor: config.enabled ? "#22C55E22" : "#A8A6A022",
+                color: config.enabled ? "#22C55E" : "#A8A6A0",
+              }}
+            >
+              {config.enabled ? "AÇIK" : "KAPALI"}
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
+              style={{ backgroundColor: "#F0B90B14", border: "1px solid #F0B90B55", color: "#F0B90B" }}
+            >
+              <Coins size={12} style={{ color: "#F0B90B" }} />
+              Binance Futures
+            </span>
+            {!config.apiKeyConfigured && (
+              <span className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider" style={{ backgroundColor: "#EF444422", color: "#EF4444" }}>
+                API key tanımlı değil
               </span>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
-                style={{ backgroundColor: "#F0B90B14", border: "1px solid #F0B90B55", color: "#F0B90B" }}
-              >
-                <Coins size={12} style={{ color: "#F0B90B" }} />
-                Binance Futures
-              </span>
-              {!config.apiKeyConfigured && (
-                <span className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider" style={{ backgroundColor: "#EF444422", color: "#EF4444" }}>
-                  API key tanımlı değil
-                </span>
-              )}
-            </div>
+            )}
             <Button
               onClick={handleToggle}
               disabled={!config.apiKeyConfigured || updateConfig.isPending}

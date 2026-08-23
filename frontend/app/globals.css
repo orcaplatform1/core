@@ -430,7 +430,11 @@ body {
   height: 44px;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  /* Negatif z-index: kartin STATIK (non-positioned) icerigi - rozetler, Ac/Kapat
+     butonu - her zaman bunun UZERINDE boyanir. Onceki z-index:0 masaustunde
+     satir tek satira sigip buton da sag koseye denk gelince butonu gorsel
+     olarak ortmustu (kullanici raporu: "masaustunde Ac butonu gozukmuyor"). */
+  z-index: -1;
 }
 .money-rain-dollar {
   position: absolute;
