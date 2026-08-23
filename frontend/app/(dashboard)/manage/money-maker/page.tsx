@@ -932,17 +932,13 @@ export default function MoneyMakerPage() {
               >
                 {config.enabled ? "AÇIK" : "KAPALI"}
               </span>
-              <div
-                className="why-orca-badge-glow"
-                style={{ "--why-orca-glow": "#F0B90B" } as React.CSSProperties}
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
+                style={{ backgroundColor: "#F0B90B14", border: "1px solid #F0B90B55", color: "#F0B90B" }}
               >
-                <span
-                  className="rounded-full px-2.5 py-0.5 text-badge font-semibold uppercase tracking-wider"
-                  style={{ color: "#F0B90B" }}
-                >
-                  Binance Futures
-                </span>
-              </div>
+                <Coins size={12} className="money-pulse-icon" style={{ color: "#22C55E" }} />
+                Binance Futures
+              </span>
               {!config.apiKeyConfigured && (
                 <span className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider" style={{ backgroundColor: "#EF444422", color: "#EF4444" }}>
                   API key tanımlı değil
