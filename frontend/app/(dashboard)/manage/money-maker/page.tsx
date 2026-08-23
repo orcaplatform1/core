@@ -918,12 +918,7 @@ export default function MoneyMakerPage() {
       {isLoading || !config ? (
         <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>
       ) : market === "CRYPTO" ? (
-        <div className="relative rounded-2xl border border-border bg-card p-4 space-y-3">
-          <div className="money-rain-wrap" aria-hidden="true">
-            <span className="money-rain-dollar">$</span>
-            <span className="money-rain-dollar">$</span>
-            <span className="money-rain-dollar">$</span>
-          </div>
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
             <Power size={16} color={config.enabled ? "#22C55E" : "#A8A6A0"} />
             <span className="text-body-sm font-semibold text-[#F5F1EA]">Durum</span>
@@ -956,6 +951,22 @@ export default function MoneyMakerPage() {
             >
               {config.enabled ? "Kapat" : "Aç"}
             </Button>
+            <span className="btc-coin-spin ml-auto" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 32 32">
+                <defs>
+                  <radialGradient id="btcCoinGold" cx="35%" cy="30%" r="75%">
+                    <stop offset="0%" stopColor="#FFE49A" />
+                    <stop offset="45%" stopColor="#F7931A" />
+                    <stop offset="100%" stopColor="#C97B0E" />
+                  </radialGradient>
+                </defs>
+                <circle cx="16" cy="16" r="14.5" fill="url(#btcCoinGold)" stroke="#B5730A" strokeWidth="1" />
+                <circle cx="16" cy="16" r="11.5" fill="none" stroke="#FFE49A" strokeWidth="0.75" opacity="0.6" />
+                <text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="700" fill="#FFF8EC" fontFamily="Arial, sans-serif">
+                  ₿
+                </text>
+              </svg>
+            </span>
           </div>
 
           {!config.apiKeyConfigured && (

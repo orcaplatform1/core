@@ -395,74 +395,32 @@ body {
   }
 }
 
-/* Money Maker panelindeki Durum kartinda "para" animasyonu - onceki
-   .why-orca-badge-glow donen halka (kullanici tarifiyle "deniz feneri
-   isigi") hem cok parlak/sari oldugu icin yanindaki metni okunakli kilmiyordu
-   hem de absolute+inset:-100% pseudo-eleman bir flex-wrap satirinin icinde
-   masaustunde sayfa genisligini daraltan bir layout hatasina yol aciyordu.
-   Daha "etkili" bir animasyon istendi - rozetin icine degil, Durum
-   kartinin sag ust kosesine kucuk, SABIT piksel boyutlu (44x44) bir kutuya
-   kondu. Onceki "deniz feneri" hatasindan kasitli olarak FARKLI: negatif
-   inset (inset:-100% gibi) YOK, sadece kucuk sabit top/right offset - bu
-   yuzden yatay tasma/sayfa daralmasi riski olmuyor. pointer-events:none ile
-   tiklamalari da engellemiyor. */
-@keyframes dollar-float-up {
-  0% {
-    transform: translateY(0) scale(0.75);
-    opacity: 0;
+/* Money Maker panelindeki Durum kartinda "para" animasyonu - iki onceki
+   deneme de absolute positioning (inset:-100% / sabit top-right kutu +
+   z-index) kullandigi icin ya sayfa genisligini daraltan bir layout
+   hatasina yol acti ya da (negatif z-index kartin kendi arka planinin
+   ALTINA dusurunce) tamamen gorunmez oldu. Bu yuzden BILINCLI olarak
+   position:absolute HIC kullanilmiyor - normal akista (in-flow) bir flex
+   ogesi, "ml-auto" ile satirin sag ucuna itiliyor. Boylece stacking-context/
+   z-index derdi hic olmuyor, her zaman diger icerigin yaninda (ustunde
+   degil) goze carpiyor. */
+@keyframes btc-coin-spin {
+  from {
+    transform: rotateY(0deg);
   }
-  15% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-36px) scale(1.05);
-    opacity: 0;
+  to {
+    transform: rotateY(360deg);
   }
 }
-.money-rain-wrap {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  width: 44px;
-  height: 44px;
-  overflow: hidden;
-  pointer-events: none;
-  /* Negatif z-index: kartin STATIK (non-positioned) icerigi - rozetler, Ac/Kapat
-     butonu - her zaman bunun UZERINDE boyanir. Onceki z-index:0 masaustunde
-     satir tek satira sigip buton da sag koseye denk gelince butonu gorsel
-     olarak ortmustu (kullanici raporu: "masaustunde Ac butonu gozukmuyor"). */
-  z-index: -1;
-}
-.money-rain-dollar {
-  position: absolute;
-  bottom: 2px;
-  font-weight: 800;
-  color: #22C55E;
-  text-shadow: 0 0 8px rgba(34, 197, 94, 0.65);
-  animation: dollar-float-up 2.2s ease-in-out infinite;
-}
-.money-rain-dollar:nth-child(1) {
-  left: 2px;
-  font-size: 12px;
-  animation-delay: 0s;
-}
-.money-rain-dollar:nth-child(2) {
-  left: 17px;
-  font-size: 16px;
-  animation-delay: 0.7s;
-}
-.money-rain-dollar:nth-child(3) {
-  left: 30px;
-  font-size: 11px;
-  animation-delay: 1.4s;
+.btc-coin-spin {
+  display: inline-flex;
+  animation: btc-coin-spin 2.6s linear infinite;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 0 5px rgba(247, 147, 26, 0.5));
 }
 @media (prefers-reduced-motion: reduce) {
-  .money-rain-dollar {
+  .btc-coin-spin {
     animation: none;
-    opacity: 0.5;
   }
 }
 
