@@ -17,6 +17,7 @@ import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { AiMentorPreviewCard } from "@/components/marketing/ai-mentor-preview-card";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function SiteNavbar({
   siteContent = DEFAULT_SITE_CONTENT,
@@ -35,6 +36,7 @@ export function SiteNavbar({
         </Link>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <div className="hidden md:flex items-center gap-3">
             {isLoading ? (
               <div className="h-8 w-24 animate-pulse rounded-lg bg-secondary" />

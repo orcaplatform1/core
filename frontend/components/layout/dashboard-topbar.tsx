@@ -33,6 +33,7 @@ import { SiteLogo } from "@/components/layout/site-logo";
 import { DEFAULT_SITE_CONTENT } from "@/lib/marketing/default-site-content";
 import type { SiteContentSettings } from "@/lib/marketing/site-content-types";
 import { celebrate } from "@/lib/hooks/use-celebration";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 function playNotificationSound() {
   try {
@@ -177,6 +178,7 @@ export function DashboardTopbar({
       </Sheet>
       <div className="flex-1" />
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Button
           variant="ghost"
           size="icon"
