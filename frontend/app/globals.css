@@ -1085,6 +1085,20 @@ header {
   border-radius: 22px !important;
 }
 
+/* Footer'daki "Traders.TR" marka gecisi icin — kullanici istegi 2026-08-24:
+   duz (premium/glow olmadan) kırmızı ve beyaz. Site paletinden BAGIMSIZ
+   (ayni sebep .btn-indigo-comet/.btn-gold-comet ile). Ayni class'lar
+   KriptoBeyan footer'inda da kullaniliyor, iki site arasinda tutarli marka
+   vurgusu icin. */
+.text-traders-red {
+  font-weight: 700;
+  color: #dc2626;
+}
+.text-traders-white {
+  font-weight: 700;
+  color: #ffffff;
+}
+
 .icon-tile-blue { background: var(--icon-bg-blue); color: var(--chart-finans); }
 .icon-tile-green { background: var(--icon-bg-green); color: var(--chart-simulation); }
 .icon-tile-purple { background: var(--icon-bg-purple); color: var(--chart-backtest); }

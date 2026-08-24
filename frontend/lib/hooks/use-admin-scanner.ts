@@ -2,16 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 export type ScanMarket = "CRYPTO" | "FOREX";
-// CRYPTO'da paralel calisan iki strateji varyanti - ORCA ACS (BASE) ve Test
-// Flow (ORDER_FLOW, ayni kurallar + order flow teyidi). FOREX'te varyant yok.
-export type ScanStrategy = "BASE" | "ORDER_FLOW";
-// Test Flow (order flow) varyantinda her sinyalin kac/kac kriteri gectigini
-// gosterir - bkz. backend scanner.service.ts isOrderFlowBullish.
-export type OrderFlowScore = {
-  passed: number;
-  total: number;
-  criteria: { label: string; passed: boolean }[];
-};
 export type ScanSignal = {
   symbol: string;
   direction: "LONG" | "SHORT";
@@ -29,7 +19,6 @@ export type ScanSignal = {
   distancePercent: number;
   fundingRate: number | null;
   aiCommentary: string | null;
-  orderFlowScore: OrderFlowScore | null;
 };
 export type ScanResultData = {
   crypto: ScanSignal[];
@@ -40,23 +29,18 @@ export type ScanResultRow = {
   results: ScanResultData;
   createdAt: string;
 };
-export function useLastScan(market: ScanMarket = "CRYPTO", strategy: ScanStrategy = "BASE") {
+export function useLastScan(market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "last", market, strategy],
-    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?market=${market}&strategy=${strategy}`),
+    queryKey: ["admin", "scanner", "last", market],
+    queryFn: () => apiClient<ScanResultRow>(`/scanner/last?market=${market}`),
   });
 }
-export function useTriggerScan(market: ScanMarket = "CRYPTO", strategy: ScanStrategy = "BASE") {
+export function useTriggerScan(market: ScanMarket = "CRYPTO") {
   const qc = useQueryClient();
-  const path =
-    market === "FOREX"
-      ? "/scanner/scan/forex/day-trade"
-      : strategy === "ORDER_FLOW"
-        ? "/scanner/scan/day-trade/order-flow"
-        : "/scanner/scan/day-trade";
+  const path = market === "FOREX" ? "/scanner/scan/forex/day-trade" : "/scanner/scan/day-trade";
   return useMutation({
     mutationFn: () => apiClient<{ message: string }>(path, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", market, strategy] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "last", market] }),
   });
 }
 export function useLivePrice(symbol: string, enabled: boolean, market: ScanMarket = "CRYPTO") {
@@ -108,10 +92,10 @@ export type TrackedSignalsData = {
   signals: TrackedSignal[];
   stats: SignalStatsBlock;
 };
-export function useTrackedSignals(market: ScanMarket = "CRYPTO", strategy: ScanStrategy = "BASE") {
+export function useTrackedSignals(market: ScanMarket = "CRYPTO") {
   return useQuery({
-    queryKey: ["admin", "scanner", "tracked", market, strategy],
-    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?market=${market}&strategy=${strategy}`),
+    queryKey: ["admin", "scanner", "tracked", market],
+    queryFn: () => apiClient<TrackedSignalsData>(`/scanner/tracked?market=${market}`),
     refetchInterval: 30000,
   });
 }

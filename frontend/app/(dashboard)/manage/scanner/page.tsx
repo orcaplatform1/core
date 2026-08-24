@@ -16,7 +16,6 @@ import {
   Layers,
   Filter,
   BarChart3,
-  Waves,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ import {
   type ScanSignal,
   type TrackedSignal,
   type ScanMarket,
-  type ScanStrategy,
   type SignalStatsBlock,
 } from "@/lib/hooks/use-admin-scanner";
 
@@ -202,17 +200,6 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
             <p className="text-body-xs text-[#A8A6A0]">{bullish ? "LONG" : "SHORT"}</p>
           </div>
         </div>
-        {signal.orderFlowScore && (
-          <span
-            className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
-            style={{
-              backgroundColor: signal.orderFlowScore.passed === signal.orderFlowScore.total ? "#22C55E22" : "#3B5BFF22",
-              color: signal.orderFlowScore.passed === signal.orderFlowScore.total ? "#22C55E" : "#3B5BFF",
-            }}
-          >
-            Order Flow {signal.orderFlowScore.passed}/{signal.orderFlowScore.total}
-          </span>
-        )}
       </div>
 
       <div className="flex items-center justify-between rounded-xl border border-[#3B5BFF33] bg-gradient-to-r from-[#3B5BFF14] to-transparent px-3 py-2">
@@ -284,19 +271,6 @@ function SignalCard({ signal, market }: { signal: ScanSignal; market: ScanMarket
           </p>
         ))}
       </div>
-
-      {signal.orderFlowScore && (
-        <div className="rounded-lg border border-border bg-card-inner p-2.5 space-y-1">
-          <p className="text-body-xs font-semibold uppercase tracking-wider text-[#8FB8FF]">
-            Order Flow Teyidi ({signal.orderFlowScore.passed}/{signal.orderFlowScore.total})
-          </p>
-          {signal.orderFlowScore.criteria.map((c, i) => (
-            <p key={i} className="text-body-xs" style={{ color: c.passed ? "#22C55E" : "#605D57" }}>
-              {c.passed ? "✓" : "✗"} {c.label}
-            </p>
-          ))}
-        </div>
-      )}
 
       {signal.aiCommentary && (
         <div className="rounded-lg border border-[#3B5BFF40] bg-[#3B5BFF11] p-3">
@@ -743,17 +717,13 @@ function AboutModulePanel({ onClose }: { onClose: () => void }) {
 export default function AdminScannerPage() {
   const { user: me, isLoading: authLoading } = useAuth();
   const [market, setMarket] = useState<ScanMarket>("CRYPTO");
-  // Test Flow: ORCA ACS ile birebir aynı kural motoru + order flow teyidi -
-  // sadece CRYPTO'da anlamlı, FOREX'e geçilince otomatik BASE'e döner.
-  const [strategy, setStrategy] = useState<ScanStrategy>("BASE");
   const [showAbout, setShowAbout] = useState(false);
-  const { data: lastScan, isLoading } = useLastScan(market, strategy);
-  const { data: tracked } = useTrackedSignals(market, strategy);
-  const triggerScan = useTriggerScan(market, strategy);
+  const { data: lastScan, isLoading } = useLastScan(market);
+  const { data: tracked } = useTrackedSignals(market);
+  const triggerScan = useTriggerScan(market);
 
   function handleMarketChange(next: ScanMarket) {
     setMarket(next);
-    if (next === "FOREX") setStrategy("BASE");
   }
 
   if (authLoading) {
@@ -812,34 +782,19 @@ export default function AdminScannerPage() {
 
       <div className="space-y-4">
         <div>
-          <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Piyasa &amp; Strateji</p>
-          <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-lg">
+          <p className="mb-2 text-badge uppercase tracking-wider text-[#A8A6A0]">Piyasa</p>
+          <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card-inner p-1.5 sm:max-w-sm">
             <button
               type="button"
               onClick={() => handleMarketChange("CRYPTO")}
               className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
-                market === "CRYPTO" && strategy === "BASE"
+                market === "CRYPTO"
                   ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
                   : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
               }`}
             >
               <Coins size={16} />
               Orca ACS
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMarket("CRYPTO");
-                setStrategy("ORDER_FLOW");
-              }}
-              className={`flex items-center justify-center gap-2 rounded-xl py-3 text-body-sm transition-all duration-200 ${
-                market === "CRYPTO" && strategy === "ORDER_FLOW"
-                  ? "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(59,91,255,0.4),0_4px_16px_-4px_rgba(59,91,255,0.6)]"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              }`}
-            >
-              <Waves size={16} />
-              Test Flow
             </button>
             <button
               type="button"
@@ -855,30 +810,6 @@ export default function AdminScannerPage() {
             </button>
           </div>
         </div>
-
-        {market === "CRYPTO" && strategy === "ORDER_FLOW" && (
-          <div className="rounded-2xl border border-[#3B5BFF33] bg-[#3B5BFF0D] p-4 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Waves size={16} className="text-[#3B5BFF]" />
-              <p className="text-body-sm font-semibold text-[#F5F1EA]">Test Flow (Order Flow)</p>
-              <span
-                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
-                style={{ backgroundColor: "#F5A62322", color: "#F5A623" }}
-              >
-                Deneysel — karşılaştırma amaçlı
-              </span>
-            </div>
-            <p className="text-body-xs text-[#A8A6A0]">
-              ORCA ACS ile <b className="text-[#F5F1EA]">birebir aynı</b> ICT/SMC kural motoru (MSB + hacim + FVG +
-              EMA200 + XBT filtresi + korelasyon) — tek fark, kırılım onaylandıktan sonra{" "}
-              <b className="text-[#F5F1EA]">order flow</b>'un (kümülatif delta, bid/ask dengesi, taker oranı, top
-              trader pozisyon oranı — 4 kriterden en az 3'ü) LONG yönünü destekliyor mu diye bakılması. Money
-              Maker'a (gerçek Binance işlemi) bağlı <b className="text-[#F5F1EA]">değildir</b> ve ona hiçbir
-              şekilde dokunmaz — Money Maker, ORCA ACS'nin bulduğu sinyallerle olduğu gibi ayrı bir bölüm olarak
-              devam eder.
-            </p>
-          </div>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

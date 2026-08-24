@@ -39,22 +39,6 @@ export class ScannerScheduler {
       removeOnFail: true,
     });
   }
-  // Test Flow (Order Flow varyanti) - sadece ScannerConfig.orderFlowTestEnabled
-  // acikken periyodik olarak taranir (admin panelden kapatilabilir); manuel
-  // "Şimdi Tara" butonu (ScannerController.runDayTradeOrderFlowScan) bu
-  // toggle'dan bagimsiz her zaman calisir.
-  @Cron('*/15 * * * *')
-  async queueDayTradeOrderFlowScan() {
-    const enabled = await this.scannerService.isOrderFlowTestEnabled();
-    if (!enabled) return;
-    await this.scannerQueue.add('day-trade-order-flow-scan', {}, {
-      attempts: 3,
-      backoff: { type: 'fixed', delay: 10000 },
-      jobId: 'day-trade-order-flow-scan',
-      removeOnComplete: true,
-      removeOnFail: true,
-    });
-  }
   @Cron('*/15 * * * *')
   async queueForexDayTradeScan() {
     await this.scannerQueue.add('forex-day-trade-scan', {}, {

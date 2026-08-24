@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Home, GraduationCap, Wrench, LifeBuoy, FileText } from "lucide-react";
+import { Home, GraduationCap, Wrench, LifeBuoy, FileText, Link2 } from "lucide-react";
 import { getFooterPages, getSiteContent } from "@/lib/marketing/get-site-content";
 import { getPrograms } from "@/lib/marketing/get-programs";
+import { getScannedSitePagesByGroup } from "@/lib/marketing/site-pages-scanner";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
@@ -10,55 +11,27 @@ export const metadata: Metadata = {
   description: "ORCA platformundaki tüm sayfalara ve bölümlere tek yerden ulaşın.",
 };
 
+// Bolum basina ikon - "Diğer" yeni/eslesmemis sayfalarin dustugu genel
+// grup, ozel bir ikonu yok (Link2 fallback).
+const GROUP_ICONS: Record<string, React.ElementType> = {
+  Genel: Home,
+  Eğitim: GraduationCap,
+  Araçlar: Wrench,
+  Destek: LifeBuoy,
+  Diğer: Link2,
+};
+
+// SECTIONS artik app/ klasoru TARANARAK uretiliyor (bkz. site-pages-scanner.ts)
+// - yeni bir sayfa eklendiginde otomatik burada da cikar.
 const SECTIONS: {
   title: string;
   icon: React.ElementType;
   links: { label: string; href: string }[];
-}[] = [
-  {
-    title: "Genel",
-    icon: Home,
-    links: [
-      { label: "Anasayfa", href: "/" },
-      { label: "Giriş Yap", href: "/login" },
-      { label: "Kayıt Ol", href: "/register" },
-      { label: "Topluluk", href: "/community" },
-    ],
-  },
-  {
-    title: "Eğitim",
-    icon: GraduationCap,
-    links: [
-      { label: "Tüm Programlar", href: "/programs" },
-      { label: "AI Mentor", href: "/mentor" },
-      { label: "Canlı Dersler", href: "/live-lessons" },
-      { label: "Sertifikalarım", href: "/certificates" },
-      { label: "Liderlik Tablosu", href: "/leaderboard" },
-      { label: "Rozetler", href: "/badges" },
-    ],
-  },
-  {
-    title: "Araçlar",
-    icon: Wrench,
-    links: [
-      { label: "Kripto Araçları", href: "/tools/crypto" },
-      { label: "Forex Araçları", href: "/tools/forex" },
-      { label: "BIST 100", href: "/tools/bist100" },
-      { label: "Ekonomik Takvim", href: "/tools/economic-calendar" },
-      { label: "Simülasyon", href: "/simulation" },
-      { label: "Backtest", href: "/backtest" },
-      { label: "Güçlendiriciler", href: "/enhancers" },
-    ],
-  },
-  {
-    title: "Destek",
-    icon: LifeBuoy,
-    links: [
-      { label: "Sıkça Sorulan Sorular", href: "/faq" },
-      { label: "Destek Merkezi", href: "/support" },
-    ],
-  },
-];
+}[] = getScannedSitePagesByGroup().map((section) => ({
+  title: section.title,
+  icon: GROUP_ICONS[section.title] ?? Link2,
+  links: section.links,
+}));
 
 export default async function SitemapPage() {
   const [legalPages, siteContent, programs] = await Promise.all([

@@ -6,13 +6,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
-// CRYPTO'da iki strateji varyanti paralel calisiyor (bkz. scanner.service.ts
-// basindaki ICT_BASE_STRATEGY_NAME/ICT_ORDER_FLOW_STRATEGY_NAME) - hangisinin
-// sonuclarina bakildigi ?strategy=ORDER_FLOW query param'iyla secilir.
-// FOREX'in tek varyanti oldugu icin strategy param'i FOREX'te yok sayilir.
-function resolveStrategyName(market: string, strategy?: string): string {
+// Test Flow (ICT_BREAKOUT_RETEST_OF) varyanti kaldirildi (kullanici istegi:
+// "test flow boktan cikti") - CRYPTO'da artik tek strateji (ORCA ACS) var.
+function resolveStrategyName(market: string): string {
   if (market === 'FOREX') return 'FX_LIQUIDITY_SWEEP';
-  return strategy === 'ORDER_FLOW' ? 'ICT_BREAKOUT_RETEST_OF' : 'ICT_BREAKOUT_RETEST';
+  return 'ICT_BREAKOUT_RETEST';
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,32 +31,24 @@ export class ScannerController {
     await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-scan' });
     return { message: 'Day Trade taraması (ICT/SMC Breakout & Retest, kripto) kuyruğa eklendi.' };
   }
-  // Test Flow: ORCA ACS ile birebir aynı kural motoru + order flow teyidi.
-  // Toggle kapalıyken bile admin manuel tetikleyebilir (ORCA ACS'nin "Şimdi
-  // Tara" davranışıyla tutarlı - toggle sadece otomatik/periyodik taramayı kapatır).
-  @Post('scan/day-trade/order-flow')
-  async runDayTradeOrderFlowScan() {
-    await this.scannerQueue.add('day-trade-order-flow-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-order-flow-scan' });
-    return { message: 'Test Flow taraması (ICT/SMC Breakout & Retest + Order Flow, kripto) kuyruğa eklendi.' };
-  }
   @Post('scan/forex/day-trade')
   async runForexDayTradeScan() {
     await this.scannerQueue.add('forex-day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'forex-day-trade-scan' });
     return { message: 'Forex Day Trade taraması (ICT likidite süpürme) kuyruğa eklendi.' };
   }
   @Get('last')
-  getLastScan(@Query('market') market?: string, @Query('strategy') strategy?: string) {
+  getLastScan(@Query('market') market?: string) {
     const m = market || 'CRYPTO';
-    return this.scannerService.getLastScan('DAY', m, resolveStrategyName(m, strategy));
+    return this.scannerService.getLastScan('DAY', m, resolveStrategyName(m));
   }
   @Get('price/:symbol')
   getLivePrice(@Param('symbol') symbol: string, @Query('market') market?: string) {
     return this.scannerService.getLivePrice(symbol, market || 'CRYPTO');
   }
   @Get('tracked')
-  getTrackedSignals(@Query('market') market?: string, @Query('strategy') strategy?: string) {
+  getTrackedSignals(@Query('market') market?: string) {
     const m = market || 'CRYPTO';
-    return this.scannerService.getTrackedSignals('DAY', m, resolveStrategyName(m, strategy));
+    return this.scannerService.getTrackedSignals('DAY', m, resolveStrategyName(m));
   }
 
   // Kripto strateji degisikligi (Supply/Demand -> ICT/SMC Breakout & Retest)
@@ -68,9 +58,9 @@ export class ScannerController {
     return this.scannerService.clearCryptoSignals();
   }
 
-  // ORCA ACS ile Test Flow'un (ikisi de CRYPTO) sinyal/istatistik gecmisini
-  // sifirlar, ikisi AYNI ANDA sifirdan baslasin diye - Money Maker'in gercek
-  // Binance pozisyonlarina/emirlerine dokunmaz (bkz. scannerService.resetStrategyComparison).
+  // Test Flow kaldirildiktan sonra bu artik sadece ORCA ACS'nin sonuclanmis
+  // (closedAt dolu) sinyal/istatistik gecmisini sifirlar - Money Maker'in
+  // gercek Binance pozisyonlarina/emirlerine dokunmaz (bkz. scannerService.resetStrategyComparison).
   @Delete('tracked/crypto/strategy-comparison')
   async resetStrategyComparison() {
     return this.scannerService.resetStrategyComparison();
@@ -81,7 +71,7 @@ export class ScannerController {
     return this.scannerService.getScannerConfig();
   }
   @Patch('config')
-  updateScannerConfig(@Body() body: { orderFlowTestEnabled?: boolean; cryptoSignalNotificationsEnabled?: boolean }) {
+  updateScannerConfig(@Body() body: { cryptoSignalNotificationsEnabled?: boolean }) {
     return this.scannerService.updateScannerConfig(body);
   }
 }

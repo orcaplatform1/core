@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AutoTradeService } from '../execution/auto-trade.service';
 import { ForexAutoTradeService } from '../execution/forex-auto-trade.service';
-import { OrderFlowToolsService } from '../public-tools/order-flow-tools.service';
 
 interface Candle {
   time: number;
@@ -12,12 +11,6 @@ interface Candle {
   low: number;
   close: number;
   volume: number;
-}
-
-interface OrderFlowScore {
-  passed: number;
-  total: number;
-  criteria: { label: string; passed: boolean }[];
 }
 
 interface Setup {
@@ -222,21 +215,14 @@ const FOREX_BLOCKED_DATES: string[] = [
   '2026-12-09', // FOMC Toplantisi (Aralik 2026)
 ];
 
-// --- Test Flow: ORCA ACS'nin (ICT_BREAKOUT_RETEST) kripto kural motoruyla
-// BIREBIR ayni calisan, tek ek sarti olan varyant (kullanici istegi
-// 2026-08-23: "hangi strateji iyiyse onunla devam ederiz"). Butun MSB/hacim/
-// FVG/EMA200/risk-yuzdesi kurallari degismiyor - sadece yapisal olarak
-// onaylanmis bir setup, OrderFlowToolsService'in ANLIK REST anlik goruntusune
-// (defter dengesi + son ~1000 islemden kumulatif delta) gore de agresif alim
-// baskisi gostermiyorsa elenir. Bu veri sadece CANLI cekilebildigi icin
-// (gecmise donuk saklanmiyor) bu varyant SADECE ileriye donuk/canli
-// karsilastirma icindir, backtest edilemez.
 const ICT_BASE_STRATEGY_NAME = 'ICT_BREAKOUT_RETEST';
+// Test Flow (Order Flow teyitli varyant) 2026-08-23'te ORCA ACS ile A/B
+// karsilastirmasi icin eklenmis, sonuclari zayif cikinca tamamen kaldirildi
+// (kullanici istegi: "test flow boktan cikti"). Bu sabit SADECE eski Test
+// Flow kayitlarini DB'den temizlemek icin (bkz. resetStrategyComparison)
+// tutuluyor - yeni hicbir tarama artik bu strateji adiyla yazmiyor.
 const ICT_ORDER_FLOW_STRATEGY_NAME = 'ICT_BREAKOUT_RETEST_OF';
 const FX_STRATEGY_NAME = 'FX_LIQUIDITY_SWEEP';
-// 4 order flow kriterinden (bkz. isOrderFlowBullish) en az kacinin pozitif
-// olmasi gerektigi - kullanici istegi 2026-08-23: "3/4 esik olsun".
-const ORDER_FLOW_CONFIRM_THRESHOLD = 3;
 
 @Injectable()
 export class ScannerService {
@@ -245,7 +231,6 @@ export class ScannerService {
     private readonly notificationsService: NotificationsService,
     private readonly autoTradeService: AutoTradeService,
     private readonly forexAutoTradeService: ForexAutoTradeService,
-    private readonly orderFlowToolsService: OrderFlowToolsService,
   ) {}
 
   // Bu dosyadaki TUM dis servis (Binance/Yahoo/Anthropic) cagrilari icin ortak
@@ -569,53 +554,14 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
-  // Test Flow varyanti icin: yapisal olarak zaten onaylanmis bir setup'in
-  // anlik order flow'u LONG yonunu destekliyor mu? Kullanici geri bildirimi
-  // 2026-08-23 ("çok az veriye bakıyoruz") uzerine 2 sinyalden 4 sinyale
-  // cikarildi - OrderFlowToolsService'in dondurdugu farkli pencerelerden
-  // (aggTrade delta, anlik defter, 5dk taker orani, Binance "top trader"
-  // pozisyon orani) 4 bagimsiz LONG-teyit sinyali, ORDER_FLOW_CONFIRM_THRESHOLD
-  // (3/4) esigini gecerse onaylanir - tek bir gurultulu sinyale asiri
-  // guvenmemek icin cogunluk oyu mantigi.
-  private async isOrderFlowBullish(
-    symbol: string,
-  ): Promise<{ confirmed: boolean; score: OrderFlowScore | null; note: string | null }> {
-    const flow = await this.orderFlowToolsService.getOrderFlow(symbol);
-    if (!flow) return { confirmed: false, score: null, note: null };
-
-    const criteria: { label: string; passed: boolean }[] = [
-      { label: 'Kümülatif Delta (agresif alım baskısı)', passed: flow.cumulativeDelta > 0 },
-      { label: 'Bid/Ask Defter Dengesi', passed: flow.bidAskImbalancePercent > 0 },
-      { label: 'Taker Alım/Satım Oranı (5dk)', passed: flow.takerBuySellRatio != null && flow.takerBuySellRatio > 1 },
-      {
-        label: 'Top Trader Pozisyon Oranı',
-        passed: flow.topTraderLongShortPositionRatio != null && flow.topTraderLongShortPositionRatio > 1,
-      },
-    ];
-    const passed = criteria.filter((c) => c.passed).length;
-    const total = criteria.length;
-    const confirmed = passed >= ORDER_FLOW_CONFIRM_THRESHOLD;
-    const note = `Order Flow Teyidi: ${passed}/${total} kriter pozitif (${criteria
-      .filter((c) => c.passed)
-      .map((c) => c.label)
-      .join(', ') || 'hiçbiri'})`;
-    return { confirmed, score: { passed, total, criteria }, note };
-  }
-
   // ICT/SMC Breakout & Retest modeli - SADECE kripto Day-Trade (swing kripto
   // ve forex de dahil, tum swing mantigi tamamen kaldirildi). En hacimli
   // ICT_TOP_SYMBOLS coin, 15 dakikalik mumlar uzerinde taranir. Tarama basina
   // BIR kez BTC piyasa filtresi kontrol edilir - guvensizse hic aday uretilmez.
-  //
-  // useOrderFlowConfirmation=true -> Test Flow varyanti (bkz. isOrderFlowBullish):
-  // asagidaki TUM kurallar (MSB/hacim/FVG/EMA200/risk araligi/korelasyon)
-  // birebir ayni kalir, tek fark yapisal olarak onaylanan setup'in ek olarak
-  // order flow teyidi de gecmesi gerekmesidir (bkz. kullanici istegi
-  // 2026-08-23 - iki strateji ayni kurallarla, sadece bu tek ekle karsilastirilsin).
-  async scanDayTrade(useOrderFlowConfirmation = false) {
+  async scanDayTrade() {
     const symbolList = await this.fetchTopBinanceSymbols(ICT_TOP_SYMBOLS);
     const rawCandidateCount = symbolList.length;
-    const logTag = useOrderFlowConfirmation ? 'scanDayTradeOrderFlow' : 'scanDayTrade';
+    const logTag = 'scanDayTrade';
 
     const marketSafe = await this.isBtcMarketSafe();
     if (!marketSafe) {
@@ -633,7 +579,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     // MSB + hacim + FVG + EMA200 trend sartlarinin hepsi buildIctBreakoutRetestSetup
     // icinde tek fonksiyonda birlesik oldugu icin bu sayac hepsini kapsar.
     let structureFiltered = 0;
-    let orderFlowFiltered = 0;
 
     for (const symbol of symbolList) {
       try {
@@ -643,18 +588,10 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
         const setup = this.buildIctBreakoutRetestSetup(candles);
         if (!setup) { structureFiltered++; continue; }
 
-        let orderFlowScore: OrderFlowScore | null = null;
-        if (useOrderFlowConfirmation) {
-          const flowCheck = await this.isOrderFlowBullish(symbol);
-          if (!flowCheck.confirmed) { orderFlowFiltered++; continue; }
-          if (flowCheck.note) setup.reasons.push(flowCheck.note);
-          orderFlowScore = flowCheck.score;
-        }
-
         const closes = candles.slice(-60).map((c) => c.close);
         returnsMap[symbol] = closes.slice(1).map((c, i) => (c - closes[i]) / closes[i]);
 
-        candidates.push({ symbol, ...setup, winRatePercent: null, fundingRate: null, style: 'DAY', orderFlowScore });
+        candidates.push({ symbol, ...setup, winRatePercent: null, fundingRate: null, style: 'DAY' });
       } catch { structureFiltered++; continue; }
       await new Promise((r) => setTimeout(r, 150));
     }
@@ -669,7 +606,6 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     console.log(`[${logTag}] Filtre öncesi ham aday sayısı: ${rawCandidateCount}`);
     console.log(`[${logTag}] BTC/DXY filtresine takılanlar: 0`);
     console.log(`[${logTag}] Hacim/Trend filtresine takılanlar: ${structureFiltered}`);
-    if (useOrderFlowConfirmation) console.log(`[${logTag}] Order Flow teyidinden elenenler: ${orderFlowFiltered}`);
     console.log(`[${logTag}] Korelasyondan elenenler: ${correlationFiltered}`);
     console.log(`[${logTag}] Kuyruğa/SUPER_ADMIN'e başarıyla gönderilen sinyal sayısı: ${selected.length}`);
 
@@ -949,12 +885,11 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     }
   }
 
-  async runDayTradeScan(useOrderFlowConfirmation = false) {
-    const crypto = await this.scanDayTrade(useOrderFlowConfirmation);
+  async runDayTradeScan() {
+    const crypto = await this.scanDayTrade();
     const results = { crypto, scannedAt: new Date() };
-    const strategyName = useOrderFlowConfirmation ? ICT_ORDER_FLOW_STRATEGY_NAME : ICT_BASE_STRATEGY_NAME;
     await this.prisma.scanResult.create({
-      data: { results: results as any, style: 'DAY', market: 'CRYPTO', strategyName },
+      data: { results: results as any, style: 'DAY', market: 'CRYPTO', strategyName: ICT_BASE_STRATEGY_NAME },
     });
     return results;
   }
@@ -976,8 +911,8 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     });
   }
 
-  private async runScheduledDayTradeScan(useOrderFlowConfirmation: boolean) {
-    const strategyName = useOrderFlowConfirmation ? ICT_ORDER_FLOW_STRATEGY_NAME : ICT_BASE_STRATEGY_NAME;
+  private async runScheduledDayTradeScan() {
+    const strategyName = ICT_BASE_STRATEGY_NAME;
     const previousScan = await this.prisma.scanResult.findFirst({
       where: { style: 'DAY', market: 'CRYPTO', strategyName },
       orderBy: { createdAt: 'desc' },
@@ -986,7 +921,7 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
       ((previousScan?.results as any)?.crypto ?? []).map((c: any) => c.symbol),
     );
 
-    const results = await this.runDayTradeScan(useOrderFlowConfirmation);
+    const results = await this.runDayTradeScan();
     // stillValid=false (fiyat henuz FVG giris bolgesine geri cekilmedi) demek
     // sinyalin GECERSIZ oldugu anlamina gelmez - sadece henuz TETIKLENMEDIGI
     // anlamina gelir. Eskiden burada stillValid ile filtrelenip bu adaylar
@@ -1013,26 +948,21 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     );
     const signalsNeedingTracking = detectedSignals.filter((c: any) => !blockedSymbols.has(c.symbol));
     if (signalsNeedingTracking.length > 0) {
-      // Test Flow (order flow) varyanti Money Maker'a (gercek Binance emri /
-      // forex golge pozisyon) KESINLIKLE baglanmaz - skipAutoTrade bunu
-      // garanti eder (bkz. kullanici istegi 2026-08-23: "money maker
-      // katmanini engellemesin, o ayni devam edicek").
       await this.createTrackedSignals(signalsNeedingTracking, 'DAY', 'CRYPTO', {
         strategyNameOverride: strategyName,
-        skipAutoTrade: useOrderFlowConfirmation,
       });
     }
     // Swing tamamen kaldirildigi icin acik sinyallerin (kripto+forex, hepsi
     // artik DAY) WATCHING->TRIGGERED->HIT_TP/HIT_STOP guncellemesi buradan
     // yapiliyor - bu, 15 dakikada bir calisan tikimlerden biri.
-    if (!useOrderFlowConfirmation) await this.updateTrackedSignals();
+    await this.updateTrackedSignals();
 
     if (newDetectedSignals.length === 0) return;
 
-    // Kullanici istegi 2026-08-23: Money Maker'a adapte olurken ORCA ACS +
-    // Test Flow "yeni sinyal" bildirimlerini bir sure kapatip paneli manuel
-    // kontrol edecek - tarama/sinyal olusturma bundan ETKILENMEZ, sadece
-    // admin bildirimi kesiliyor.
+    // Kullanici istegi 2026-08-23: Money Maker'a adapte olurken ORCA ACS
+    // "yeni sinyal" bildirimlerini bir sure kapatip paneli manuel kontrol
+    // edecek - tarama/sinyal olusturma bundan ETKILENMEZ, sadece admin
+    // bildirimi kesiliyor.
     const notifConfig = await this.getScannerConfig();
     if (!notifConfig.cryptoSignalNotificationsEnabled) return;
 
@@ -1042,29 +972,20 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     });
 
     const symbolList = newDetectedSignals.map((c: any) => `${c.symbol} (${c.direction})`).join(', ');
-    const label = useOrderFlowConfirmation ? 'Test Flow (Order Flow)' : 'Day Trade';
-    const message = `${newDetectedSignals.length} yeni aktif ${label} sinyali: ${symbolList}`;
+    const message = `${newDetectedSignals.length} yeni aktif Day Trade sinyali: ${symbolList}`;
 
     await this.notificationsService.createForManyUsers(
       admins.map((a) => a.id),
       {
         type: 'SYSTEM',
-        title: `AI Tarayıcı: Yeni ${label} Sinyali`,
+        title: `AI Tarayıcı: Yeni Day Trade Sinyali`,
         message,
       },
     );
   }
 
   async scheduledDayTradeScan() {
-    return this.runScheduledDayTradeScan(false);
-  }
-
-  // Test Flow: ORCA ACS ile ayni kural motoru + order flow teyidi (bkz.
-  // scanDayTrade/isOrderFlowBullish). isOrderFlowTestEnabled() kapaliysa
-  // scheduler bu fonksiyonu hic cagirmaz - manuel "Şimdi Tara" butonu (admin
-  // panel) toggle durumundan bagimsiz her zaman calisir.
-  async scheduledDayTradeOrderFlowScan() {
-    return this.runScheduledDayTradeScan(true);
+    return this.runScheduledDayTradeScan();
   }
 
   async scheduledForexDayTradeScan() {
@@ -1515,28 +1436,20 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     return { signals, stats };
   }
 
-  // Admin panelde ORCA ACS'nin yanindaki "Test Flow" ac/kapa anahtari - kapali
-  // olunca scheduler yeni tarama kuyruga eklemez (bkz. ScannerScheduler),
-  // acikken devam eden acik sinyaller yine updateTrackedSignals() ile normal
-  // sekilde sonuclanir. Tek satirlik singleton (AutoTradeConfig ile ayni desen).
+  // Tek satirlik singleton (AutoTradeConfig ile ayni desen).
   async getScannerConfig() {
     const existing = await this.prisma.scannerConfig.findFirst();
     if (existing) return existing;
     return this.prisma.scannerConfig.create({ data: {} });
   }
 
-  async updateScannerConfig(data: { orderFlowTestEnabled?: boolean; cryptoSignalNotificationsEnabled?: boolean }) {
+  async updateScannerConfig(data: { cryptoSignalNotificationsEnabled?: boolean }) {
     const config = await this.getScannerConfig();
     return this.prisma.scannerConfig.update({ where: { id: config.id }, data });
   }
 
-  async isOrderFlowTestEnabled(): Promise<boolean> {
-    const config = await this.getScannerConfig();
-    return config.orderFlowTestEnabled;
-  }
-
   // Saglik kontrolu icin (bkz. ScannerScheduler.checkScannerHealth) - kripto
-  // taramasi (ORCA ACS veya Test Flow, ikisi de ScanResult'a yazar) en son
+  // taramasi en son
   // ne zaman calisti. 2026-08-23 sabahi tarama saatlerce sessizce durmustu
   // (bkz. commit e7ad4cf - BullMQ sabit jobId + removeOnComplete eksikligi)
   // kullanici bunu ancak elle fark etmisti - bu yuzden bu bildirim eklendi.
@@ -1565,24 +1478,24 @@ Tespit edilen konfirmasyonlar: ${setup.reasons.join(', ')}`;
     );
   }
 
-  // ORCA ACS (ICT_BREAKOUT_RETEST) ve Test Flow (ICT_BREAKOUT_RETEST_OF)
-  // varyantlarinin sinyal/istatistik gecmisini sifirlar, ikisi de AYNI ANDA
-  // sifirdan baslasin diye (kullanici istegi 2026-08-23). SADECE TrackedSignal/
-  // ScanResult kayitlarina dokunur - AutoTradeService/Binance'e hic
-  // cagri YAPMAZ, yani Money Maker'in gercek acik pozisyonlari/emirleri
+  // ORCA ACS'nin (ICT_BREAKOUT_RETEST) sonuclanmis sinyal/istatistik
+  // gecmisini sifirlar (kullanici istegi 2026-08-24: Test Flow kaldirildiktan
+  // sonra ACS'nin temiz baslamasi). Ayrica artik hic yazilmayan eski Test
+  // Flow (ICT_BREAKOUT_RETEST_OF) kayitlarini da temizler. SADECE
+  // TrackedSignal/ScanResult kayitlarina dokunur - AutoTradeService/Binance'e
+  // hic cagri YAPMAZ, yani Money Maker'in gercek acik pozisyonlari/emirleri
   // kesinlikle etkilenmez (clearCryptoSignals()'tan farki budur).
   //
-  // ONEMLI: ORCA ACS (base) tarafinda SADECE closedAt DOLU (yani zaten
-  // sonuclanmis) kayitlar silinir. Hala acik olan (WATCHING/TRIGGERED/HIT_TP1/
-  // HIT_TP2, closedAt=null) bir TrackedSignal'in Money Maker'da GERCEK bir
-  // AutoTrade karsiligi (bekleyen LIMIT emri veya acik pozisyon) olabilir -
-  // bu kayit silinirse o AutoTrade sahipsiz kalir, bir daha hicbir zaman
-  // otomatik izlenip iptal/kapatilamaz (bkz. 2026-08-23 olayi: ham SQL ile
-  // yapilan bir sifirlama tam olarak bunu yapip 12 bekleyen emri sahipsiz
-  // birakmisti, AutoTradeService.onSignalInvalidated ile tek tek elle iptal
-  // edildi). Test Flow (OF) tarafi Money Maker'a hic baglanmadigi
-  // (skipAutoTrade=true) icin acik/kapali farketmeksizin guvenle tamamen
-  // silinebilir.
+  // ONEMLI: ORCA ACS tarafinda SADECE closedAt DOLU (yani zaten sonuclanmis)
+  // kayitlar silinir. Hala acik olan (WATCHING/TRIGGERED/HIT_TP1/HIT_TP2,
+  // closedAt=null) bir TrackedSignal'in Money Maker'da GERCEK bir AutoTrade
+  // karsiligi (bekleyen LIMIT emri veya acik pozisyon) olabilir - bu kayit
+  // silinirse o AutoTrade sahipsiz kalir, bir daha hicbir zaman otomatik
+  // izlenip iptal/kapatilamaz (bkz. 2026-08-23 olayi: ham SQL ile yapilan bir
+  // sifirlama tam olarak bunu yapip 12 bekleyen emri sahipsiz birakmisti,
+  // AutoTradeService.onSignalInvalidated ile tek tek elle iptal edildi). Eski
+  // Test Flow kayitlari Money Maker'a hic baglanmadigi icin acik/kapali
+  // farketmeksizin guvenle tamamen silinebilir.
   async resetStrategyComparison() {
     const [deletedBaseTracked, deletedBaseScans, deletedOfTracked, deletedOfScans] = await Promise.all([
       this.prisma.trackedSignal.deleteMany({

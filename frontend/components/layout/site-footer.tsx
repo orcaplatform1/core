@@ -30,6 +30,34 @@ function DiscordIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+// Telif metni admin panelden (FooterSettings.copyrightText) düz metin
+// olarak geliyor — "Traders.TR" gecen kismini kullanici istegiyle (2026-08-24:
+// "Traders'i premium kırmızı, .TR'yi premium beyaz yap, yanına bayrak
+// simgesi koy") ozel stille vurgulayip yaninda bayrak ikonu gostermek icin
+// metni bu sabit alt dizeye gore boluyoruz, geri kalani duz metin kaliyor.
+function renderCopyrightWithBrandHighlight(text: string) {
+  const marker = "Traders.TR";
+  const parts = text.split(marker);
+  if (parts.length === 1) return text;
+  return parts.flatMap((part, i) =>
+    i === 0
+      ? [part]
+      : [
+          <span key={i} className="whitespace-nowrap">
+            <span className="text-traders-red">Traders</span>
+            <span className="text-traders-white">.TR</span>{" "}
+            <img
+              src="/footerflag.png"
+              alt=""
+              aria-hidden
+              className="inline-block h-[1em] w-[1em] translate-y-[0.1em] object-contain align-baseline"
+            />
+          </span>,
+          part,
+        ],
+  );
+}
+
 export const socialIcons: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   X: X,
   YouTube: YoutubeIcon,
@@ -101,7 +129,11 @@ export function SiteFooter({
 
         <div className="mt-6 flex flex-col-reverse items-center gap-6 pt-2 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <p className="text-footer-copyright text-muted-foreground">{footer.copyrightText}</p>
+            <p className="text-footer-copyright text-muted-foreground">
+              {renderCopyrightWithBrandHighlight(
+                footer.copyrightText ?? DEFAULT_FOOTER_SETTINGS.copyrightText!,
+              )}
+            </p>
             <Link
               href="/sitemap"
               className="text-footer-copyright text-muted-foreground transition-colors duration-200 hover:text-foreground"
