@@ -24,6 +24,7 @@ import {
   useAutoTradeConfig,
   useUpdateAutoTradeConfig,
   useAutoTradeStats,
+  useAutoTradeBalance,
   useAutoTradePositions,
   useCloseAutoTrade,
   useCloseAllAutoTrades,
@@ -733,6 +734,7 @@ export default function MoneyMakerPage() {
   const [market, setMarket] = useState<MMMarket>("CRYPTO");
   const { data: config, isLoading } = useAutoTradeConfig();
   const { data: stats } = useAutoTradeStats();
+  const { data: balance } = useAutoTradeBalance();
   const { data: positions } = useAutoTradePositions();
   const { data: marketContext } = useMarketContext(positions?.map((p) => p.symbol) ?? []);
   const updateConfig = useUpdateAutoTradeConfig();
@@ -1002,10 +1004,20 @@ export default function MoneyMakerPage() {
             <Button onClick={handleSaveRisk} disabled={updateConfig.isPending} className="h-9">
               Başla
             </Button>
-            <span className="text-body-xs text-[#605D57]">
-              Giriş-stop arası kırılırsa (TP1'e hiç ulaşmadan) kaybedilecek sabit dolar tutarı. Kaldıraç, Binance'in o sembol için izin verdiği tavanı aşarsa otomatik kırpılır (ör. 100x istenip sembol 50x'e izinliyse 50x uygulanır).
-            </span>
           </div>
+
+          {balance && (
+            <div className="flex items-center gap-3 text-body-xs text-[#A8A6A0] flex-wrap">
+              <span>
+                Futures net bakiye: <b className="text-[#F5F1EA]">${balance.marginBalance.toFixed(2)}</b>
+              </span>
+              {balance.unrealizedPnl !== 0 && (
+                <span style={{ color: balance.unrealizedPnl >= 0 ? "#22C55E" : "#EF4444" }}>
+                  ({balance.unrealizedPnl >= 0 ? "+" : ""}${balance.unrealizedPnl.toFixed(2)} açık pozisyon)
+                </span>
+              )}
+            </div>
+          )}
 
           {stats && stats.totalClosed > 0 && (
             <div className="border-t border-border pt-3 space-y-1.5">

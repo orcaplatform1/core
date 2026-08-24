@@ -65,6 +65,12 @@ export class AutoTradeController {
     });
   }
 
+  @Get('balance')
+  async getBalance() {
+    if (!this.binance.isConfigured) return { walletBalance: 0, unrealizedPnl: 0, marginBalance: 0 };
+    return this.binance.getAccountBalance();
+  }
+
   @Get('trades')
   async getTrades() {
     return this.prisma.autoTrade.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });

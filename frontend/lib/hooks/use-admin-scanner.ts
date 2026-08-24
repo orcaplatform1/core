@@ -165,6 +165,18 @@ export function useUpdateAutoTradeConfig() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "scanner", "auto-trade", "config"] }),
   });
 }
+export type AutoTradeBalance = {
+  walletBalance: number;
+  unrealizedPnl: number;
+  marginBalance: number;
+};
+export function useAutoTradeBalance() {
+  return useQuery({
+    queryKey: ["admin", "scanner", "auto-trade", "balance"],
+    queryFn: () => apiClient<AutoTradeBalance>(`/scanner/auto-trade/balance`),
+    refetchInterval: 5000,
+  });
+}
 export type LiveAutoTradePosition = {
   id: string;
   symbol: string;

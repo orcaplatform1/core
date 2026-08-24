@@ -66,6 +66,29 @@ export class BinanceFuturesClientService {
     return usdt ? parseFloat(usdt.availableBalance) : 0;
   }
 
+  // Money Maker panelinde "kaldirac/USDT" kutularinin altinda canli
+  // gosterilen net bakiye icin (kullanici istegi 2026-08-24: "işlemdeyken
+  // artıp eksildiğini görelim") - /fapi/v2/account'taki totalMarginBalance
+  // zaten Binance uygulamasindaki "Margin Balance" ile ayni deger (cuzdan
+  // bakiyesi + acik pozisyonlarin gerceklesmemis K/Z'si), tek cagriyla
+  // gelir. Salt-okunur - hicbir emir/config etkilemez.
+  async getAccountBalance(): Promise<{
+    walletBalance: number;
+    unrealizedPnl: number;
+    marginBalance: number;
+  }> {
+    const account = await this.signedRequest<{
+      totalWalletBalance: string;
+      totalUnrealizedProfit: string;
+      totalMarginBalance: string;
+    }>('GET', '/fapi/v2/account');
+    return {
+      walletBalance: parseFloat(account.totalWalletBalance),
+      unrealizedPnl: parseFloat(account.totalUnrealizedProfit),
+      marginBalance: parseFloat(account.totalMarginBalance),
+    };
+  }
+
   async setLeverage(symbol: string, leverage: number): Promise<void> {
     await this.signedRequest('POST', '/fapi/v1/leverage', { symbol, leverage });
   }
