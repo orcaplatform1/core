@@ -201,7 +201,7 @@ export const DEFAULT_FOOTER_SETTINGS: FooterSettingsData = {
     Instagram: "https://instagram.com",
     Discord: "https://discord.com",
   },
-  copyrightText: `© ${new Date().getFullYear()} ORCA. Bir Traders.TR markasıdır. Tüm hakları saklıdır. Bu platformda yer alan tüm içerikler, tasarımlar, marka unsurları ve fikrî mülkiyet hakları ilgili yasal mevzuat kapsamında korunmaktadır.`,
+  copyrightText: `© ${new Date().getFullYear()} Orca Akademi. Tüm hakları saklıdır. Orca Akademi bir Traders.TR ticari markasıdır. Bu platformda yer alan tüm içerikler, tasarımlar, marka unsurları ve fikrî mülkiyet hakları ilgili yasal mevzuat kapsamında korunmaktadır.`,
   platformLinks: [
     { label: "Programlar", href: "/programs" },
     { label: "AI Mentor", href: "/mentor" },
