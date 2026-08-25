@@ -55,7 +55,7 @@ export class BinanceUserStreamService implements OnModuleInit, OnModuleDestroy {
       this.ws = ws;
 
       ws.on('open', () => {
-        this.logger.log(`Binance user-data-stream bagli (${this.binance.testnet ? 'TESTNET' : 'LIVE'})`);
+        this.logger.log('Binance user-data-stream bagli (LIVE)');
       });
 
       ws.on('message', (raw: Buffer) => {

@@ -222,13 +222,10 @@ function AboutTerminalNewsTradePanel({ onClose }: { onClose: () => void }) {
               </p>
               <p>
                 <b className="text-[#F5F1EA]">Gölge mod (varsayılan AÇIK):</b> "Aç" anahtarı açık olsa bile gölge
-                mod açıkken hiçbir gerçek/testnet emir borsaya gitmez — sadece "açılsaydı ne olurdu" kaydı
+                mod açıkken hiçbir gerçek emir borsaya gitmez — sadece "açılsaydı ne olurdu" kaydı
                 (giriş fiyatı, hesaplanan pivot stop, gecikme) tutulur. Amaç: isabet oranını/whipsaw oranını
-                gerçek para riske atmadan ölçmek. Gölge mod kapatılmadan hiçbir gerçek emir açılmaz.
-              </p>
-              <p>
-                <b className="text-[#F5F1EA]">Testnet varsayılan:</b> `BINANCE_TESTNET` elle `false` yapılmadığı
-                sürece emirler test ortamına gider.
+                gerçek para riske atmadan ölçmek. Gölge mod kapatılmadan hiçbir gerçek emir açılmaz (borsa
+                bağlantısı daima mainnet, testnet desteği yok).
               </p>
               <p>
                 <b className="text-[#F5F1EA]">Bildirimler:</b> gerçek pozisyon açıldığında, kapandığında ve
@@ -685,12 +682,6 @@ export default function TerminalNewsTradePage() {
                 style={{ backgroundColor: config.shadowMode ? "#8A5CFF22" : "#EF444422", color: config.shadowMode ? "#8A5CFF" : "#EF4444" }}
               >
                 {config.shadowMode ? "GÖLGE MOD" : "GERÇEK EMİR"}
-              </span>
-              <span
-                className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider"
-                style={{ backgroundColor: config.testnetActive ? "#F5A62322" : "#EF444422", color: config.testnetActive ? "#F5A623" : "#EF4444" }}
-              >
-                {config.testnetActive ? "TESTNET" : "GERÇEK PARA"}
               </span>
               {!config.apiKeyConfigured && (
                 <span className="rounded-full px-2 py-0.5 text-badge uppercase tracking-wider" style={{ backgroundColor: "#EF444422", color: "#EF4444" }}>

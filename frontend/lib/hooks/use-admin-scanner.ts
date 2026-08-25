@@ -103,7 +103,6 @@ export function useTrackedSignals(market: ScanMarket = "CRYPTO") {
 export type AutoTradeConfig = {
   id: string;
   enabled: boolean;
-  testnet: boolean;
   cryptoEnabled: boolean;
   forexEnabled: boolean;
   riskPerTradeUsdt: number;
@@ -112,7 +111,6 @@ export type AutoTradeConfig = {
   forexLeverage: number;
   updatedAt: string;
   apiKeyConfigured: boolean;
-  testnetActive: boolean;
 };
 export type AutoTrade = {
   id: string;

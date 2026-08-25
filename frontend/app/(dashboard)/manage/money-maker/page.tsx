@@ -191,9 +191,8 @@ function AboutMoneyMakerPanel({ onClose }: { onClose: () => void }) {
                 olmalı. İkisinden biri eksikse hiçbir gerçek emir gönderilmez.
               </p>
               <p>
-                <b className="text-[#F5F1EA]">Mainnet aktif:</b> <code>BINANCE_TESTNET</code> env değişkeni{" "}
-                <code>false</code> olarak ayarlı — bu hesap gerçek (mainnet) Binance USDT-M Futures'a bağlı,
-                açılan tüm emirler gerçek parayla çalışır.
+                <b className="text-[#F5F1EA]">Mainnet aktif:</b> Bu hesap her zaman gerçek (mainnet) Binance
+                USDT-M Futures'a bağlı, açılan tüm emirler gerçek parayla çalışır — testnet desteği yok.
               </p>
               <p>
                 <b className="text-[#F5F1EA]">Kısmi dolum güvenlik ağı:</b> Bir sinyal, giriş emri kısmen dolmuş
@@ -974,7 +973,6 @@ export default function MoneyMakerPage() {
           {!config.apiKeyConfigured && (
             <p className="text-body-xs text-[#A8A6A0]">
               Açmak için backend `.env` içinde BINANCE_API_KEY / BINANCE_API_SECRET tanımlı olmalı (sadece futures izinli, para çekme izni kapalı).
-              {config.testnetActive ? " Şu an testnet'e yönlendirilecek şekilde ayarlı." : ""}
             </p>
           )}
 

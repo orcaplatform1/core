@@ -4,10 +4,9 @@ import { createHmac } from 'crypto';
 // Binance USDT-M Futures REST istemcisi - imzali (signed) istekler icin
 // HMAC-SHA256 kullanir (Binance'in resmi imzalama yontemi). API key/secret
 // SADECE .env'den okunur (BINANCE_API_KEY/BINANCE_API_SECRET), DB'de tutulmaz.
-// BINANCE_TESTNET !== 'false' oldugu surece testnet'e baglanir - gercek
-// paraya gecmek icin kullanicinin bilincli olarak .env'de bu degeri 'false'
-// yapmasi gerekir (bkz. AutoTradeService - ayrica DB'deki AutoTradeConfig.enabled
-// de acik olmali, iki bagimsiz anahtar).
+// Daima mainnet'e baglanir (2026-08-25: testnet destegi komple kaldirildi,
+// gercek paraya gecis kalici - DB'deki AutoTradeConfig.enabled/cryptoEnabled
+// hala acik olmali, gercek emir icin bunlar sart).
 export interface SymbolFilters {
   stepSize: number;
   tickSize: number;
@@ -20,9 +19,8 @@ export class BinanceFuturesClientService {
   private readonly logger = new Logger(BinanceFuturesClientService.name);
   private readonly apiKey = process.env.BINANCE_API_KEY || '';
   private readonly apiSecret = process.env.BINANCE_API_SECRET || '';
-  readonly testnet = process.env.BINANCE_TESTNET !== 'false';
-  readonly restBase = this.testnet ? 'https://testnet.binancefuture.com' : 'https://fapi.binance.com';
-  readonly wsBase = this.testnet ? 'wss://stream.binancefuture.com' : 'wss://fstream.binance.com';
+  readonly restBase = 'https://fapi.binance.com';
+  readonly wsBase = 'wss://fstream.binance.com';
 
   get isConfigured(): boolean {
     return !!this.apiKey && !!this.apiSecret;

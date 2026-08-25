@@ -34,7 +34,6 @@ export class AutoTradeController {
       ...config,
       apiKeyConfigured: this.binance.isConfigured,
       restBase: this.binance.restBase,
-      testnetActive: this.binance.testnet,
     };
   }
 

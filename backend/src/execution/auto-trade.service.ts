@@ -44,9 +44,10 @@ function pearsonReturnsCorrelation(a: number[], b: number[]): number | null {
 // Kullanici istegi 2026-08-20: "sistemi hazırla... stop entry'e kadar kendi
 // çeksin... bana hiçbişi sorma otomatik yap" - AMA "ne zaman başarı oranımız
 // belli dedik... başlarız" de dedigi icin varsayilan KAPALI (AutoTradeConfig.
-// enabled=false, testnet=true) - kullanici hazir oldugunda admin endpoint'ten
-// acacak. Bu iki bagimsiz anahtar + .env'de gercek API key sarti olmadan HICBIR
-// gercek emir gitmez (bkz. isActive()).
+// enabled=false) - kullanici hazir oldugunda admin endpoint'ten acacak. Bu iki
+// bagimsiz anahtar (enabled + cryptoEnabled) + .env'de gercek API key sarti
+// olmadan HICBIR gercek emir gitmez (bkz. isActive()). Borsa baglantisi daima
+// mainnet (2026-08-25: testnet destegi komple kaldirildi).
 //
 // Akis: onSignalCreated -> LIMIT giris emri (borsa doldurur) -> ORDER_TRADE_UPDATE
 // (websocket, anlik) -> SL+TP1+TP2+TP3 emirleri acilir -> TP1 dolunca stop

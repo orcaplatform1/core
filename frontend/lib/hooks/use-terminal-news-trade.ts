@@ -10,7 +10,6 @@ import { apiClient } from "@/lib/api-client";
 export type TerminalNewsTradeConfig = {
   id: string;
   enabled: boolean;
-  testnet: boolean;
   shadowMode: boolean;
   riskPerTradeUsdt: number;
   leverage: number;
@@ -18,7 +17,6 @@ export type TerminalNewsTradeConfig = {
   apiKeyConfigured: boolean;
   xApiConfigured: boolean;
   aiConfigured: boolean;
-  testnetActive: boolean;
 };
 
 export type NewsCategory =

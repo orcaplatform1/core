@@ -924,7 +924,6 @@ model TrackedSignal {
 model AutoTradeConfig {
   id               String   @id @default(cuid())
   enabled          Boolean  @default(false)
-  testnet          Boolean  @default(true)
   cryptoEnabled    Boolean  @default(true)
   // Henuz gercek bir forex brokeri baglanmadigi icin (kullanici istegi
   // 2026-08-22: "api şimdilik kalsın, daha sonra kuracağız") forexEnabled
@@ -1051,7 +1050,6 @@ enum TerminalNewsTradeStatus {
 model TerminalNewsTradeConfig {
   id               String   @id @default(cuid())
   enabled          Boolean  @default(false)
-  testnet          Boolean  @default(true)
   shadowMode       Boolean  @default(true)
   riskPerTradeUsdt Float    @default(10)
   leverage         Int      @default(5)

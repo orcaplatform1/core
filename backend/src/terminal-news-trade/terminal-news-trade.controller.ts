@@ -12,7 +12,8 @@ import { TerminalNewsTradeService } from './terminal-news-trade.service';
 // Terminal News Trade acma/kapama ve risk ayarlari - SADECE SUPER_ADMIN.
 // "enabled" false, "shadowMode" true varsayilan gelir (bkz.
 // TerminalNewsTradeConfig modeli) - kullanici X API erisimini alip golge mod
-// verisini gozden gecirdikten sonra buradan gercek/testnet moda gecirir.
+// verisini gozden gecirdikten sonra buradan gercek moda gecirir (borsa
+// baglantisi daima mainnet, testnet destegi kaldirildi).
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('SUPER_ADMIN')
 @Controller('terminal-news-trade')
@@ -40,7 +41,6 @@ export class TerminalNewsTradeController {
       apiKeyConfigured: this.binance.isConfigured,
       xApiConfigured: this.xStream.isConfigured,
       aiConfigured: this.classifier.isConfigured,
-      testnetActive: this.binance.testnet,
     };
   }
 
