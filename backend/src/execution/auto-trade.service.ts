@@ -57,6 +57,44 @@ function pearsonReturnsCorrelation(a: number[], b: number[]): number | null {
 export class AutoTradeService implements OnModuleInit {
   private readonly logger = new Logger(AutoTradeService.name);
 
+  // Money Maker disinda (dogrudan Binance'ten) elle acilmis pozisyonlar DB'de
+  // hic kayitli degil - kapandiklarinda TP mi stop mu vurdugunu anlayabilmek
+  // icin son gorulen durumlarini (stop/TP emir id'leri, giris fiyati vb.)
+  // bellekte tutuyoruz (kullanici istegi 2026-08-25: "islem orda kapanıncada
+  // burda tp se tp stopda stop diye etiket koyarsın"). Restart'ta sifirlanir -
+  // DB'ye yazilmiyor, bilerek hafif tutuldu.
+  private readonly manualPositionState = new Map<
+    string,
+    {
+      direction: 'LONG' | 'SHORT';
+      qty: number;
+      entryPrice: number;
+      sinceMs: number;
+      // 2025-12-09'dan sonra Binance STOP_MARKET/TAKE_PROFIT_MARKET emirlerini
+      // ayri bir "Algo Order" servisine tasidi (bkz. BinanceFuturesClientService
+      // getOpenAlgoOrders yorumu) - o yuzden bir emrin normal (/fapi/v1/order)
+      // mi yoksa algo (/fapi/v1/algoOrder) mi oldugunu ayrica tutuyoruz, kapanis
+      // sebebini kontrol ederken dogru endpoint'e sorulabilsin diye.
+      stop: { kind: 'algo' | 'order'; id: number } | null;
+      tp1: { kind: 'algo' | 'order'; id: number } | null;
+      tp2: { kind: 'algo' | 'order'; id: number } | null;
+      tp3: { kind: 'algo' | 'order'; id: number } | null;
+    }
+  >();
+  private manualClosedHistory: Array<{
+    id: string;
+    symbol: string;
+    direction: 'LONG' | 'SHORT';
+    closeReason: 'TP3' | 'STOP_FULL_LOSS' | 'MANUAL_CLOSE';
+    entryPrice: number;
+    qty: number;
+    closedAtMs: number;
+    realizedPnl: number;
+    commission: number;
+    funding: number;
+    netPnl: number;
+  }> = [];
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
@@ -779,13 +817,233 @@ export class AutoTradeService implements OnModuleInit {
         };
       }),
     );
-    return results;
+
+    // Money Maker disinda (dogrudan Binance'ten) elle acilmis pozisyonlar -
+    // yukaridaki DB'de hic AutoTrade kaydi yok, o yuzden bot tarafindan
+    // acilmis gibi ayri kartlar olarak ekleniyor (kullanici istegi
+    // 2026-08-25). Sadece gercekten AKTIF (OPEN/BREAKEVEN_SET) DB kayitlarinin
+    // sembolu haric tutulur - PENDING_ENTRY'de borsada henuz gercek pozisyon
+    // yok, cakisma olmaz.
+    const trackedSymbols = new Set(
+      activeTrades.filter((t) => t.status === 'OPEN' || t.status === 'BREAKEVEN_SET').map((t) => t.symbol),
+    );
+    const manualPositions = await this.binance
+      .getAllOpenPositions()
+      .catch(() => [] as Awaited<ReturnType<BinanceFuturesClientService['getAllOpenPositions']>>);
+    const untrackedManual = manualPositions.filter((p) => !trackedSymbols.has(p.symbol));
+
+    const manualResults = await Promise.all(
+      untrackedManual.map(async (p) => {
+        const direction: 'LONG' | 'SHORT' = p.positionAmt > 0 ? 'LONG' : 'SHORT';
+        // STOP_MARKET/TAKE_PROFIT_MARKET (Binance UI'nin "TP/SL" kisayolunun
+        // koydugu tip) 2025-12-09'dan beri normal /fapi/v1/openOrders'ta
+        // GORUNMUYOR, ayri "Algo Order" listesinden gelmesi lazim - bkz.
+        // BinanceFuturesClientService.getOpenAlgoOrders yorumu (kullanici
+        // geri bildirimi 2026-08-25: tek stop/tek TP koydu, panel "bulunamadı"
+        // dedi - kok sebep buydu). Duz LIMIT reduceOnly emirler (manuel TP
+        // icin de kullanilabilir) hala normal openOrders'ta kaliyor, o yuzden
+        // ikisi birlikte sorgulanip birlestiriliyor.
+        const [orders, algoOrders] = await Promise.all([
+          this.binance.getOpenOrders(p.symbol).catch(() => []),
+          this.binance.getOpenAlgoOrders(p.symbol).catch(() => []),
+        ]);
+        const algoStop = algoOrders.find((o) => o.orderType === 'STOP_MARKET' || o.orderType === 'STOP') ?? null;
+        const regularStop = !algoStop ? orders.find((o) => o.type === 'STOP_MARKET' || o.type === 'STOP') ?? null : null;
+        const stopRef: { kind: 'algo' | 'order'; id: number; price: number } | null = algoStop
+          ? { kind: 'algo', id: algoStop.algoId, price: algoStop.triggerPrice }
+          : regularStop
+            ? { kind: 'order', id: regularStop.orderId, price: regularStop.stopPrice }
+            : null;
+
+        const tpCandidates = [
+          ...algoOrders
+            .filter((o) => o !== algoStop && (o.orderType === 'TAKE_PROFIT_MARKET' || o.orderType === 'TAKE_PROFIT'))
+            .map((o) => ({ kind: 'algo' as const, id: o.algoId, price: o.triggerPrice })),
+          ...orders
+            .filter((o) => o !== regularStop && (o.type === 'TAKE_PROFIT_MARKET' || o.type === 'TAKE_PROFIT' || (o.type === 'LIMIT' && o.reduceOnly)))
+            .map((o) => ({ kind: 'order' as const, id: o.orderId, price: o.type === 'LIMIT' ? o.price : o.stopPrice })),
+        ].sort((a, b) => Math.abs(a.price - p.entryPrice) - Math.abs(b.price - p.entryPrice));
+        const [tp1, tp2, tp3] = tpCandidates;
+
+        // Bir sonraki poll'da bu pozisyon Binance'ten kaybolursa (kapandiysa)
+        // TP mi stop mu vurdugunu anlayabilmek icin son gorulen emir
+        // referanslarini (hangi endpoint'ten geldigi + id) bellekte
+        // guncelliyoruz.
+        this.manualPositionState.set(p.symbol, {
+          direction,
+          qty: Math.abs(p.positionAmt),
+          entryPrice: p.entryPrice,
+          sinceMs: this.manualPositionState.get(p.symbol)?.sinceMs ?? Date.now(),
+          stop: stopRef ? { kind: stopRef.kind, id: stopRef.id } : null,
+          tp1: tp1 ? { kind: tp1.kind, id: tp1.id } : null,
+          tp2: tp2 ? { kind: tp2.kind, id: tp2.id } : null,
+          tp3: tp3 ? { kind: tp3.kind, id: tp3.id } : null,
+        });
+
+        return {
+          id: `manual:${p.symbol}`,
+          symbol: p.symbol,
+          direction,
+          status: 'OPEN' as const,
+          closeReason: null,
+          entryPrice: p.entryPrice,
+          qty: Math.abs(p.positionAmt),
+          markPrice: p.markPrice,
+          unrealizedProfit: p.unrealizedProfit,
+          notional: p.notional,
+          leverage: p.leverage,
+          liquidationPrice: p.liquidationPrice,
+          fundingRate: await this.binance.getFundingRate(p.symbol).catch(() => null),
+          stopPrice: stopRef?.price ?? null,
+          stopTriggered: false,
+          tp1Price: tp1?.price ?? null,
+          tp2Price: tp2?.price ?? null,
+          tp3Price: tp3?.price ?? null,
+          tp1Filled: false,
+          tp2Filled: false,
+          tp3Filled: false,
+          realizedSoFar: 0,
+          commissionSoFar: 0,
+          fundingSoFar: 0,
+          manual: true,
+        };
+      }),
+    );
+
+    // Az once bellekte kayitli olup artik Binance'te (ve bot tarafinda) hic
+    // gorulmeyen semboller = kapanmis demek - hangi emrin (stop/TP) doldugunu
+    // kontrol edip "TP3"/"STOP_FULL_LOSS"/"MANUAL_CLOSE" olarak etiketliyoruz
+    // (kullanici istegi 2026-08-25: "işlem orda kapanıncada burda tp se tp
+    // stopda stop diye etiket koyarsın").
+    const stillOpenSymbols = new Set(untrackedManual.map((p) => p.symbol));
+    const disappeared = [...this.manualPositionState.entries()].filter(
+      ([symbol]) => !stillOpenSymbols.has(symbol) && !trackedSymbols.has(symbol),
+    );
+    // Bir emir referansinin (stop veya TP) GERCEKTEN tetiklenip tetiklenmedigini
+    // kontrol eder - referans algo ise /fapi/v1/algoOrder (actualOrderId doluysa
+    // tetiklenmis, bkz. bot'un kendi stop'u icin ayni desen yukarida), normal
+    // emirse /fapi/v1/order (status FILLED).
+    const wasFilled = async (symbol: string, ref: { kind: 'algo' | 'order'; id: number } | null): Promise<boolean> => {
+      if (!ref) return false;
+      if (ref.kind === 'algo') {
+        const s = await this.binance.getAlgoOrderStatus(symbol, ref.id).catch(() => null);
+        return !!s?.actualOrderId && s.actualOrderId !== '0' && s.actualOrderId !== '';
+      }
+      const s = await this.binance.getOrderStatus(symbol, ref.id).catch(() => null);
+      return s?.status === 'FILLED';
+    };
+
+    for (const [symbol, state] of disappeared) {
+      this.manualPositionState.delete(symbol);
+      let closeReason: 'TP3' | 'STOP_FULL_LOSS' | 'MANUAL_CLOSE' = 'MANUAL_CLOSE';
+      if (await wasFilled(symbol, state.stop)) {
+        closeReason = 'STOP_FULL_LOSS';
+      } else {
+        for (const tp of [state.tp1, state.tp2, state.tp3]) {
+          if (await wasFilled(symbol, tp)) {
+            closeReason = 'TP3';
+            break;
+          }
+        }
+      }
+      const pnl = await this.binance
+        .getRealizedPnlBreakdown(symbol, state.sinceMs, Date.now())
+        .catch(() => ({ realizedPnl: 0, commission: 0, funding: 0, netTotal: 0 }));
+      this.manualClosedHistory.unshift({
+        id: `manual-closed:${symbol}:${Date.now()}`,
+        symbol,
+        direction: state.direction,
+        closeReason,
+        entryPrice: state.entryPrice,
+        qty: state.qty,
+        closedAtMs: Date.now(),
+        realizedPnl: pnl.realizedPnl,
+        commission: pnl.commission,
+        funding: pnl.funding,
+        netPnl: pnl.netTotal,
+      });
+      await this.notifyAdmins(
+        'Orca ACS: Elle açılan pozisyon kapandı',
+        `${symbol}: ${closeReason === 'TP3' ? 'TP' : closeReason === 'STOP_FULL_LOSS' ? 'Stop' : 'Elle'} ile kapandı - net ${pnl.netTotal >= 0 ? '+' : ''}$${pnl.netTotal.toFixed(2)}.`,
+      );
+    }
+    // 48 saatten eski kayitlar dusurulur, en fazla 15 kayit tutulur - bot'un
+    // kendi CLOSED gecmisiyle ayni pencere/limit (bkz. bu fonksiyonun basi).
+    this.manualClosedHistory = this.manualClosedHistory
+      .filter((c) => c.closedAtMs > Date.now() - 48 * 60 * 60 * 1000)
+      .slice(0, 15);
+
+    const manualClosedResults = this.manualClosedHistory.map((c) => ({
+      id: c.id,
+      symbol: c.symbol,
+      direction: c.direction,
+      status: 'CLOSED' as const,
+      closeReason: c.closeReason,
+      entryPrice: c.entryPrice,
+      qty: c.qty,
+      markPrice: null,
+      unrealizedProfit: null,
+      notional: null,
+      leverage: null,
+      liquidationPrice: null,
+      fundingRate: null,
+      stopPrice: null,
+      stopTriggered: false,
+      tp1Price: null,
+      tp2Price: null,
+      tp3Price: null,
+      tp1Filled: false,
+      tp2Filled: false,
+      tp3Filled: false,
+      realizedSoFar: c.realizedPnl,
+      commissionSoFar: c.commission,
+      fundingSoFar: c.funding,
+      manual: true,
+    }));
+
+    return [...manualResults, ...results, ...manualClosedResults];
+  }
+
+  // "manual:<symbol>" id'li kartlar icin - DB'de hic kaydi olmayan, dogrudan
+  // Binance'ten elle acilmis bir pozisyonu panelden piyasa fiyatiyla kapatir.
+  async closeManualPosition(symbol: string) {
+    const positionAmt = await this.binance.getPositionAmt(symbol).catch(() => 0);
+    if (Math.abs(positionAmt) === 0) return;
+
+    // Elle konulmus stop/TP'ler (algo + normal) kalirsa panelden kapatilmis
+    // pozisyonun "hangisi vurdu" tespiti bir sonraki pollde yanlis MANUAL_CLOSE
+    // yerine hayalet bir TP/stop'a baglanabilir - piyasadan kapatmadan once
+    // hepsi iptal edilir.
+    const [orders, algoOrders] = await Promise.all([
+      this.binance.getOpenOrders(symbol).catch(() => []),
+      this.binance.getOpenAlgoOrders(symbol).catch(() => []),
+    ]);
+    await Promise.all([
+      ...orders.filter((o) => o.reduceOnly).map((o) => this.binance.cancelOrder(symbol, o.orderId)),
+      ...algoOrders.map((o) => this.binance.cancelAlgoOrder(symbol, o.algoId)),
+    ]);
+
+    await this.binance.placeOrder({
+      symbol,
+      side: positionAmt > 0 ? 'SELL' : 'BUY',
+      type: 'MARKET',
+      quantity: Math.abs(positionAmt),
+      reduceOnly: true,
+    });
+    await this.notifyAdmins(
+      'Orca ACS: Manuel pozisyon panelden kapatıldı',
+      `${symbol}: Binance'te elle açılmış pozisyon panelden piyasa fiyatından kapatıldı.`,
+    );
   }
 
   // Tek bir pozisyonu ELLE kapatir (kullanici panelden "Kapat" butonuna
   // basinca) - kalan tum emirleri iptal eder, borsada hala acik pozisyon
   // varsa piyasa fiyatindan kapatir, gercek PnL'i kaydeder.
   async closePosition(tradeId: string) {
+    if (tradeId.startsWith('manual:')) {
+      await this.closeManualPosition(tradeId.slice('manual:'.length));
+      return;
+    }
     const trade = await this.prisma.autoTrade.findUnique({ where: { id: tradeId } });
     if (!trade) throw new Error('İşlem bulunamadı');
     if (trade.status === 'PENDING_ENTRY') {
@@ -846,7 +1104,21 @@ export class AutoTradeService implements OnModuleInit {
         this.logger.error(`closeAllPositions: ${trade.symbol} kapatilamadi: ${err.message}`),
       );
     }
-    return { closed: openTrades.length };
+
+    // Elle acilmis (DB'de hic kaydi olmayan) pozisyonlar da "Tüm İşlemleri
+    // Kapat" ile birlikte kapatilsin (kullanici istegi 2026-08-25).
+    const trackedSymbols = new Set(
+      openTrades.filter((t) => t.status === 'OPEN' || t.status === 'BREAKEVEN_SET').map((t) => t.symbol),
+    );
+    const manualPositions = await this.binance.getAllOpenPositions().catch(() => []);
+    let manualClosed = 0;
+    for (const p of manualPositions.filter((p) => !trackedSymbols.has(p.symbol))) {
+      await this.closeManualPosition(p.symbol)
+        .then(() => manualClosed++)
+        .catch((err) => this.logger.error(`closeAllPositions: manuel ${p.symbol} kapatilamadi: ${err.message}`));
+    }
+
+    return { closed: openTrades.length + manualClosed };
   }
 
   // kaydi silinmeden once borsadaki acik emirleri de temizler, aksi halde

@@ -490,6 +490,12 @@ function PositionCard({
     : isPending
       ? "BEKLİYOR — LİMİT EMİR DOLMADI"
       : "AÇIK";
+  // Money Maker disinda (dogrudan Binance'ten) elle acilmis pozisyonlar -
+  // botun stop/TP kademeleri hic yok, bu yuzden ayri bir sari "MANUEL" rozeti
+  // ve alt notla isaretleniyor (kullanici istegi 2026-08-25: "kendim
+  // binancedan actigim pozisyonları... otomatik acilmis gibi gostersin
+  // money makerdan yoneteyim").
+  const isManual = !!position.manual;
 
   // R-multiple: risk mesafesi. Kripto'da sabit dolar riski/miktardan turetilir
   // (config.riskPerTradeUsdt / qty) - TP1 sonrasi stop basabasa cekilse bile
@@ -498,8 +504,9 @@ function PositionCard({
   // ZAMAN girisin tam 1R uzaginda oldugu icin |TP1-giris| direkt 1R mesafesidir -
   // "1R" her iki markette de ayni anlama gelir (kullanici istegi 2026-08-20:
   // "yüzdelik ve RR'ları da parantez içinde yaz").
-  const riskDistance =
-    market === "FOREX"
+  const riskDistance = isManual
+    ? null
+    : market === "FOREX"
       ? position.tp1Price != null && position.entryPrice != null
         ? Math.abs(position.tp1Price - position.entryPrice)
         : null
@@ -541,7 +548,11 @@ function PositionCard({
         ? "NOT: TP2 Alındı. Stop zaten girişte (değişmedi)."
         : tp1Filled
           ? "NOT: TP1 Alındı, Giriş Stopa Çekildi."
-          : null;
+          : isManual
+            ? position.stopPrice != null || position.tp1Price != null
+              ? "NOT: Bu pozisyon ve Binance'te elle eklediğin stop/TP emirleri okunuyor — TP1/TP2/TP3 kutucukları borsadaki bekleyen emirlerin fiyatını gösterir, doldu bilgisi takip edilmiyor."
+              : "NOT: Bu pozisyon Binance'te elle açıldı, borsada bekleyen bir stop/TP emri bulunamadı — kapatmak istersen buradan piyasa fiyatından kapatabilirsin."
+            : null;
   // Not kutusu rengi: stop'a bagli (acik pozisyonda stopTriggered, kapanmis
   // pozisyonda STOP_BREAKEVEN/STOP_FULL_LOSS) durumlarda kirmizi, digerlerinde
   // (TP3, TP1/TP2, elle kapatma) pembe - kullanici istegi 2026-08-22: "notun
@@ -586,6 +597,14 @@ function PositionCard({
           >
             {statusLabel}
           </span>
+          {isManual && (
+            <span
+              className="rounded-full px-2.5 py-1 text-badge font-semibold uppercase"
+              style={{ backgroundColor: "#F5A62322", color: "#F5A623", boxShadow: "0 0 12px -2px #F5A62366" }}
+            >
+              Manuel
+            </span>
+          )}
         </div>
         {!isClosed && (
           <Button

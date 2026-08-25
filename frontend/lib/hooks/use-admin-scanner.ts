@@ -200,6 +200,10 @@ export type LiveAutoTradePosition = {
   realizedSoFar: number;
   commissionSoFar: number;
   fundingSoFar: number;
+  // true ise bu pozisyon Money Maker tarafindan degil, dogrudan Binance'ten
+  // elle acilmis - DB'de hic AutoTrade kaydi yok, sadece borsadaki canli
+  // pozisyondan turetildi (bkz. backend AutoTradeService.getLivePositions).
+  manual?: boolean;
 };
 export function useAutoTradePositions() {
   return useQuery({

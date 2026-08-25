@@ -182,14 +182,70 @@ export class BinanceFuturesClientService {
     };
   }
 
+  // Money Maker'in disinda (dogrudan Binance uygulamasindan) elle acilmis
+  // pozisyonlari da panelde gostermek icin (kullanici istegi 2026-08-25:
+  // "kendim binancedan actigim pozisyonları gostermiyor... otomatik acilmis
+  // gibi gostersin money makerdan yoneteyim") - symbol parametresi VERILMEDEN
+  // cagrilirsa Binance hesaptaki TUM sembollerin pozisyon riskini doner,
+  // burada sadece gercekten acik olanlar (positionAmt != 0) filtrelenir.
+  async getAllOpenPositions(): Promise<
+    {
+      symbol: string;
+      positionAmt: number;
+      entryPrice: number;
+      markPrice: number;
+      unrealizedProfit: number;
+      leverage: number;
+      notional: number;
+      liquidationPrice: number;
+    }[]
+  > {
+    const rows = await this.signedRequest<
+      {
+        symbol: string;
+        positionAmt: string;
+        entryPrice: string;
+        markPrice: string;
+        unRealizedProfit: string;
+        leverage: string;
+        notional: string;
+        liquidationPrice: string;
+      }[]
+    >('GET', '/fapi/v2/positionRisk');
+    return rows
+      .filter((r) => parseFloat(r.positionAmt) !== 0)
+      .map((r) => ({
+        symbol: r.symbol,
+        positionAmt: parseFloat(r.positionAmt),
+        entryPrice: parseFloat(r.entryPrice),
+        markPrice: parseFloat(r.markPrice),
+        unrealizedProfit: parseFloat(r.unRealizedProfit),
+        leverage: parseFloat(r.leverage),
+        notional: Math.abs(parseFloat(r.notional)),
+        liquidationPrice: parseFloat(r.liquidationPrice),
+      }));
+  }
+
   // Panel kartinda SL/TP1/TP2/TP3 fiyatlarini GERCEKTEN borsada bekleyen
   // emirlerden okumak icin (kullanici istegi 2026-08-20: "stop tp nerede
   // yazıyor") - DB'deki sig.stop/tp1/tp2/tp3 statik degerler, TP1 dolunca
   // stop basabasa cekildigi icin (bkz. onTp1Filled) canli deger sadece
   // borsadan gelen bu emirlerde dogru.
-  async getOpenOrders(symbol: string): Promise<{ orderId: number; price: number }[]> {
-    const rows = await this.signedRequest<{ orderId: number; price: string }[]>('GET', '/fapi/v1/openOrders', { symbol });
-    return rows.map((r) => ({ orderId: r.orderId, price: parseFloat(r.price) }));
+  async getOpenOrders(symbol: string): Promise<
+    { orderId: number; price: number; type: string; side: string; stopPrice: number; reduceOnly: boolean; closePosition: boolean }[]
+  > {
+    const rows = await this.signedRequest<
+      { orderId: number; price: string; type: string; side: string; stopPrice: string; reduceOnly: boolean; closePosition: boolean }[]
+    >('GET', '/fapi/v1/openOrders', { symbol });
+    return rows.map((r) => ({
+      orderId: r.orderId,
+      price: parseFloat(r.price),
+      type: r.type,
+      side: r.side,
+      stopPrice: parseFloat(r.stopPrice),
+      reduceOnly: r.reduceOnly,
+      closePosition: r.closePosition,
+    }));
   }
 
   // Bir LIMIT emrin (TP1/TP2/TP3) GERCEKTEN dolup dolmadigini kontrol etmek
@@ -369,6 +425,29 @@ export class BinanceFuturesClientService {
     algoId: string | number,
   ): Promise<{ algoStatus: string; actualOrderId: string; actualPrice: string; triggerPrice: string }> {
     return this.signedRequest('GET', '/fapi/v1/algoOrder', { symbol, algoId });
+  }
+
+  // Binance UI'dan (Money Maker disinda) elle konulan stop/TP'leri okumak icin
+  // - 2025-12-09'dan sonra tum kosullu emirler (STOP_MARKET/TAKE_PROFIT_MARKET)
+  // /fapi/v1/openOrders'ta GORUNMUYOR (bkz. placeOrder yorumu, -4120 hatasi),
+  // ayri bir liste endpoint'i gerekiyor. Kullanici geri bildirimi 2026-08-25:
+  // Binance'ten elle koydugu tek stop/tek TP panelde "bulunamadı" gorunuyordu -
+  // kok sebep buydu, /fapi/v1/openOrders bos donuyordu cunku bu emirler orada
+  // hic yok.
+  async getOpenAlgoOrders(
+    symbol: string,
+  ): Promise<{ algoId: number; orderType: string; side: string; triggerPrice: number; reduceOnly: boolean; closePosition: boolean }[]> {
+    const rows = await this.signedRequest<
+      { algoId: number; orderType: string; side: string; triggerPrice: string; reduceOnly: boolean; closePosition: boolean }[]
+    >('GET', '/fapi/v1/openAlgoOrders', { symbol });
+    return rows.map((r) => ({
+      algoId: r.algoId,
+      orderType: r.orderType,
+      side: r.side,
+      triggerPrice: parseFloat(r.triggerPrice),
+      reduceOnly: r.reduceOnly,
+      closePosition: r.closePosition,
+    }));
   }
 
   // Pozisyon tamamen kapandiktan sonra o sembol+zaman araligindaki GERCEK
