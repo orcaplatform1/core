@@ -327,6 +327,31 @@ export class AuthService {
     return { message: 'Şifre başarıyla değiştirildi. Lütfen tekrar giriş yapın.' };
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !user.password) {
+      throw new BadRequestException('Şifre değiştirilemiyor.');
+    }
+
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!passwordMatch) {
+      throw new BadRequestException('Mevcut şifre yanlış.');
+    }
+
+    const password = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password },
+    });
+
+    await this.securityLogService.log('PASSWORD_CHANGE', user.id);
+
+    return { message: 'Şifre başarıyla değiştirildi.' };
+  }
+
   async verifyEmail(token: string) {
     const user = await this.prisma.user.findFirst({
       where: { emailVerificationToken: token },

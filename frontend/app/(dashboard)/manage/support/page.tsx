@@ -35,6 +35,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   PAYMENT: "Ödeme",
   TECHNICAL: "Teknik Sorun",
   ACCOUNT: "Hesap",
+  EMAIL_PHONE_CHANGE: "E-posta/Telefon Değiştir",
   OTHER: "Diğer",
 };
 

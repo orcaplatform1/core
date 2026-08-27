@@ -87,3 +87,15 @@ export const confirmResetSchema = z
     path: ["newPasswordConfirm"],
   });
 export type ConfirmResetFormValues = z.infer<typeof confirmResetSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Mevcut şifreni gir"),
+    newPassword: z.string().min(8, "Yeni şifre en az 8 karakter olmalı"),
+    newPasswordConfirm: z.string(),
+  })
+  .refine((data) => data.newPassword === data.newPasswordConfirm, {
+    message: "Şifreler eşleşmiyor",
+    path: ["newPasswordConfirm"],
+  });
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

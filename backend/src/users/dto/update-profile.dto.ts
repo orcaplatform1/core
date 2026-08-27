@@ -1,4 +1,4 @@
-import { IsOptional, IsDateString, IsEnum, IsEmail, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsDateString, IsEnum } from 'class-validator';
 export enum EducationLevelDto {
   ILKOGRETIM = 'ILKOGRETIM',
   LISE = 'LISE',
@@ -24,11 +24,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(OccupationTypeDto)
   occupation?: OccupationTypeDto;
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-  @IsOptional()
-  @IsString()
-  @MinLength(10)
-  phone?: string;
 }

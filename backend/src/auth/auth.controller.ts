@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ConfirmPhoneVerificationDto } from './dto/confirm-phone-verification.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
@@ -73,6 +74,13 @@ export class AuthController {
   @Post('password-reset/confirm')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
+    const userId = (req.user as any).id;
+    return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
   }
 
   @Post('verify-email')

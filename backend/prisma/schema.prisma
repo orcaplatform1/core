@@ -1233,6 +1233,7 @@ enum SupportTicketCategory {
   PAYMENT
   TECHNICAL
   ACCOUNT
+  EMAIL_PHONE_CHANGE
   OTHER
 }
 

@@ -89,3 +89,10 @@ export function useRequestAccountDeletion() {
     mutationFn: () => apiClient("/users/me/delete", { method: "POST" }),
   });
 }
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (payload: { currentPassword: string; newPassword: string }) =>
+      apiClient<{ message: string }>("/auth/change-password", { method: "POST", body: payload }),
+  });
+}

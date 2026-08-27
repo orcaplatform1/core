@@ -103,20 +103,11 @@ export class UsersService {
       }
     }
 
-    const current = await this.prisma.user.findUnique({ where: { id: userId } });
     const data: any = {
       dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
       education: dto.education as any,
       occupation: dto.occupation as any,
     };
-    if (dto.email && dto.email !== current?.email) {
-      data.email = dto.email;
-      data.emailVerified = false;
-    }
-    if (dto.phone && dto.phone !== current?.phone) {
-      data.phone = dto.phone;
-      data.phoneVerified = false;
-    }
     try {
       return await this.prisma.user.update({
         where: { id: userId },

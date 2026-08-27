@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
-export type SupportTicketCategory = "PAYMENT" | "TECHNICAL" | "ACCOUNT" | "OTHER";
+export type SupportTicketCategory = "PAYMENT" | "TECHNICAL" | "ACCOUNT" | "EMAIL_PHONE_CHANGE" | "OTHER";
 export type SupportTicketStatus = "OPEN" | "IN_PROGRESS" | "CLOSED";
 
 export type SupportUser = {

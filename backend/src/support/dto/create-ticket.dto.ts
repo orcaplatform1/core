@@ -1,6 +1,6 @@
 import { IsIn, IsString, MinLength } from 'class-validator';
 
-const CATEGORIES = ['PAYMENT', 'TECHNICAL', 'ACCOUNT', 'OTHER'] as const;
+const CATEGORIES = ['PAYMENT', 'TECHNICAL', 'ACCOUNT', 'EMAIL_PHONE_CHANGE', 'OTHER'] as const;
 
 export class CreateTicketDto {
   @IsString()

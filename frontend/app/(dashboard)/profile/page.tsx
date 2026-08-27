@@ -5,22 +5,35 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Lock, Download, Trash2, ShieldAlert, ShieldCheck, ShieldX, Copy, Gift, UserX } from "lucide-react";
+import {
+  Lock,
+  Download,
+  Trash2,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  Copy,
+  Gift,
+  UserX,
+  KeyRound,
+  LifeBuoy,
+} from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { profileSchema, type ProfileFormValues } from "@/lib/schemas/auth";
+import {
+  profileSchema,
+  changePasswordSchema,
+  type ProfileFormValues,
+  type ChangePasswordFormValues,
+} from "@/lib/schemas/auth";
 import {
   useUpdateProfile,
   useExportMyData,
   useRequestAccountDeletion,
   useMyBlockedList,
   useUnblockUser,
+  useChangePassword,
 } from "@/lib/hooks/use-profile";
 import { useReferralStats } from "@/lib/hooks/use-referral";
-import {
-  useRequestPhoneVerification,
-  useConfirmPhoneVerification,
-} from "@/lib/hooks/use-verification";
-import { countryCodes } from "@/lib/data/country-codes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -138,20 +151,19 @@ export default function ProfilePage() {
   const { mutate: updateProfile, isPending: saving } = useUpdateProfile();
   const { mutate: exportData, isPending: exporting } = useExportMyData();
   const { mutate: requestDeletion, isPending: deleting } = useRequestAccountDeletion();
-  const { mutate: requestPhoneCode, isPending: sendingCode } = useRequestPhoneVerification();
-  const { mutate: confirmPhoneCode, isPending: confirmingCode } = useConfirmPhoneVerification();
+  const { mutate: changePassword, isPending: changingPassword } = useChangePassword();
   const { data: referralStats } = useReferralStats();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const initialPhone = user?.phone ?? "";
-  const initialDialCode = countryCodes.find((c) => initialPhone.startsWith(c.dialCode))?.dialCode ?? "+90";
-  const initialLocalNumber = initialPhone.startsWith(initialDialCode)
-    ? initialPhone.slice(initialDialCode.length)
-    : "";
-  const [phoneCountryCode, setPhoneCountryCode] = useState(initialDialCode);
-  const [phoneNumberDraft, setPhoneNumberDraft] = useState(initialLocalNumber);
-  const [showCodeInput, setShowCodeInput] = useState(false);
-  const [phoneCode, setPhoneCode] = useState("");
+
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+  });
 
   const { register, handleSubmit, setValue, watch } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -173,38 +185,17 @@ export default function ProfilePage() {
     });
   };
 
-  const savePhone = () => {
-    updateProfile(
-      { phone: `${phoneCountryCode}${phoneNumberDraft}` },
+  const onChangePassword = (values: ChangePasswordFormValues) => {
+    changePassword(
+      { currentPassword: values.currentPassword, newPassword: values.newPassword },
       {
         onSuccess: () => {
-          toast.success("Telefon kaydedildi", { description: "Şimdi doğrulayabilirsin." });
-          refreshUser();
+          toast.success("Şifren güncellendi");
+          resetPasswordForm();
         },
-        onError: () => toast.error("Telefon kaydedilemedi."),
+        onError: (err: any) => toast.error(err?.message ?? "Şifre değiştirilemedi."),
       }
     );
-  };
-
-  const sendCode = () => {
-    requestPhoneCode(undefined, {
-      onSuccess: (data: any) => {
-        toast.info(data?.message ?? "Kod gönderildi");
-        setShowCodeInput(true);
-      },
-      onError: () => toast.error("Kod gönderilemedi."),
-    });
-  };
-
-  const confirmCode = () => {
-    confirmPhoneCode(phoneCode, {
-      onSuccess: () => {
-        toast.success("Telefon doğrulandı");
-        setShowCodeInput(false);
-        refreshUser();
-      },
-      onError: () => toast.error("Kod hatalı ya da süresi dolmuş."),
-    });
   };
 
   const handleExport = () => {
@@ -333,102 +324,84 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* İletişim — doğrulama durumuna göre kilitli/editable */}
+      {/* İletişim — kalıcı kilitli, değişiklik destek merkezi üzerinden */}
       <div className="rounded-2xl border border-border bg-card p-6">
         <h3 className="text-card-title-sm text-foreground">İletişim Bilgileri</h3>
 
         <div className="mt-5 flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <Label className="text-muted-foreground">Email</Label>
+              <Label className="flex items-center gap-1.5 text-muted-foreground">
+                <Lock className="size-3.5" /> Email
+              </Label>
               {user?.email && <VerifyBadge verified={!!user?.emailVerified} />}
             </div>
             <Input value={user?.email ?? "—"} disabled />
-            {user?.email && !user?.emailVerified && (
-              <span className="text-body-xs text-muted-foreground">
-                Kayıt sırasında gönderilen doğrulama bağlantısına tıklayarak email'ini doğrula.
-              </span>
-            )}
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <Label className="text-muted-foreground">Telefon</Label>
+              <Label className="flex items-center gap-1.5 text-muted-foreground">
+                <Lock className="size-3.5" /> Telefon
+              </Label>
               {user?.phone && <VerifyBadge verified={!!user?.phoneVerified} />}
             </div>
+            <Input value={user?.phone ?? "—"} disabled />
+          </div>
+        </div>
 
-            {user?.phoneVerified ? (
-              <Input value={user.phone ?? ""} disabled />
-            ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Select value={phoneCountryCode} onValueChange={(v) => setPhoneCountryCode(v ?? "+90")}>
-                    <SelectTrigger className="w-[92px] shrink-0">
-                      <SelectValue>
-                        {() => {
-                          const selected = countryCodes.find((c) => c.dialCode === phoneCountryCode);
-                          return selected ? `${selected.flag} ${selected.dialCode}` : "+90";
-                        }}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countryCodes.map((c) => (
-                        <SelectItem key={c.code} value={c.dialCode}>
-                          {c.flag} {c.dialCode}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    value={phoneNumberDraft}
-                    onChange={(e) => setPhoneNumberDraft(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    inputMode="numeric"
-                    maxLength={10}
-                    className="min-w-0 flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    className="h-9 shrink-0"
-                    disabled={saving || phoneNumberDraft.length !== 10}
-                    onClick={savePhone}
-                  >
-                    Kaydet
-                  </Button>
-                </div>
+        <p className="mt-4 text-body-xs text-muted-foreground">
+          Email veya telefonunu değiştirmek için Destek Merkezi&apos;ne talep oluştur.
+        </p>
+        <Link href="/support?category=EMAIL_PHONE_CHANGE" className="mt-3 inline-block">
+          <Button variant="outline" className="h-10">
+            <LifeBuoy className="size-4" /> Destek Merkezi&apos;ne Git
+          </Button>
+        </Link>
+      </div>
 
-                {user?.phone && !showCodeInput && (
-                  <Button
-                    variant="outline"
-                    className="h-9 w-fit"
-                    disabled={sendingCode}
-                    onClick={sendCode}
-                  >
-                    {sendingCode ? "Gönderiliyor..." : "Doğrulama Kodu Gönder"}
-                  </Button>
-                )}
+      {/* Şifre Değiştir */}
+      <form
+        onSubmit={handlePasswordSubmit(onChangePassword)}
+        className="rounded-2xl border border-border bg-card p-6"
+      >
+        <h3 className="flex items-center gap-2 text-card-title-sm text-foreground">
+          <KeyRound className="size-4" /> Şifre Değiştir
+        </h3>
+        <p className="mt-1 text-body-xs text-muted-foreground">
+          Hesap güvenliğin için şifreni düzenli olarak güncelle.
+        </p>
 
-                {showCodeInput && (
-                  <div className="flex gap-2">
-                    <Input
-                      value={phoneCode}
-                      onChange={(e) => setPhoneCode(e.target.value)}
-                      placeholder="6 haneli kod"
-                      maxLength={6}
-                    />
-                    <Button
-                      className="h-9 shrink-0"
-                      disabled={confirmingCode || phoneCode.length !== 6}
-                      onClick={confirmCode}
-                    >
-                      {confirmingCode ? "Doğrulanıyor..." : "Doğrula"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="currentPassword">Mevcut Şifre</Label>
+            <Input id="currentPassword" type="password" {...registerPassword("currentPassword")} />
+            {passwordErrors.currentPassword && (
+              <span className="text-body-xs text-danger">{passwordErrors.currentPassword.message}</span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="newPassword">Yeni Şifre</Label>
+            <Input id="newPassword" type="password" {...registerPassword("newPassword")} />
+            {passwordErrors.newPassword && (
+              <span className="text-body-xs text-danger">{passwordErrors.newPassword.message}</span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="newPasswordConfirm">Yeni Şifre (Tekrar)</Label>
+            <Input id="newPasswordConfirm" type="password" {...registerPassword("newPasswordConfirm")} />
+            {passwordErrors.newPasswordConfirm && (
+              <span className="text-body-xs text-danger">{passwordErrors.newPasswordConfirm.message}</span>
             )}
           </div>
         </div>
-      </div>
+
+        <Button type="submit" disabled={changingPassword} className="mt-6 h-11">
+          {changingPassword ? "Güncelleniyor..." : "Şifreyi Güncelle"}
+        </Button>
+      </form>
 
       {/* Kişisel Bilgiler — her zaman düzenlenebilir */}
       <form onSubmit={handleSubmit(onSubmit)} className="rounded-2xl border border-border bg-card p-6">

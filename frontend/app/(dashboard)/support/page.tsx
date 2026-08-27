@@ -14,6 +14,7 @@ import {
   Clock,
   Loader2,
   CheckCircle2,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const CATEGORY_OPTIONS: { value: SupportTicketCategory; label: string; icon: typ
   { value: "PAYMENT", label: "Ödeme", icon: CreditCard },
   { value: "TECHNICAL", label: "Teknik Sorun", icon: Wrench },
   { value: "ACCOUNT", label: "Hesap", icon: UserCog },
+  { value: "EMAIL_PHONE_CHANGE", label: "E-posta/Telefon Değiştir", icon: Mail },
   { value: "OTHER", label: "Diğer", icon: MoreHorizontal },
 ];
 
@@ -54,8 +56,14 @@ function formatClock(iso: string) {
   return `${date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })} ${time}`;
 }
 
-function NewTicketForm({ onCreated }: { onCreated: (id: string) => void }) {
-  const [category, setCategory] = useState<SupportTicketCategory>("OTHER");
+function NewTicketForm({
+  onCreated,
+  initialCategory,
+}: {
+  onCreated: (id: string) => void;
+  initialCategory?: SupportTicketCategory;
+}) {
+  const [category, setCategory] = useState<SupportTicketCategory>(initialCategory ?? "OTHER");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const createTicket = useCreateTicket();
@@ -317,6 +325,7 @@ function SupportPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const ticketParam = searchParams.get("ticket");
+  const categoryParam = searchParams.get("category") as SupportTicketCategory | null;
   const [selected, setSelected] = useState<string | null>(ticketParam);
 
   useEffect(() => {
@@ -344,7 +353,7 @@ function SupportPageInner() {
         <TicketThread ticketId={selected} onBack={backToList} />
       ) : (
         <>
-          <NewTicketForm onCreated={selectTicket} />
+          <NewTicketForm onCreated={selectTicket} initialCategory={categoryParam ?? undefined} />
           <TicketList onSelect={selectTicket} />
         </>
       )}
