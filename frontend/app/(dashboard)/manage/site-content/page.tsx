@@ -24,7 +24,7 @@ import type {
   WhyOrcaItemData,
 } from "@/lib/marketing/site-content-types";
 
-const TOOL_PREVIEW_KEYS: ToolPreviewKey[] = ["scanner", "backtest", "simulation", "calendar", "live"];
+const TOOL_PREVIEW_KEYS: ToolPreviewKey[] = ["backtest", "simulation", "calendar", "crypto", "forex", "whales"];
 const PARTNER_BRAND_KEYS = Object.keys(PARTNER_BRANDS) as PartnerBrandKey[];
 const SOCIAL_KEYS = ["X", "YouTube", "Instagram", "Discord"];
 const MIN_FEATURED_PROGRAMS = 6;
@@ -771,7 +771,7 @@ export default function SiteContentPage() {
                 onClick={() =>
                   set("toolsItems", [
                     ...form.toolsItems,
-                    { icon: "radar", title: "", description: "", href: "", previewKey: "scanner" },
+                    { icon: "bitcoin", title: "", description: "", href: "", previewKey: "crypto" },
                   ])
                 }
               >

@@ -23,7 +23,7 @@ export interface PlatformShowcaseData {
   phoneImageUrl?: string | null;
 }
 
-export type ToolPreviewKey = "scanner" | "backtest" | "simulation" | "calendar" | "live";
+export type ToolPreviewKey = "backtest" | "simulation" | "calendar" | "crypto" | "forex" | "whales";
 
 export interface ToolItemData {
   icon?: string;

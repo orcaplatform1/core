@@ -1,10 +1,12 @@
 import {
   Activity,
+  Bitcoin,
   Bot,
   CalendarClock,
   Clock,
   Crown,
   GraduationCap,
+  Landmark,
   LineChart,
   MessageSquare,
   Radar,
@@ -15,6 +17,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  Waves,
   Waypoints,
   Wrench,
   Zap,
@@ -41,6 +44,9 @@ export const MARKETING_ICONS: Record<string, LucideIcon> = {
   zap: Zap,
   rocket: Rocket,
   wrench: Wrench,
+  bitcoin: Bitcoin,
+  landmark: Landmark,
+  waves: Waves,
 };
 
 export const MARKETING_ICON_KEYS = Object.keys(MARKETING_ICONS);

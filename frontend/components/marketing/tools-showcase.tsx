@@ -3,19 +3,38 @@ import { ArrowRight } from "lucide-react";
 import { resolveIcon } from "@/lib/marketing/icon-registry";
 import type { ToolItemData, ToolPreviewKey } from "@/lib/marketing/site-content-types";
 
-function ScannerPreview() {
+function ForexPreview() {
   const rows = [
-    { symbol: "XBT", side: "BUY", price: "67.842", change: "+2.4%" },
-    { symbol: "ETH", side: "SELL", price: "3.512", change: "-1.1%" },
-    { symbol: "SOL", side: "BUY", price: "178,3", change: "+5.7%" },
+    { symbol: "USD/TRY", price: "34,18", change: "+0.3%" },
+    { symbol: "EUR/USD", price: "1,0842", change: "-0.2%" },
+    { symbol: "XAU/USD", price: "2.412", change: "+1.1%" },
+    { symbol: "BIST 100", price: "9.845", change: "+0.8%" },
   ];
   return (
     <div className="space-y-1.5 text-[10px]">
       {rows.map((r) => (
         <div key={r.symbol} className="flex items-center justify-between rounded-md bg-black/20 px-2 py-1.5">
           <span className="font-medium text-foreground/80">{r.symbol}</span>
-          <span className="text-muted-foreground">${r.price}</span>
-          <span className={r.side === "BUY" ? "text-success" : "text-danger"}>{r.change}</span>
+          <span className="text-muted-foreground">{r.price}</span>
+          <span className={r.change.startsWith("+") ? "text-success" : "text-danger"}>{r.change}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WhalePreview() {
+  const rows = [
+    { label: "BTC → Binance", amount: "1.240 BTC" },
+    { label: "ETH → Bilinmeyen Cüzdan", amount: "8.500 ETH" },
+    { label: "USDT → Coinbase", amount: "12,4M USDT" },
+  ];
+  return (
+    <div className="space-y-1.5 text-[10px]">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center justify-between rounded-md bg-black/20 px-2 py-1.5">
+          <span className="text-foreground/80">{r.label}</span>
+          <span className="text-muted-foreground">{r.amount}</span>
         </div>
       ))}
     </div>
@@ -95,7 +114,7 @@ function CalendarPreview() {
 
 // Piyasa heatmap'i — her hücre bir varlığı ve yüzdesel performansına göre
 // yeşil/kırmızı yoğunluğunu temsil ediyor (gerçek heatmap araçlarına referansla).
-function LiveAnalysisPreview() {
+function CryptoHeatmapPreview() {
   const cells = [
     { symbol: "XBT", change: 2.4 },
     { symbol: "ETH", change: 1.1 },
@@ -128,11 +147,12 @@ function LiveAnalysisPreview() {
 }
 
 const PREVIEW_BY_KEY: Record<ToolPreviewKey, React.ReactNode> = {
-  scanner: <ScannerPreview />,
   backtest: <BacktestPreview />,
   simulation: <SimulationPreview />,
   calendar: <CalendarPreview />,
-  live: <LiveAnalysisPreview />,
+  crypto: <CryptoHeatmapPreview />,
+  forex: <ForexPreview />,
+  whales: <WhalePreview />,
 };
 
 export function ToolsShowcase({
@@ -161,7 +181,7 @@ export function ToolsShowcase({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tools.map((tool) => {
           const Icon = resolveIcon(tool.icon);
           return (
