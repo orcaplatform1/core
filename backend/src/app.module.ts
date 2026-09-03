@@ -73,6 +73,11 @@ import { SponsorshipsModule } from './sponsorships/sponsorships.module';
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
         port: Number(process.env.REDIS_PORT) || 6379,
+        // BullMQ resmi onerisi: worker'larin kullandigi baglantida bu null olmali,
+        // yoksa Redis'in kisa sureli restart'larinda (bkz. unattended-upgrades) kuyruk
+        // komutlari birkac denemeden sonra pes edip is/joblari sessizce basarisiz sayabilir.
+        maxRetriesPerRequest: null,
+        retryStrategy: (times: number) => Math.min(times * 500, 10000),
       },
     }),
     ThrottlerModule.forRoot([

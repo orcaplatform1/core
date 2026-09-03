@@ -28,12 +28,12 @@ export class ScannerController {
   // 2026-08-23 OPUSDT duplicate sinyal vakasi).
   @Post('scan/day-trade')
   async runDayTradeScan() {
-    await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-scan' });
+    await this.scannerQueue.add('day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'day-trade-scan', removeOnComplete: true, removeOnFail: true });
     return { message: 'Day Trade taraması (ICT/SMC Breakout & Retest, kripto) kuyruğa eklendi.' };
   }
   @Post('scan/forex/day-trade')
   async runForexDayTradeScan() {
-    await this.scannerQueue.add('forex-day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'forex-day-trade-scan' });
+    await this.scannerQueue.add('forex-day-trade-scan', {}, { attempts: 3, backoff: { type: 'fixed', delay: 10000 }, jobId: 'forex-day-trade-scan', removeOnComplete: true, removeOnFail: true });
     return { message: 'Forex Day Trade taraması (ICT likidite süpürme) kuyruğa eklendi.' };
   }
   @Get('last')

@@ -572,20 +572,33 @@ export class AutoTradeService implements OnModuleInit {
   @Interval(60000)
   async pollStaleEntries() {
     if (!this.binance.isConfigured) return;
-    const pending = await this.prisma.autoTrade.findMany({ where: { status: 'PENDING_ENTRY' } });
+    let pending: Awaited<ReturnType<typeof this.prisma.autoTrade.findMany>>;
+    try {
+      pending = await this.prisma.autoTrade.findMany({ where: { status: 'PENDING_ENTRY' } });
+    } catch (err: any) {
+      // DB'nin kisa sureli restart'lari (bkz. unattended-upgrades) sirasinda bu sorgu
+      // basarisiz olabiliyordu ve try/catch olmadan unhandled rejection olarak process'i
+      // etkileme riski tasiyordu - bir sonraki 60sn'lik tick'te zaten tekrar denenecek.
+      this.logger.warn(`pollStaleEntries (findMany): ${err.message}`);
+      return;
+    }
     for (const trade of pending) {
-      const sig = await this.prisma.trackedSignal.findUnique({ where: { id: trade.trackedSignalId } });
-      if (!sig) continue;
-      const price = await this.binance.getTickerPrice(trade.symbol).catch(() => null);
-      if (price == null) continue;
-      const passedTp1 = trade.direction === 'LONG' ? price >= sig.tp1 : price <= sig.tp1;
-      if (passedTp1) {
-        this.logger.warn(`${trade.symbol}: fiyat (${price}) TP1'e (${sig.tp1}) ulasti ama giris hic dolmadi - kacan firsat, bekleyen emir iptal ediliyor`);
-        await this.notifyAdmins(
-          'Orca ACS: Kaçan giriş iptal edildi',
-          `${trade.symbol}: fiyat (${price}) girmeden TP1 seviyesine (${sig.tp1}) ulaştı, giriş emri hiç dolmadı - fırsat kaçtı, bekleyen emir iptal edildi.`,
-        );
-        await this.onSignalInvalidated(trade.trackedSignalId);
+      try {
+        const sig = await this.prisma.trackedSignal.findUnique({ where: { id: trade.trackedSignalId } });
+        if (!sig) continue;
+        const price = await this.binance.getTickerPrice(trade.symbol).catch(() => null);
+        if (price == null) continue;
+        const passedTp1 = trade.direction === 'LONG' ? price >= sig.tp1 : price <= sig.tp1;
+        if (passedTp1) {
+          this.logger.warn(`${trade.symbol}: fiyat (${price}) TP1'e (${sig.tp1}) ulasti ama giris hic dolmadi - kacan firsat, bekleyen emir iptal ediliyor`);
+          await this.notifyAdmins(
+            'Orca ACS: Kaçan giriş iptal edildi',
+            `${trade.symbol}: fiyat (${price}) girmeden TP1 seviyesine (${sig.tp1}) ulaştı, giriş emri hiç dolmadı - fırsat kaçtı, bekleyen emir iptal edildi.`,
+          );
+          await this.onSignalInvalidated(trade.trackedSignalId);
+        }
+      } catch (err: any) {
+        this.logger.warn(`pollStaleEntries (${trade.symbol}): ${err.message}`);
       }
     }
   }

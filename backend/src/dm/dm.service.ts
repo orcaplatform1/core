@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -28,6 +28,7 @@ const MESSAGE_SELECT = {
 @Injectable()
 export class DmService {
   private readonly redis: Redis;
+  private readonly logger = new Logger(DmService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -39,7 +40,12 @@ export class DmService {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT) || 6379,
+      retryStrategy: (times: number) => Math.min(times * 500, 10000),
     });
+    // Dinleyici olmadan ioredis "Unhandled error event" olarak logluyordu (bkz.
+    // unattended-upgrades kaynakli kisa Redis restart'lari) - client zaten otomatik
+    // reconnect ediyor, burada sadece net loglama icin.
+    this.redis.on('error', (err) => this.logger.warn(`Redis baglanti hatasi (otomatik yeniden baglanilacak): ${err.message}`));
   }
 
   private async getBlockStatus(userA: string, userB: string): Promise<{ blocked: boolean; blockerIsA: boolean }> {
