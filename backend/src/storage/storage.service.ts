@@ -100,7 +100,11 @@ export class StorageService {
 
     const client = this.getClient();
     const bucket = this.getBucket();
-    const key = `${folder}/${randomUUID()}-${fileName}`;
+    // fileName istemciden geliyor - "/" veya kontrol karakteri iceremez, aksi
+    // halde object key beklenmedik sekilde baska bir "klasor" onekiyle
+    // olusturulabilir (savunma derinligi, R2/S3'te gercek dizin gecisi yok).
+    const safeFileName = fileName.replace(/[/\\]+/g, '_').replace(/[\x00-\x1f]/g, '');
+    const key = `${folder}/${randomUUID()}-${safeFileName}`;
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: key,

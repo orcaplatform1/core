@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 // Redis/Postgres'in kisa sureli otomatik guncelleme restart'lari (bkz. unattended-upgrades,
@@ -20,8 +21,16 @@ process.on('uncaughtException', (err) => {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(helmet());
+  app.use(cookieParser());
   app.enableShutdownHooks();
-  app.enableCors();
+  // Auth httpOnly cookie ile yapiliyor (bkz. auth-cookies.util.ts); credentials:true
+  // acik origin ile birlikte kullanilamadigi icin bilinen origin listesi zorunlu hale
+  // geldi - bu, cookie'nin sadece bu origin'lerden gelen istmece istemcilere
+  // gonderilmesini saglayarak CSRF yuzeyini daraltir (ek olarak SameSite=Lax var).
+  app.enableCors({
+    origin: ['https://traders.tr', 'https://www.traders.tr', /^http:\/\/localhost:\d+$/],
+    credentials: true,
+  });
   app.useWebSocketAdapter(new IoAdapter(app));
   app.useGlobalPipes(
     new ValidationPipe({

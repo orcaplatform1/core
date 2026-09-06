@@ -9,6 +9,23 @@ import {
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { PresenceService } from './presence.service';
+import { ACCESS_COOKIE } from '../auth/auth-cookies.util';
+
+const ALLOWED_ORIGINS = ['https://traders.tr', 'https://www.traders.tr', /^http:\/\/localhost:\d+$/];
+
+// `cookie` paketinin type'lari bu projenin moduleResolution:"node" ayariyla
+// cozulemedigi icin (exports map, node16/bundler gerektiriyor) tek satirlik
+// deger okumak icin kucuk bir ayikici yeterli - tam RFC 6265 parser'i gerekmiyor.
+function readCookie(cookieHeader: string, name: string): string | undefined {
+  for (const part of cookieHeader.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() === name) {
+      return decodeURIComponent(part.slice(eq + 1).trim());
+    }
+  }
+  return undefined;
+}
 
 // Bildirim/duyuru anlık teslimi — önceden sadece 60sn'lik polling vardı (bkz.
 // use-notifications.ts refetchInterval), admin bir duyuru gönderdiğinde kullanıcı
@@ -16,7 +33,7 @@ import { PresenceService } from './presence.service';
 // secret); her kullanıcı kendi userId'sine ait bir room'a katılır. Aynı bağlantı,
 // admin paneldeki "şu an aktif" listesi için PresenceService'e de kaydedilir —
 // ayrı bir heartbeat/polling mekanizması kurmaya gerek kalmadan.
-@WebSocketGateway({ cors: { origin: '*' }, namespace: '/notifications' })
+@WebSocketGateway({ cors: { origin: ALLOWED_ORIGINS, credentials: true }, namespace: '/notifications' })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(NotificationsGateway.name);
@@ -29,7 +46,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   async handleConnection(client: Socket) {
     try {
+      // Token artik httpOnly cookie'de (frontend socket.ts withCredentials:true ile
+      // baglaniyor); auth/query alanlari eski istemciler icin yedek olarak kaliyor.
+      const cookieHeader = client.handshake.headers.cookie;
+      const cookieToken = cookieHeader ? readCookie(cookieHeader, ACCESS_COOKIE) : undefined;
       const token =
+        cookieToken ??
         (client.handshake.auth?.token as string | undefined) ??
         (client.handshake.query?.token as string | undefined);
       if (!token) throw new Error('Token yok');

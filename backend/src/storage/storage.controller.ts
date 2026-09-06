@@ -20,9 +20,20 @@ export class StorageController {
     return this.storageService.getUploadUrl(dto.fileName, dto.contentType, dto.folder, dto.fileSizeBytes);
   }
 
+  // Herhangi bir giris yapmis kullanici herhangi bir key icin presigned URL
+  // isteyebiliyordu (IDOR) - "receipts/" klasoru baskasinin odeme dekonti gibi
+  // hassas kisisel veriler icerdigi icin buradan tamamen cikarildi, sahiplik
+  // kontrolu olan /payments/:id/receipt-url uzerinden cozulmesi zorunlu
+  // (bkz. payments.service.ts getReceiptUrl). Diger klasorler (video/pdf/
+  // resource) zaten sadece enrollment kontrolunden gecen ders ucundan
+  // (lessons.service.ts) tahmin edilemez UUID'li key olarak donuyor.
   @UseGuards(JwtAuthGuard)
   @Get('play/:key')
   getPlayUrl(@Param('key') key: string) {
-    return this.storageService.getPlayUrl(decodeURIComponent(key));
+    const decoded = decodeURIComponent(key);
+    if (decoded.startsWith('receipts/')) {
+      throw new ForbiddenException('Bu dosya türü bu uçtan görüntülenemez.');
+    }
+    return this.storageService.getPlayUrl(decoded);
   }
 }

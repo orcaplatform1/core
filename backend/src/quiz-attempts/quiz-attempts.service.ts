@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadgesService } from '../badges/badges.service';
 import { PointsService } from '../points/points.service';
@@ -88,13 +88,20 @@ export class QuizAttemptsService {
     });
   }
 
-  async finish(attemptId: string) {
+  async finish(attemptId: string, userId?: string) {
     const attempt = await this.prisma.quizAttempt.findUnique({
       where: { id: attemptId },
     });
 
     if (!attempt) {
       throw new NotFoundException('Quiz denemesi bulunamadı.');
+    }
+
+    // Guvenlik: eskiden herhangi bir giris yapmis kullanici baskasinin
+    // attemptId'sini vererek onun devam eden denemesini erken bitirip
+    // eksik cevaplarla puanlanmasina sebep olabiliyordu (IDOR).
+    if (userId && attempt.userId !== userId) {
+      throw new ForbiddenException('Bu quiz denemesi size ait değil.');
     }
 
     if (attempt.endedAt) {
@@ -205,12 +212,16 @@ export class QuizAttemptsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requesterId?: string, requesterRole?: string) {
     const attempt = await this.prisma.quizAttempt.findUnique({
       where: { id },
     });
 
     if (!attempt) {
+      throw new NotFoundException('Quiz denemesi bulunamadı.');
+    }
+
+    if (requesterRole !== 'SUPER_ADMIN' && attempt.userId !== requesterId) {
       throw new NotFoundException('Quiz denemesi bulunamadı.');
     }
 

@@ -20,8 +20,9 @@ export class QuizAttemptsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('finish')
-  finish(@Body() dto: FinishQuizAttemptDto) {
-    return this.quizAttemptsService.finish(dto.attemptId);
+  finish(@Req() req: Request, @Body() dto: FinishQuizAttemptDto) {
+    const userId = (req.user as any).id;
+    return this.quizAttemptsService.finish(dto.attemptId, userId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,7 +34,8 @@ export class QuizAttemptsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.quizAttemptsService.findOne(id);
+  findOne(@Req() req: Request, @Param('id') id: string) {
+    const requester = req.user as any;
+    return this.quizAttemptsService.findOne(id, requester.id, requester.role);
   }
 }

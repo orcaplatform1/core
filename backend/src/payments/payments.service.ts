@@ -1,11 +1,21 @@
 import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { createHmac, randomUUID } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import { InvoicesService } from '../invoices/invoices.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BadgesService } from '../badges/badges.service';
+import { StorageService } from '../storage/storage.service';
 import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
+
+// Webhook imza karsilastirmasi icin sabit-zamanli karsilastirma - `===` timing
+// attack'e (imzayi byte byte tahmin etmeye) teorik olarak acikti; uzunluk
+// farkliysa timingSafeEqual once atacagi icin once uzunluk kontrol ediliyor.
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
 
 const FOUNDING_MEMBER_LIMIT = 500;
 
@@ -34,6 +44,7 @@ export class PaymentsService {
     private readonly invoicesService: InvoicesService,
     private readonly notificationsService: NotificationsService,
     private readonly badgesService: BadgesService,
+    private readonly storageService: StorageService,
   ) {}
 
   // Ilk 500 program satin alan (mentor kredisi degil, gercek program erisimi
@@ -366,10 +377,30 @@ export class PaymentsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requesterId?: string, requesterRole?: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id } });
     if (!payment) throw new NotFoundException('Ödeme bulunamadı.');
+    // Guvenlik: eskiden herhangi bir giris yapmis kullanici, sahibi olmadigi
+    // bir odemeyi id ile dogrudan cekebiliyordu (IDOR) - artik sadece odemenin
+    // sahibi veya SUPER_ADMIN gorebilir.
+    if (requesterRole !== 'SUPER_ADMIN' && payment.userId !== requesterId) {
+      throw new NotFoundException('Ödeme bulunamadı.');
+    }
     return payment;
+  }
+
+  // receiptUrl alaninda aslinda imzali-olmayan bir R2 object key tutuluyor
+  // (bkz. subscription/page.tsx - upload-url'den donen "key" dogrudan
+  // kaydediliyor, gercek bir URL degil). Admin paneli bunu daha once oldugu
+  // gibi dogrudan href'e basiyordu (calismayan link) ve genel amacli
+  // /storage/play/:key ucu herhangi bir giris yapmis kullanicinin ANY key'i
+  // (baska bir kullanicinin dekontu dahil) presigned URL'e cevirebilmesine
+  // izin veriyordu (IDOR). Bu uc erisimi odemenin sahibi/SUPER_ADMIN ile
+  // sinirlayip key'i sadece o zaman cozumler.
+  async getReceiptUrl(id: string, requesterId: string, requesterRole: string) {
+    const payment = await this.findOne(id, requesterId, requesterRole);
+    if (!payment.receiptUrl) throw new NotFoundException('Bu ödeme için makbuz yüklenmemiş.');
+    return this.storageService.getPlayUrl(payment.receiptUrl);
   }
 
   async approve(id: string, actorId?: string) {
@@ -499,7 +530,7 @@ export class PaymentsService {
     const payload = `${timestamp}\n${nonce}\n${rawBody}\n`;
     const expectedSignature = createHmac('sha512', secretKey).update(payload).digest('hex').toUpperCase();
 
-    return expectedSignature === receivedSignature;
+    return safeEqual(expectedSignature, receivedSignature);
   }
 
   private verifyBybitSignature(headers: Record<string, string>, rawBody: string): boolean {
@@ -515,7 +546,7 @@ export class PaymentsService {
     const payload = `${timestamp}${apiKey}${rawBody}`;
     const expectedSignature = createHmac('sha256', secretKey).update(payload).digest('hex');
 
-    return expectedSignature === receivedSignature;
+    return safeEqual(expectedSignature, receivedSignature);
   }
 
   async handleBinanceWebhook(headers: Record<string, string>, rawBody: string, payload: any) {

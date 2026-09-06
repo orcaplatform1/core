@@ -4,14 +4,16 @@ import {
   Get,
   Post,
   Req,
+  Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -23,10 +25,14 @@ import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
+import { ACCESS_COOKIE, REFRESH_COOKIE, setAuthCookies, clearAuthCookies } from './auth-cookies.util';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Get('health')
   health() {
@@ -34,29 +40,51 @@ export class AuthController {
   }
 
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const { token, refreshToken, user } = await this.authService.register(dto);
+    setAuthCookies(res, token, refreshToken);
+    return { user };
   }
 
   @Post('login')
-  login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const ip = req.ip || '';
     const userAgent = req.headers['user-agent'] || '';
-    return this.authService.login(dto, ip, userAgent);
+    const { token, refreshToken, user } = await this.authService.login(dto, ip, userAgent);
+    setAuthCookies(res, token, refreshToken);
+    return { user };
   }
 
-  @UseGuards(JwtAuthGuard)
+  // JwtAuthGuard kasitli olarak kullanilmiyor: bu uc tam olarak access token'in
+  // suresi dolduktan sonra cagrilir, guard o an zaten 401 doner ve refresh'e
+  // hic sira gelmezdi (bkz. auth.service.ts refresh() yorumu).
   @Post('refresh')
-  refresh(@Req() req: Request, @Body() dto: RefreshTokenDto) {
-    const userId = (req.user as any).id;
-    return this.authService.refresh(userId, dto.refreshToken);
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const accessCookie = req.cookies?.[ACCESS_COOKIE];
+    const refreshCookie = req.cookies?.[REFRESH_COOKIE];
+    if (!accessCookie || !refreshCookie) {
+      throw new UnauthorizedException('Oturum bulunamadı, lütfen tekrar giriş yapın.');
+    }
+
+    let payload: { sub: string; sessionId?: string };
+    try {
+      payload = this.jwtService.verify(accessCookie, { ignoreExpiration: true });
+    } catch {
+      throw new UnauthorizedException('Geçersiz oturum.');
+    }
+
+    const { token, refreshToken, user } = await this.authService.refresh(payload, refreshCookie);
+    setAuthCookies(res, token, refreshToken);
+    return { user };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  logout(@Req() req: Request) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const userId = (req.user as any).id;
-    return this.authService.logout(userId);
+    const result = await this.authService.logout(userId);
+    clearAuthCookies(res);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

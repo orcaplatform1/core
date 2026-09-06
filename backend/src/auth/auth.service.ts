@@ -26,6 +26,25 @@ function avatarForGender(gender: string): string {
   return gender === 'ERKEK' ? BLUE_AVATAR : PINK_AVATAR;
 }
 
+// register/login yanitlari bu sekilde sanitize edilmis kullanici donduruyor -
+// ham Prisma User satiri (password hash, refreshTokenHash, passwordResetToken,
+// emailVerificationToken, phoneVerificationCode gibi gizli alanlar dahil)
+// hem HTTP response'ta hem de client'in localStorage'inda (bkz. frontend
+// auth-storage.ts) duz JSON olarak durdugu icin ciddi bir bilgi sizintisiydi.
+function sanitizeUser(user: Record<string, any>) {
+  const {
+    password,
+    refreshTokenHash,
+    passwordResetToken,
+    passwordResetExpires,
+    emailVerificationToken,
+    phoneVerificationCode,
+    phoneVerificationExpires,
+    ...safe
+  } = user;
+  return safe;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -130,7 +149,7 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
 
-    return { token: accessToken, refreshToken, user };
+    return { token: accessToken, refreshToken, user: sanitizeUser(user) };
   }
 
   async login(dto: LoginDto, ip: string, userAgent: string) {
@@ -230,20 +249,30 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.issueTokens(user.id, user.email, user.role, sessionId);
 
-    return { token: accessToken, refreshToken, user: { ...user, sessionId } };
+    return { token: accessToken, refreshToken, user: sanitizeUser({ ...user, sessionId }) };
   }
 
-  async refresh(userId: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  // Access token cookie'si suresi dolmus olsa bile imzasi hala gecerliyse (bkz.
+  // auth.controller.ts refresh() - ignoreExpiration:true ile decode edilir)
+  // kullaniciyi tanimlamak icin kullanilir; asil yetkilendirme refreshTokenHash
+  // karsilastirmasindan gelir. Eskiden bu uc JwtAuthGuard'in arkasindaydi, yani
+  // access token gercekten suresi dolunca (tam da refresh'e ihtiyac duyulan an)
+  // guard istegi zaten 401 ile reddediyor, refresh token'a hic sira gelmiyordu.
+  async refresh(expiredAccessPayload: { sub: string; sessionId?: string }, refreshToken: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: expiredAccessPayload.sub } });
 
     if (!user || !user.refreshTokenHash) {
       throw new UnauthorizedException('Geçersiz refresh token.');
     }
 
+    if (user.sessionId && expiredAccessPayload.sessionId && user.sessionId !== expiredAccessPayload.sessionId) {
+      throw new UnauthorizedException('Bu oturum artık geçerli değil, başka bir yerden giriş yapılmış olabilir.');
+    }
+
     const isValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
 
     if (!isValid) {
-      await this.securityLogService.log('REFRESH_TOKEN_INVALID', userId);
+      await this.securityLogService.log('REFRESH_TOKEN_INVALID', user.id);
       throw new UnauthorizedException('Geçersiz refresh token.');
     }
 
@@ -254,7 +283,7 @@ export class AuthService {
       user.sessionId ?? randomUUID(),
     );
 
-    return { token: accessToken, refreshToken: newRefreshToken };
+    return { token: accessToken, refreshToken: newRefreshToken, user: sanitizeUser(user) };
   }
 
   async logout(userId: string) {

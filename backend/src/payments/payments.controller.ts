@@ -46,8 +46,16 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentsService.findOne(id);
+  findOne(@Req() req: Request, @Param('id') id: string) {
+    const requester = req.user as any;
+    return this.paymentsService.findOne(id, requester.id, requester.role);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/receipt-url')
+  getReceiptUrl(@Req() req: Request, @Param('id') id: string) {
+    const requester = req.user as any;
+    return this.paymentsService.getReceiptUrl(id, requester.id, requester.role);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
