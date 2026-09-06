@@ -102,6 +102,22 @@ export class AutoTradeService implements OnModuleInit {
     private readonly userStream: BinanceUserStreamService,
   ) {}
 
+  // onSignalCreated'daki "ayni sembolde aktif trade var mi" kontrolu ile
+  // ardindan gelen Binance emri + DB kaydi arasinda gecen surede (await'ler
+  // yuzunden) ayni sembol icin ikinci bir cagri araya girip ayni kontrolu
+  // (henuz kayit yokken) gecebiliyordu (TOCTOU) - tam da OPUSDT olayina
+  // (yorumda anlatilan) yol acan yaris. Process tek instance (pm2 fork modu,
+  // cluster degil) calistigi icin bellek-ici, sembol bazli bir mutex bu yarisi
+  // tamamen kapatir - ayni sembol icin ikinci cagri birincisi bitene kadar
+  // (DB kaydi olusana kadar) bekler.
+  private symbolMutex = new Map<string, Promise<unknown>>();
+  private withSymbolLock<T>(symbol: string, fn: () => Promise<T>): Promise<T> {
+    const prev = this.symbolMutex.get(symbol) ?? Promise.resolve();
+    const run = prev.then(fn, fn);
+    this.symbolMutex.set(symbol, run.catch(() => undefined));
+    return run;
+  }
+
   onModuleInit() {
     this.userStream.onOrderUpdate((event) => {
       this.handleFill(event).catch((err) =>
@@ -144,6 +160,18 @@ export class AutoTradeService implements OnModuleInit {
     if (sig.market !== 'CRYPTO') return; // Binance Futures'ta forex kontrati yok
     if (!(await this.isActive())) return;
 
+    return this.withSymbolLock(sig.symbol, () => this.executeSignalEntry(sig));
+  }
+
+  private async executeSignalEntry(sig: {
+    id: string;
+    symbol: string;
+    direction: string;
+    market: string;
+    entryZoneTop: number;
+    entryZoneBottom: number;
+    stop: number;
+  }) {
     try {
       const config = await this.getConfig();
       if (!config.cryptoEnabled) return;
@@ -347,6 +375,23 @@ export class AutoTradeService implements OnModuleInit {
       const tp2Qty = this.binance.roundToStep(totalQty * TP2_QTY_FRACTION, filters.stepSize);
       const tp3Qty = this.binance.roundToStep(totalQty - tp1Qty - tp2Qty, filters.stepSize);
 
+      // Giris fiyati/miktari/zamani HEMEN kaydedilir - asagidaki dort placeOrder
+      // cagrisindan biri (ag hatasi, gecici Binance -1001 vb.) yarida basarisiz
+      // olursa bile entryFilledAt kaybolmasin (getRealizedPnlBreakdown ve panel
+      // "Giriş" alani buna dayaniyor).
+      await this.prisma.autoTrade.update({
+        where: { id: trade.id },
+        data: { entryPrice: event.avgPrice, qty: totalQty, entryFilledAt: new Date() },
+      });
+
+      // Onceden SL+TP1+TP2+TP3 hepsi basarili olduktan SONRA tek seferde DB'ye
+      // yaziliyordu - biri (orn. TP2) basarisiz olursa oncesinde GERCEKTEN
+      // Binance'e yerlesmis olan SL/TP1 emirlerinin id'si hic DB'ye yazilmadan
+      // kayboluyordu: status 'FAILED'e dusuyor, pollPendingStopOrders (status
+      // OPEN/BREAKEVEN_SET filtreler) ve getLivePositions bu GERCEK, korumasi
+      // gorevi gormeye devam eden SL emrini bir daha asla izlemiyordu - borsada
+      // sessizce yasayan, sistemin izini kaybettigi bir emir kaliyordu. Artik
+      // her emir yerlestikce ayri ayri kaydediliyor.
       const slOrder = await this.binance.placeOrder({
         symbol: trade.symbol,
         side: closeSide,
@@ -355,6 +400,11 @@ export class AutoTradeService implements OnModuleInit {
         quantity: totalQty,
         reduceOnly: true,
       });
+      await this.prisma.autoTrade.update({
+        where: { id: trade.id },
+        data: { status: 'OPEN', slOrderId: String(slOrder.orderId) },
+      });
+
       const tp1Order = await this.binance.placeOrder({
         symbol: trade.symbol,
         side: closeSide,
@@ -363,6 +413,8 @@ export class AutoTradeService implements OnModuleInit {
         quantity: tp1Qty,
         reduceOnly: true,
       });
+      await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { tp1OrderId: String(tp1Order.orderId) } });
+
       const tp2Order = await this.binance.placeOrder({
         symbol: trade.symbol,
         side: closeSide,
@@ -371,6 +423,8 @@ export class AutoTradeService implements OnModuleInit {
         quantity: tp2Qty,
         reduceOnly: true,
       });
+      await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { tp2OrderId: String(tp2Order.orderId) } });
+
       const tp3Order = await this.binance.placeOrder({
         symbol: trade.symbol,
         side: closeSide,
@@ -379,31 +433,33 @@ export class AutoTradeService implements OnModuleInit {
         quantity: tp3Qty,
         reduceOnly: true,
       });
+      await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { tp3OrderId: String(tp3Order.orderId) } });
 
-      await this.prisma.autoTrade.update({
-        where: { id: trade.id },
-        data: {
-          status: 'OPEN',
-          entryPrice: event.avgPrice,
-          qty: totalQty,
-          entryFilledAt: new Date(),
-          slOrderId: String(slOrder.orderId),
-          tp1OrderId: String(tp1Order.orderId),
-          tp2OrderId: String(tp2Order.orderId),
-          tp3OrderId: String(tp3Order.orderId),
-        },
-      });
       await this.notifyAdmins(
         'Orca ACS: Gerçek pozisyon açıldı',
         `${trade.symbol} ${trade.direction} @ ${event.avgPrice} (qty=${totalQty}) - SL/TP1/TP2/TP3 emirleri yerleşti.`,
       );
     } catch (err: any) {
       this.logger.error(`onEntryFilled hatasi (${trade.symbol}): ${err.message}`);
-      await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { status: 'FAILED', errorMessage: err.message } });
-      await this.notifyAdmins(
-        'Orca ACS: KRİTİK - pozisyon korumasız',
-        `${trade.symbol}: giriş doldu ama SL/TP emirleri açılamadı (${err.message}). Pozisyonu ELLE kontrol et.`,
-      );
+      const current = await this.prisma.autoTrade.findUnique({ where: { id: trade.id } }).catch(() => null);
+      if (!current?.slOrderId) {
+        // Stop-loss hic yerlesmedi - pozisyon gercekten korumasiz.
+        await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { status: 'FAILED', errorMessage: err.message } });
+        await this.notifyAdmins(
+          'Orca ACS: KRİTİK - pozisyon korumasız',
+          `${trade.symbol}: giriş doldu ama stop-loss emri açılamadı (${err.message}). Pozisyonu ELLE kontrol et.`,
+        );
+      } else {
+        // Stop-loss yerlesti (pozisyon korumali), sadece TP kurulumu yarida
+        // kaldi - trade'i FAILED yapip izlemeden dusurmek yerine OPEN birakiyoruz
+        // ki pollPendingStopOrders/getLivePositions gercek pozisyonu takibe
+        // devam etsin, sadece eksik TP'ler icin admin'e haber veriliyor.
+        await this.prisma.autoTrade.update({ where: { id: trade.id }, data: { errorMessage: err.message } });
+        await this.notifyAdmins(
+          'Orca ACS: TP emirleri eksik kaldı',
+          `${trade.symbol}: stop-loss yerleşti (pozisyon korumalı) ama TP emirlerinden biri açılamadı (${err.message}). Eksik TP'leri ELLE ekle.`,
+        );
+      }
     }
   }
 
