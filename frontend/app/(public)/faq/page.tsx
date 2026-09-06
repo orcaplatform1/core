@@ -3,6 +3,7 @@ import { PageHero } from "@/components/marketing/page-hero";
 import { FaqContent } from "@/components/marketing/faq-content";
 import { FAQ_CATEGORIES } from "@/lib/marketing/faq-data";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
   title: "Sıkça Sorulan Sorular",
@@ -32,7 +33,7 @@ export default async function FaqPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
       <PageHero title="Sıkça Sorulan Sorular" heroImageSrc={siteContent.heroImageUrl ?? undefined} />
       <FaqContent categories={FAQ_CATEGORIES} />

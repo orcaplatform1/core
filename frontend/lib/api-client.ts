@@ -12,36 +12,22 @@ export class ApiError extends Error {
   }
 }
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
-async function doRefresh(): Promise<string | null> {
-  const refreshToken = authStorage.getRefreshToken();
-  const accessToken = authStorage.getAccessToken();
-  if (!refreshToken || !accessToken) return null;
-
+async function doRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ refreshToken }),
+      credentials: "include",
     });
     if (!res.ok) {
       authStorage.clear();
-      return null;
+      return false;
     }
-    const data = await res.json();
-    authStorage.setAccessToken(data.token);
-    const refreshKey = "orca_refresh_token";
-    if (typeof window !== "undefined") {
-      localStorage.setItem(refreshKey, data.refreshToken);
-    }
-    return data.token as string;
+    return true;
   } catch {
     authStorage.clear();
-    return null;
+    return false;
   }
 }
 
@@ -63,13 +49,10 @@ export async function apiClient<T = unknown>(
       "Content-Type": "application/json",
       ...headers,
     };
-    if (auth) {
-      const token = authStorage.getAccessToken();
-      if (token) finalHeaders.Authorization = `Bearer ${token}`;
-    }
     return fetch(`${BASE_URL}${path}`, {
       method,
       headers: finalHeaders,
+      credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   };
@@ -82,8 +65,8 @@ export async function apiClient<T = unknown>(
         refreshPromise = null;
       });
     }
-    const newToken = await refreshPromise;
-    if (newToken) {
+    const refreshed = await refreshPromise;
+    if (refreshed) {
       res = await doFetch();
     }
   }

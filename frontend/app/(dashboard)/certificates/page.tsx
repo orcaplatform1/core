@@ -7,7 +7,6 @@ import {
   useMyCertificateStatus,
   useIssueCertificate,
 } from "@/lib/hooks/use-curriculum";
-import { authStorage } from "@/lib/auth-storage";
 import { Button } from "@/components/ui/button";
 import { celebrate } from "@/lib/hooks/use-celebration";
 import { SuccessStoryPanel } from "@/components/dashboard/success-story-panel";
@@ -18,10 +17,9 @@ export default function CertificatesPage() {
 
   const handleDownload = async (id: string) => {
     try {
-      const token = authStorage.getAccessToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/certificates/${id}/pdf`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { credentials: "include" }
       );
       if (!res.ok) throw new Error();
       const blob = await res.blob();

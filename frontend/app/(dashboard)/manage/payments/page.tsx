@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Lock, FileText, Check, X, Tag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "@/components/ui/external-link";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
+import { apiClient } from "@/lib/api-client";
 import {
   useAdminPayments,
   useApprovePayment,
@@ -172,6 +172,15 @@ export default function AdminPaymentsPage() {
   const approve = useApprovePayment();
   const reject = useRejectPayment();
 
+  const handleViewReceipt = async (paymentId: string) => {
+    try {
+      const { url } = await apiClient<{ url: string }>(`/payments/${paymentId}/receipt-url`);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Makbuz açılamadı, tekrar dene.");
+    }
+  };
+
   if (authLoading) {
     return <p className="text-body-sm text-[#A8A6A0]">Yükleniyor...</p>;
   }
@@ -255,13 +264,14 @@ export default function AdminPaymentsPage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   {p.receiptUrl && (
-                    <ExternalLink
-                      href={p.receiptUrl}
+                    <button
+                      type="button"
+                      onClick={() => handleViewReceipt(p.id)}
                       className="flex items-center gap-1 text-body-xs text-primary hover:underline"
                     >
                       <FileText size={14} />
                       Dekont/Kanıt
-                    </ExternalLink>
+                    </button>
                   )}
                   {status === "PENDING" && (
                     <div className="ml-auto flex gap-2">

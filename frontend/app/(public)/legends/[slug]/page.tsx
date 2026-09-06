@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { LEGENDS, getLegend } from "@/lib/data/legends";
 import { LegendAvatar } from "@/components/legends/legend-avatar";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export function generateStaticParams() {
   return LEGENDS.map((l) => ({ slug: l.slug }));
@@ -55,12 +56,12 @@ export default async function LegendDetailPage({
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <Link
         href="/legends"

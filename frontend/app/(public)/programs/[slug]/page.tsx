@@ -5,6 +5,7 @@ import { Clock, Layers } from "lucide-react";
 import { getProgramBySlugOrId, getAllModules, getAllLessons } from "@/lib/marketing/get-programs";
 import { LevelBadge } from "@/components/programs/level-badge";
 import { ProgramCurriculum } from "@/components/programs/program-curriculum";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export async function generateMetadata({
   params,
@@ -76,12 +77,12 @@ export default async function ProgramDetailPage({
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(courseJsonLd) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       {program.coverImageUrl && (
         <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/20 via-card to-purple/10 sm:h-64">

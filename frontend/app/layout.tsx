@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { CookieConsent } from "@/components/layout/cookie-consent";
 import { getSiteContent } from "@/lib/marketing/get-site-content";
+import { safeJsonLd } from "@/lib/json-ld";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -88,7 +89,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(ORGANIZATION_JSON_LD) }}
         />
         <Providers>
           {children}

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { apiClient } from "@/lib/api-client";
-import { authStorage } from "@/lib/auth-storage";
+import { useAuth } from "@/context/auth-context";
 
 const VISITOR_ID_KEY = "orca_visitor_id";
 const LAST_PING_KEY = "orca_visitor_last_ping";
@@ -16,19 +16,23 @@ function getOrCreateVisitorId() {
   return id;
 }
 
-// Sadece giris yapmamis (anonim) ziyaretcileri sayar — bu yuzden token varsa
-// hic istek atmiyoruz. Gunde bir kez ping atarak (localStorage'daki tarih
-// damgasiyla) her sayfa gecisinde gereksiz istek gitmesini engelliyoruz.
+// Sadece giris yapmamis (anonim) ziyaretcileri sayar — bu yuzden giris yapmis
+// kullanici icin hic istek atmiyoruz (token artik httpOnly cookie'de oldugu
+// icin varligi dogrudan kontrol edilemez, useAuth'tan gelen user'a bakiliyor).
+// Gunde bir kez ping atarak (localStorage'daki tarih damgasiyla) her sayfa
+// gecisinde gereksiz istek gitmesini engelliyoruz.
 export function VisitorPing() {
+  const { user, isLoading } = useAuth();
+
   useEffect(() => {
-    if (authStorage.getAccessToken()) return;
+    if (isLoading || user) return;
     const today = new Date().toISOString().slice(0, 10);
     if (localStorage.getItem(LAST_PING_KEY) === today) return;
     const visitorId = getOrCreateVisitorId();
     apiClient("/public/track-visit", { method: "POST", auth: false, body: { visitorId } })
       .then(() => localStorage.setItem(LAST_PING_KEY, today))
       .catch(() => {});
-  }, []);
+  }, [isLoading, user]);
 
   return null;
 }

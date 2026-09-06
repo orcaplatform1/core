@@ -28,8 +28,6 @@ type LoginPayload = {
 };
 
 type AuthResponse = {
-  token: string;
-  refreshToken: string;
   user: StoredUser;
 };
 
@@ -50,34 +48,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Token artik httpOnly cookie'de - JS'den varligi bile kontrol edilemez,
+    // bu yuzden localStorage'daki profil sadece anlik yukleme hissi icin
+    // gosterilir; asil oturum durumu her zaman /auth/me ile dogrulanir (cookie
+    // varsa tarayici otomatik gonderir).
     const stored = authStorage.getUser();
-    const token = authStorage.getAccessToken();
-    if (stored && token) {
-      // localStorage'daki kullanıcıyı hemen göster (anında yükleme hissi),
-      // arka planda /auth/me ile doğrula
-      setUser(stored);
-      apiClient<StoredUser>("/auth/me")
-        .then((fresh) => {
-          setUser(fresh);
-          authStorage.setSession(
-            authStorage.getAccessToken()!,
-            authStorage.getRefreshToken()!,
-            fresh
-          );
-        })
-        .catch((err) => {
-          // SADECE gerçek 401 (token artık geçersiz) durumunda çıkış yap.
-          // Ağ hatası, sayfa geçişinde isteğin iptal olması gibi geçici
-          // durumlarda kullanıcıyı oturumdan atmayalım.
-          if (err instanceof ApiError && err.status === 401) {
-            authStorage.clear();
-            setUser(null);
-          }
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+    if (stored) setUser(stored);
+    apiClient<StoredUser>("/auth/me")
+      .then((fresh) => {
+        setUser(fresh);
+        authStorage.setUser(fresh);
+      })
+      .catch((err) => {
+        // SADECE gerçek 401 (oturum yok/geçersiz) durumunda çıkış yap.
+        // Ağ hatası, sayfa geçişinde isteğin iptal olması gibi geçici
+        // durumlarda kullanıcıyı oturumdan atmayalım.
+        if (err instanceof ApiError && err.status === 401) {
+          authStorage.clear();
+          setUser(null);
+        }
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
@@ -86,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: payload,
       auth: false,
     });
-    authStorage.setSession(data.token, data.refreshToken, data.user);
+    authStorage.setUser(data.user);
     setUser(data.user);
   }, []);
 
@@ -96,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: payload,
       auth: false,
     });
-    authStorage.setSession(data.token, data.refreshToken, data.user);
+    authStorage.setUser(data.user);
     setUser(data.user);
   }, []);
 
@@ -115,11 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     const fresh = await apiClient<StoredUser>("/auth/me");
     setUser(fresh);
-    authStorage.setSession(
-      authStorage.getAccessToken()!,
-      authStorage.getRefreshToken()!,
-      fresh
-    );
+    authStorage.setUser(fresh);
   }, []);
 
   return (
