@@ -6,6 +6,7 @@ module.exports = {
       script: "npm",
       args: "run start:prod",
       namespace: "default",
+      env: { NODE_ENV: "production" },
     },
     {
       name: "orca-frontend",
@@ -13,6 +14,7 @@ module.exports = {
       script: "npm",
       args: "start -- -p 3001",
       namespace: "default",
+      env: { NODE_ENV: "production" },
     },
     {
       name: "orca-sentiment",
