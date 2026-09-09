@@ -42,6 +42,7 @@ import { ChartDrawingsModule } from './chart-drawings/chart-drawings.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { PagesModule } from './pages/pages.module';
 import { WhaleTrackerModule } from './whale-tracker/whale-tracker.module';
+import { WalletAnalysisModule } from './wallet-analysis/wallet-analysis.module';
 import { FooterModule } from './footer/footer.module';
 import { SiteContentModule } from './site-content/site-content.module';
 import { SitemapModule } from './sitemap/sitemap.module';
@@ -132,6 +133,7 @@ import { SponsorshipsModule } from './sponsorships/sponsorships.module';
     InvoicesModule,
     PublicToolsModule,
     WhaleTrackerModule,
+    WalletAnalysisModule,
     TokenUnlockModule,
     IcoTrackerModule,
     CryptoCalendarModule,
