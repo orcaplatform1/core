@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -11,7 +12,10 @@ import {
   Sparkles,
   Coins,
   Landmark,
+  Link2,
 } from "lucide-react";
+import { apiClient, ApiError } from "@/lib/api-client";
+import { Switch } from "@/components/ui/switch";
 import {
   useCryptoMovers,
   useCryptoHeatmap,
@@ -350,6 +354,121 @@ function LiquidationZonesCard() {
   );
 }
 
+interface WalletConnectedAddress {
+  address: string;
+  sameDayActivityCount: number;
+  recentSameDayDates: string[];
+}
+
+interface WalletAnalysisResult {
+  address: string;
+  fundingSource: string | null;
+  fundingSourceLooksLikeExchange: boolean;
+  connectedWallets: WalletConnectedAddress[];
+  summary: string;
+  disclaimer: string;
+}
+
+function WalletAnalysisCard() {
+  const [enabled, setEnabled] = useState(false);
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<WalletAnalysisResult | null>(null);
+
+  async function analyze() {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const data = await apiClient<WalletAnalysisResult>("/tools/crypto/wallet-analysis", {
+        method: "POST",
+        body: { address: address.trim() },
+      });
+      setResult(data);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const message =
+          typeof err.body === "object" && err.body && "message" in err.body
+            ? String((err.body as { message: unknown }).message)
+            : err.message;
+        setError(message);
+      } else {
+        setError("Analiz sırasında bir hata oluştu.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <ToolCard
+      title="Cüzdan Bağlantı Analizi (Beta)"
+      icon={Link2}
+      accent="purple"
+      badge={
+        <Switch
+          className="ml-auto"
+          checked={enabled}
+          onCheckedChange={(checked) => setEnabled(checked)}
+          aria-label="Cüzdan Bağlantı Analizi'ni aç/kapat"
+        />
+      }
+    >
+      {!enabled ? (
+        <p className="text-body-xs text-muted-foreground">
+          Bir cüzdan adresinin başka cüzdanlarla olası bağlantılarını gösterir. Deneysel bir araç —
+          açmak için üstteki anahtarı kullanın.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="0x... cüzdan adresi"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-body-xs text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+            <button
+              onClick={analyze}
+              disabled={loading || address.trim().length === 0}
+              className="shrink-0 rounded-lg bg-primary px-3 py-2 text-body-xs font-medium text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Analiz ediliyor..." : "Analiz Et"}
+            </button>
+          </div>
+
+          {error && (
+            <p className="rounded-lg bg-danger/10 px-3 py-2 text-body-xs text-danger">{error}</p>
+          )}
+
+          {result && (
+            <div className="space-y-3 rounded-lg bg-card-hover p-3">
+              <p className="text-body-xs text-foreground">{result.summary}</p>
+
+              {result.connectedWallets.length > 0 && (
+                <div className="space-y-1.5">
+                  {result.connectedWallets.map((w) => (
+                    <div key={w.address} className="rounded-lg border border-border bg-background p-2">
+                      <p className="truncate text-financial text-foreground/90">{w.address}</p>
+                      <p className="mt-0.5 text-body-xs text-muted-foreground">
+                        Son 30 günde {w.sameDayActivityCount} gün aynı zamanlarda işlem yapmış
+                        {w.recentSameDayDates.length > 0 && ` (${w.recentSameDayDates.join(", ")})`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-body-xs text-muted-foreground">{result.disclaimer}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </ToolCard>
+  );
+}
+
 export function CryptoToolsSection() {
   const { data: movers } = useCryptoMovers();
 
@@ -380,6 +499,10 @@ export function CryptoToolsSection() {
       </div>
 
       <EtfFlowCard />
+
+      <div className="grid grid-cols-1 gap-4">
+        <WalletAnalysisCard />
+      </div>
     </div>
   );
 }
