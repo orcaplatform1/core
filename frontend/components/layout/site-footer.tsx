@@ -31,10 +31,11 @@ function DiscordIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 // Telif metni admin panelden (FooterSettings.copyrightText) düz metin
-// olarak geliyor — "Traders.TR" gecen kismini kullanici istegiyle (2026-08-24:
-// "Traders'i premium kırmızı, .TR'yi premium beyaz yap, yanına bayrak
-// simgesi koy") ozel stille vurgulayip yaninda bayrak ikonu gostermek icin
-// metni bu sabit alt dizeye gore boluyoruz, geri kalani duz metin kaliyor.
+// olarak geliyor — "Traders.TR" gecen kismini ozel stille vurgulayip
+// yaninda bayrak ikonu gostermek icin metni bu sabit alt dizeye gore
+// boluyoruz, geri kalani duz metin kaliyor. Renkler traders.tr logosuyla
+// tutarli (2026-09-15): "Traders" beyaz, ".TR" mavi. Bayrak ikonuna
+// dokunulmadi.
 function renderCopyrightWithBrandHighlight(text: string) {
   const marker = "Traders.TR";
   const parts = text.split(marker);
@@ -44,8 +45,8 @@ function renderCopyrightWithBrandHighlight(text: string) {
       ? [part]
       : [
           <span key={i} className="whitespace-nowrap">
-            <span className="text-traders-red">Traders</span>
-            <span className="text-traders-white">.TR</span>{" "}
+            <span className="text-traders-white">Traders</span>
+            <span className="text-traders-blue">.TR</span>{" "}
             <img
               src="/footerflag.png"
               alt=""
