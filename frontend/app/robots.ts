@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
-// Site /core alt yolunda yayında (bkz. next.config.ts basePath) - üretilen
-// dosya otomatik olarak /core/robots.txt'de servis edilir.
+// Site /orca alt yolunda yayında (bkz. next.config.ts basePath) - üretilen
+// dosya otomatik olarak /orca/robots.txt'de servis edilir.
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -33,6 +33,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: "https://traders.tr/core/sitemap.xml",
+    sitemap: "https://traders.tr/orca/sitemap.xml",
   };
 }

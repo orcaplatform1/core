@@ -26,7 +26,7 @@ export const DEFAULT_SITE_CONTENT: SiteContentSettings = {
   heroPrimaryCtaHref: "/register",
   heroSecondaryCtaLabel: "Ücretsiz İlk Dersi İzle",
   heroSecondaryCtaHref: "/programs",
-  heroImageUrl: "/core/marketing/orca-hero-whale.webp",
+  heroImageUrl: "/orca/marketing/orca-hero-whale.webp",
 
   partnersTitle: "Güvenilen Teknoloji & Veri Ortakları",
   partnersItems: [

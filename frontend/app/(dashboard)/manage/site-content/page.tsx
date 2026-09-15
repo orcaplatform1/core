@@ -303,7 +303,7 @@ export default function SiteContentPage() {
                   placeholder="Görsel URL"
                   value={form.heroImageUrl ?? ""}
                   onChange={(v) => set("heroImageUrl", v || null)}
-                  hint='Site "/core" alt yolunda yayınlanıyor; /public altına koyduğun bir görsel için yolu "/core/..." ile başlat.'
+                  hint='Site "/orca" alt yolunda yayınlanıyor; /public altına koyduğun bir görsel için yolu "/orca/..." ile başlat.'
                 />
               </Field>
 

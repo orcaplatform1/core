@@ -97,7 +97,7 @@ export class CertificatesService {
     if (cert.userId !== requestingUserId) {
       throw new BadRequestException('Bu sertifikaya erişim yetkiniz yok.');
     }
-    const qrDataUrl = await QRCode.toDataURL(`https://traders.tr/core/verify/${cert.code}`);
+    const qrDataUrl = await QRCode.toDataURL(`https://traders.tr/orca/verify/${cert.code}`);
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 50 });
       const chunks: Buffer[] = [];

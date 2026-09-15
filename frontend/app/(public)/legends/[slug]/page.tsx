@@ -39,15 +39,15 @@ export default async function LegendDetailPage({
     name: legend.name,
     description: legend.bio.slice(0, 300),
     image: legend.photoUrl ?? undefined,
-    url: `https://traders.tr/core/legends/${legend.slug}`,
+    url: `https://traders.tr/orca/legends/${legend.slug}`,
   };
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "En İyiler", item: "https://traders.tr/core/legends" },
-      { "@type": "ListItem", position: 2, name: legend.name, item: `https://traders.tr/core/legends/${legend.slug}` },
+      { "@type": "ListItem", position: 1, name: "En İyiler", item: "https://traders.tr/orca/legends" },
+      { "@type": "ListItem", position: 2, name: legend.name, item: `https://traders.tr/orca/legends/${legend.slug}` },
     ],
   };
 

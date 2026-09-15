@@ -18,7 +18,7 @@ export function ProgramCard({ program }: { program: Program }) {
           </span>
         )}
         {program.coverImageUrl && (
-          // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
+          // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/orca")
           // ile dahili self-fetch yaparken 400 dönüyor (bkz. hero-background.tsx) -
           // yine de fill+sizes sayesinde lazy-load ve doğru en-boy oranı korunuyor.
           <Image

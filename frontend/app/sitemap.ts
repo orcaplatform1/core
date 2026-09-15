@@ -3,7 +3,7 @@ import { getPrograms } from "@/lib/marketing/get-programs";
 import { getFooterPages } from "@/lib/marketing/get-site-content";
 import { LEGENDS } from "@/lib/data/legends";
 
-const BASE = "https://traders.tr/core";
+const BASE = "https://traders.tr/orca";
 
 const STATIC_ROUTES = [
   { path: "", priority: 1, changeFrequency: "daily" as const },

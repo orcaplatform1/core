@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: "/core",
+  basePath: "/orca",
 };
 
 export default nextConfig;

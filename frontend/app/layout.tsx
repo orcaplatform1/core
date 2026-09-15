@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "latin-ext"],
 });
 
-const SITE_URL = "https://traders.tr/core";
+const SITE_URL = "https://traders.tr/orca";
 const SITE_DESCRIPTION =
   "Yapay zeka destekli finans ve trading eğitim platformu - kripto, borsa ve forex eğitimleri, canlı piyasa araçları ve AI Mentor.";
 

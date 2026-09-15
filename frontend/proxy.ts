@@ -17,7 +17,7 @@ export function proxy(request: NextRequest) {
   );
 
   if (!hasSession) {
-    // next.config.ts basePath="/core" tanımlı - `new URL("/login", request.url)`
+    // next.config.ts basePath="/orca" tanımlı - `new URL("/login", request.url)`
     // basePath'i yutup https://traders.tr/login (sitede olmayan bir path)
     // üretiyordu. `nextUrl.clone()` basePath'i koruyor.
     const loginUrl = request.nextUrl.clone();

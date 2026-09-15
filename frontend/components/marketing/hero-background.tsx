@@ -22,7 +22,7 @@ export function HeroBackground({ imageSrc, fill = false }: { imageSrc?: string; 
       }
     >
       {imageSrc ? (
-        // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
+        // unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/orca")
         // ile birlikte dahili self-fetch yaparken 400 dönüyor; görsel zaten webp/önceden
         // sıkıştırılmış geldiği için optimizer'a ihtiyaç yok.
         // md+ ekranlarda hero içeriği sağda AI Mentor kartıyla paylaşılıyor;

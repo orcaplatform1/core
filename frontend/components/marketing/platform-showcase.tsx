@@ -9,10 +9,10 @@ import type { PlatformShowcaseData } from "@/lib/marketing/site-content-types";
 // görsel bu deliğin arkasına, çerçeve PNG'i ONUN ÜSTÜNE bindirilir. Delik
 // koordinatları kaynak PNG'ler üzerinde piksel bazlı alfa-kanalı taramasıyla
 // bulundu (bkz. commit notu) - yüzdeye çevrilip aşağıda sabitlendi.
-// next/image basePath'i ("/core") bu projede otomatik eklemiyor (bkz.
-// default-site-content.ts heroImageUrl) - yol elle "/core/" ile başlıyor.
-const MACBOOK_FRAME = "/core/marketing/macbook-frame.png";
-const IPHONE_FRAME = "/core/marketing/iphone-frame.png";
+// next/image basePath'i ("/orca") bu projede otomatik eklemiyor (bkz.
+// default-site-content.ts heroImageUrl) - yol elle "/orca/" ile başlıyor.
+const MACBOOK_FRAME = "/orca/marketing/macbook-frame.png";
+const IPHONE_FRAME = "/orca/marketing/iphone-frame.png";
 
 // macbook-frame.png (3460x2200) ekran deliği: left 450 top 300 right 3010 bottom 1900
 const LAPTOP_SCREEN = { left: 13.0, top: 13.6, width: 74.0, height: 72.7 };

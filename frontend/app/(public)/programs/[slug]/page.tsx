@@ -46,7 +46,7 @@ export default async function ProgramDetailPage({
     "@type": "Course",
     name: program.title,
     description: program.description ?? undefined,
-    provider: { "@type": "Organization", name: "ORCA", sameAs: "https://traders.tr/core" },
+    provider: { "@type": "Organization", name: "ORCA", sameAs: "https://traders.tr/orca" },
     ...(program.durationHours
       ? {
           hasCourseInstance: {
@@ -62,12 +62,12 @@ export default async function ProgramDetailPage({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Programlar", item: "https://traders.tr/core/programs" },
+      { "@type": "ListItem", position: 1, name: "Programlar", item: "https://traders.tr/orca/programs" },
       {
         "@type": "ListItem",
         position: 2,
         name: program.title,
-        item: `https://traders.tr/core/programs/${program.slug ?? program.id}`,
+        item: `https://traders.tr/orca/programs/${program.slug ?? program.id}`,
       },
     ],
   };

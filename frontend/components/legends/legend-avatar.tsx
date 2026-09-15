@@ -22,7 +22,7 @@ export function LegendAvatar({
   if (showPhoto) {
     return (
       <div className={cn(dims, "relative shrink-0 overflow-hidden rounded-full border border-border")}>
-        {/* unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/core")
+        {/* unoptimized: next/image'ın local optimizer'ı bu projede basePath ("/orca")
             ile dahili self-fetch yaparken 400 dönüyor (bkz. hero-background.tsx). */}
         <Image
           src={photoUrl}

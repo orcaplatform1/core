@@ -3,7 +3,7 @@ import type { Response } from 'express';
 // Access+refresh token'lar artik XSS'e karsi tarayicidan hic okunamayan httpOnly
 // cookie olarak taniniyor (eskiden JSON response body'sinde donup frontend
 // localStorage'ina duz yaziliyordu - calinirsa kalici, yenilenebilir oturum
-// ele geciriyordu). Ayni origin uzerinden servis edildigi (traders.tr/core/backend)
+// ele geciriyordu). Ayni origin uzerinden servis edildigi (traders.tr/orca/backend)
 // icin SameSite=Lax + bilinen origin CORS listesi CSRF'e karsi yeterli savunma.
 export const ACCESS_COOKIE = 'orca_access_token';
 export const REFRESH_COOKIE = 'orca_refresh_token';

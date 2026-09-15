@@ -33,7 +33,7 @@ export class SiteContentService {
           heroBadge: 'Yeni Nesil Finans Eğitim Platformu',
           heroSecondaryCtaLabel: 'Tanıtım Videosu',
           heroSecondaryCtaHref: '/programs',
-          heroImageUrl: '/core/marketing/orca-hero-whale.webp',
+          heroImageUrl: '/orca/marketing/orca-hero-whale.webp',
           partnersTitle: 'Güvenilen Teknoloji & Veri Ortakları',
           partnersItems: [
             { icon: 'line-chart', name: 'Binance' },

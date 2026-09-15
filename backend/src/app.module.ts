@@ -65,6 +65,8 @@ import { CommunityModule } from './community/community.module';
 import { AirdropModule } from './airdrop/airdrop.module';
 import { VisitorTrialModule } from './visitor-trial/visitor-trial.module';
 import { SponsorshipsModule } from './sponsorships/sponsorships.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -150,7 +152,9 @@ import { SponsorshipsModule } from './sponsorships/sponsorships.module';
     SponsorshipsModule,
     VisitorTrialModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

@@ -3,7 +3,7 @@ import { io, type Socket } from "socket.io-client";
 let socket: Socket | null = null;
 
 // Bildirim/duyuru anlık teslimi için tekil websocket bağlantısı. Backend
-// `/core/backend` altında ters proxy'lendiğinden (bkz. nginx traders.tr config),
+// `/orca/backend` altında ters proxy'lendiğinden (bkz. nginx traders.tr config),
 // socket.io "path" ile o prefix'i, namespace ile de "/notifications"'ı ayrı taşır.
 // Kimlik doğrulama httpOnly cookie ile yapılır (withCredentials) - token artık
 // JS'den okunamadığı için handshake'e elle eklenmiyor. Çağıran taraf (bkz.
