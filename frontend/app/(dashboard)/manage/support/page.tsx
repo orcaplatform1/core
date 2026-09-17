@@ -26,8 +26,8 @@ import {
 
 const STATUS_TABS: { value: string; label: string }[] = [
   { value: "", label: "Tümü" },
-  { value: "OPEN", label: "Açık" },
-  { value: "IN_PROGRESS", label: "İşlemde" },
+  { value: "OPEN", label: "Beklemede" },
+  { value: "IN_PROGRESS", label: "Cevaplandı" },
   { value: "CLOSED", label: "Kapalı" },
 ];
 
@@ -40,8 +40,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLES: Record<SupportTicketStatus, { label: string; color: string; icon: typeof Clock }> = {
-  OPEN: { label: "Açık", color: "#3B5BFF", icon: Clock },
-  IN_PROGRESS: { label: "İşlemde", color: "#F39C3D", icon: Loader2 },
+  OPEN: { label: "Beklemede", color: "#3B5BFF", icon: Clock },
+  IN_PROGRESS: { label: "Cevaplandı", color: "#F39C3D", icon: Loader2 },
   CLOSED: { label: "Kapalı", color: "#22C55E", icon: CheckCircle2 },
 };
 

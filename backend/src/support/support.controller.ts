@@ -39,6 +39,12 @@ export class SupportController {
     return this.supportService.reply(id, user.id, user.role, dto.content);
   }
 
+  @Post('support/tickets/:id/close')
+  closeOwn(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user as any;
+    return this.supportService.closeOwn(id, user.id);
+  }
+
   @UseGuards(RolesGuard)
   @Roles('STAFF', 'SUPER_ADMIN')
   @Get('manage/support')

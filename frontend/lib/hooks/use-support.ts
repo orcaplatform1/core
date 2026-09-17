@@ -80,6 +80,20 @@ export function useReplyTicket(ticketId: string | null) {
   });
 }
 
+// Talep sahibi, destek ekibi yanit verdikten (IN_PROGRESS) sonra kendi
+// talebini kapatabilir — yanit gelmezse zaten 48 saat sonra otomatik kapanir.
+export function useCloseTicket(ticketId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiClient<SupportTicket>(`/support/tickets/${ticketId}/close`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["support", "ticket", ticketId] });
+      qc.invalidateQueries({ queryKey: ["support", "mine"] });
+      qc.invalidateQueries({ queryKey: ["admin", "support"] });
+    },
+  });
+}
+
 // --- Admin ---
 
 export function useAdminTickets(page: number, status: string, category: string) {

@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { NOT_DELETED_USER_WHERE } from '../common/deleted-user';
+
+// Destek ekibi yanit verdikten (IN_PROGRESS) sonra kullanici bu sure icinde
+// yazmazsa talep otomatik CLOSED'a gecer (bkz. KriptoBeyan'daki ayni desen).
+const AUTO_CLOSE_AFTER_HOURS = 48;
 
 const TICKET_SELECT = {
   id: true,
@@ -26,6 +31,8 @@ const MESSAGE_SELECT = {
 
 @Injectable()
 export class SupportService {
+  private readonly logger = new Logger(SupportService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
@@ -136,6 +143,40 @@ export class SupportService {
     }
 
     return message;
+  }
+
+  // Talep sahibi, destek ekibi yanit verdikten (IN_PROGRESS) sonra kendi
+  // talebini kapatabilir. Henuz yanit alinmamis (OPEN) veya zaten kapali bir
+  // talep kapatilamaz.
+  async closeOwn(id: string, userId: string) {
+    const ticket = await this.getTicketOr404(id);
+    if (ticket.user.id !== userId) {
+      throw new ForbiddenException('Bu destek talebini kapatamazsınız.');
+    }
+    if (ticket.status !== 'IN_PROGRESS') {
+      throw new BadRequestException(
+        'Talep henüz yanıtlanmadan veya zaten kapalıyken kapatılamaz.',
+      );
+    }
+    return this.prisma.supportTicket.update({
+      where: { id },
+      data: { status: 'CLOSED', closedAt: new Date() },
+      select: TICKET_SELECT,
+    });
+  }
+
+  // Saatte bir calisir: destek ekibinin yanitladigi (IN_PROGRESS) bir talebe
+  // AUTO_CLOSE_AFTER_HOURS boyunca kullanici yanit vermemisse otomatik kapatilir.
+  @Cron(CronExpression.EVERY_HOUR)
+  async autoCloseStaleTickets() {
+    const cutoff = new Date(Date.now() - AUTO_CLOSE_AFTER_HOURS * 3_600_000);
+    const result = await this.prisma.supportTicket.updateMany({
+      where: { status: 'IN_PROGRESS', updatedAt: { lt: cutoff } },
+      data: { status: 'CLOSED', closedAt: new Date() },
+    });
+    if (result.count > 0) {
+      this.logger.log(`${result.count} destek talebi ${AUTO_CLOSE_AFTER_HOURS} saat yanıtsız kaldığı için otomatik kapatıldı.`);
+    }
   }
 
   // --- Admin ---

@@ -30,6 +30,7 @@ import {
   useTicket,
   useCreateTicket,
   useReplyTicket,
+  useCloseTicket,
   type SupportTicketCategory,
   type SupportTicketStatus,
 } from "@/lib/hooks/use-support";
@@ -43,8 +44,8 @@ const CATEGORY_OPTIONS: { value: SupportTicketCategory; label: string; icon: typ
 ];
 
 const STATUS_STYLES: Record<SupportTicketStatus, { label: string; color: string; icon: typeof Clock }> = {
-  OPEN: { label: "Açık", color: "#3B5BFF", icon: Clock },
-  IN_PROGRESS: { label: "İşlemde", color: "#F39C3D", icon: Loader2 },
+  OPEN: { label: "Beklemede", color: "#3B5BFF", icon: Clock },
+  IN_PROGRESS: { label: "Cevaplandı", color: "#F39C3D", icon: Loader2 },
   CLOSED: { label: "Kapalı", color: "#22C55E", icon: CheckCircle2 },
 };
 
@@ -154,6 +155,7 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
   const { user: me } = useAuth();
   const { data, isLoading } = useTicket(ticketId);
   const replyTicket = useReplyTicket(ticketId);
+  const closeTicket = useCloseTicket(ticketId);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +171,15 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
       setText("");
     } catch (err: any) {
       toast.error(err?.message ?? "Mesaj gönderilemedi");
+    }
+  }
+
+  async function handleClose() {
+    try {
+      await closeTicket.mutateAsync();
+      toast.success("Destek talebi kapatıldı");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Talep kapatılamadı");
     }
   }
 
@@ -232,6 +243,20 @@ function TicketThread({ ticketId, onBack }: { ticketId: string; onBack: () => vo
           <p className="rounded-xl border border-border bg-card-inner p-3 text-center text-body-xs text-muted-foreground">
             Bu talep kapatıldı. Yazdığın an talep otomatik olarak yeniden açılır.
           </p>
+        ) : ticket.status === "IN_PROGRESS" ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card-inner px-3 py-2">
+            <p className="text-body-xs text-muted-foreground">
+              Destek ekibi yanıtladı. Sorun çözüldüyse kapatabilirsin — 48
+              saat içinde yazmazsan otomatik kapanır.
+            </p>
+            <button
+              onClick={handleClose}
+              disabled={closeTicket.isPending}
+              className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-label text-foreground hover:bg-accent disabled:opacity-50"
+            >
+              Talebi Kapat
+            </button>
+          </div>
         ) : null}
         <div className="mt-2 flex items-end gap-2 rounded-xl border border-border bg-card-inner p-2">
           <textarea
