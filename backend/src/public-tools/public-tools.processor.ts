@@ -5,6 +5,7 @@ import { ForexToolsService } from './forex-tools.service';
 import { EconomicToolsService } from './economic-tools.service';
 import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
+import { CycleIndicatorsService } from './cycle-indicators.service';
 
 @Processor('public-tools', { concurrency: 2, lockDuration: 300000 })
 export class PublicToolsProcessor extends WorkerHost {
@@ -14,6 +15,7 @@ export class PublicToolsProcessor extends WorkerHost {
     private readonly economicTools: EconomicToolsService,
     private readonly bistTools: BistToolsService,
     private readonly onchainTools: OnchainToolsService,
+    private readonly cycleIndicators: CycleIndicatorsService,
   ) {
     super();
   }
@@ -54,6 +56,18 @@ export class PublicToolsProcessor extends WorkerHost {
         return this.cryptoTools.refreshEtfFlows();
       case 'refresh-onchain':
         return this.onchainTools.refreshOnchain();
+      case 'refresh-cycle-cbbi':
+        return this.cycleIndicators.refreshCbbi();
+      case 'refresh-cycle-snapshot':
+        return this.cycleIndicators.refreshSnapshot();
+      case 'refresh-cycle-macro':
+        return this.cycleIndicators.refreshMacro();
+      case 'refresh-cycle-exchange-flows':
+        return this.cycleIndicators.refreshExchangeFlowsAndPriceSeries();
+      case 'refresh-cycle-rsi-heatmap':
+        return this.cycleIndicators.refreshRsiHeatmap();
+      case 'refresh-cycle-long-short':
+        return this.cycleIndicators.refreshLongShortRatio();
       default:
         return null;
     }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CryptoToolsService } from './crypto-tools.service';
@@ -8,6 +8,7 @@ import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
 import { OrderFlowToolsService } from './order-flow-tools.service';
 import { OrderFlowHeatmapService } from './order-flow-heatmap.service';
+import { CycleIndicatorsService } from './cycle-indicators.service';
 
 // Anonim ziyaretciler de erisebilir (2 dakikalik deneme suresi, bkz.
 // frontend VisitorTrialGate + backend visitor-trial modulu) - giris yapmis
@@ -25,6 +26,7 @@ export class PublicToolsController {
     private readonly onchainTools: OnchainToolsService,
     private readonly orderFlowTools: OrderFlowToolsService,
     private readonly orderFlowHeatmap: OrderFlowHeatmapService,
+    private readonly cycleIndicators: CycleIndicatorsService,
   ) {}
 
   @Get('crypto/movers')
@@ -142,5 +144,66 @@ export class PublicToolsController {
       return { error: 'unsupported_symbol', allowedSymbols };
     }
     return this.orderFlowHeatmap.getHeatmap(sym);
+  }
+
+  // ---------- Döngü göstergeleri ----------
+
+  @Get('crypto/cycle/cbbi')
+  getCbbi() {
+    return this.cycleIndicators.getCbbi();
+  }
+
+  @Get('crypto/cycle/snapshot')
+  getCycleSnapshot() {
+    return this.cycleIndicators.getSnapshot();
+  }
+
+  @Get('crypto/cycle/macro')
+  getCycleMacro() {
+    return this.cycleIndicators.getMacro();
+  }
+
+  @Get('crypto/cycle/exchange-flows')
+  getCycleExchangeFlows() {
+    return this.cycleIndicators.getExchangeFlows();
+  }
+
+  @Get('crypto/cycle/ahr999')
+  getAhr999() {
+    return this.cycleIndicators.getAhr999();
+  }
+
+  @Get('crypto/cycle/2y-ma-multiplier')
+  getTwoYearMaMultiplier() {
+    return this.cycleIndicators.getTwoYearMaMultiplier();
+  }
+
+  @Get('crypto/cycle/rsi-heatmap')
+  getRsiHeatmap() {
+    return this.cycleIndicators.getRsiHeatmap();
+  }
+
+  @Get('crypto/cycle/long-short-ratio')
+  getLongShortRatio() {
+    return this.cycleIndicators.getLongShortRatio();
+  }
+
+  @Get('crypto/cycle/market-pulse')
+  getMarketPulse() {
+    return this.cycleIndicators.getMarketPulse();
+  }
+
+  @Post('crypto/cycle/dca-calculator')
+  async postDcaCalculator(
+    @Body() body: { amountUsd?: number; frequencyDays?: number; startDate?: string },
+  ) {
+    const amountUsd = Number(body?.amountUsd);
+    const frequencyDays = Number(body?.frequencyDays);
+    const startDate = body?.startDate;
+    if (!Number.isFinite(amountUsd) || amountUsd <= 0 || !Number.isFinite(frequencyDays) || frequencyDays <= 0 || !startDate) {
+      return { error: 'invalid_params' };
+    }
+    const result = await this.cycleIndicators.computeDca({ amountUsd, frequencyDays, startDate });
+    return result ?? { error: 'data_unavailable' };
   }
 }

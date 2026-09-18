@@ -21,6 +21,16 @@ import type {
   EtfFlowsResponse,
   OrderFlowData,
   HeatmapResponse,
+  CbbiData,
+  CycleSnapshot,
+  CycleMacro,
+  ExchangeFlows,
+  Ahr999Data,
+  TwoYearMaMultiplierData,
+  RsiHeatmapRow,
+  LongShortRow,
+  MarketPulse,
+  DcaResult,
 } from "@/lib/types/tools";
 
 export function useCryptoMovers() {
@@ -172,5 +182,90 @@ export function useOrderFlowHeatmap(symbol: string) {
     queryKey: ["tools", "crypto", "order-flow", "heatmap", symbol],
     queryFn: () => apiClient<HeatmapResponse>(`/tools/crypto/order-flow/heatmap?symbol=${symbol}`),
     refetchInterval: 2000,
+  });
+}
+
+// ---------- Döngü göstergeleri ----------
+
+export function useCbbi() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "cbbi"],
+    queryFn: () => apiClient<CbbiData | null>("/tools/crypto/cycle/cbbi"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useCycleSnapshot() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "snapshot"],
+    queryFn: () => apiClient<CycleSnapshot | null>("/tools/crypto/cycle/snapshot"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useCycleMacro() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "macro"],
+    queryFn: () => apiClient<CycleMacro | null>("/tools/crypto/cycle/macro"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useExchangeFlows() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "exchange-flows"],
+    queryFn: () => apiClient<ExchangeFlows | null>("/tools/crypto/cycle/exchange-flows"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useAhr999() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "ahr999"],
+    queryFn: () => apiClient<Ahr999Data | null>("/tools/crypto/cycle/ahr999"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useTwoYearMaMultiplier() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "2y-ma-multiplier"],
+    queryFn: () => apiClient<TwoYearMaMultiplierData | null>("/tools/crypto/cycle/2y-ma-multiplier"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export function useCycleRsiHeatmap() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "rsi-heatmap"],
+    queryFn: () => apiClient<RsiHeatmapRow[]>("/tools/crypto/cycle/rsi-heatmap"),
+    refetchInterval: 15 * 60_000,
+  });
+}
+
+export function useLongShortRatio() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "long-short-ratio"],
+    queryFn: () => apiClient<LongShortRow[]>("/tools/crypto/cycle/long-short-ratio"),
+    refetchInterval: 15 * 60_000,
+  });
+}
+
+export function useMarketPulse() {
+  return useQuery({
+    queryKey: ["tools", "crypto", "cycle", "market-pulse"],
+    queryFn: () => apiClient<MarketPulse>("/tools/crypto/cycle/market-pulse"),
+    refetchInterval: 60 * 60_000,
+  });
+}
+
+export async function postDcaCalculator(params: {
+  amountUsd: number;
+  frequencyDays: number;
+  startDate: string;
+}) {
+  return apiClient<DcaResult | { error: string }>("/tools/crypto/cycle/dca-calculator", {
+    method: "POST",
+    body: params,
   });
 }

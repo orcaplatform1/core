@@ -237,3 +237,96 @@ export type HeatmapResponse = {
   footprintIntervalMs: number;
   footprint: FootprintCandle[];
 };
+
+// ---------- Döngü göstergeleri ----------
+
+export type CbbiIndicatorScores = {
+  piCycle: number | null;
+  rupl: number | null;
+  rhodl: number | null;
+  puell: number | null;
+  twoYearMa: number | null;
+  rainbow: number | null;
+  mvrv: number | null;
+  reserveRisk: number | null;
+  woobull: number | null;
+};
+
+export type CbbiData = {
+  price: number | null;
+  confidence: number | null;
+  indicators: CbbiIndicatorScores;
+  updatedAt: string;
+};
+
+export type CycleSnapshot = {
+  mvrvZscore: number | null;
+  piCycle: { sma111: number | null; sma350x2: number | null; crossed: boolean } | null;
+  puellMultiple: number | null;
+  mayerMultiple: number | null;
+  rhodlRatio: number | null;
+  reserveRisk: number | null;
+  goldenRatio: { price: number | null; sma350: number | null; x2618: number | null; x3236: number | null } | null;
+  ma200Week: { price: number | null; ma: number | null } | null;
+  updatedAt: string;
+};
+
+export type CycleMacro = {
+  rainbow: { price: number | null; bandIndex: number | null; bandLabel: string | null } | null;
+  terminalPrice: number | null;
+  m2global: number | null;
+  macroScore: number | null;
+  ssr: number | null;
+  seasonalityMonthly: Record<string, number> | null;
+  updatedAt: string;
+};
+
+export type ExchangeFlows = {
+  netflowBtc: number | null;
+  reserveBtc: number | null;
+  inflowUsd: number | null;
+  outflowUsd: number | null;
+  updatedAt: string;
+};
+
+export type Ahr999Data = {
+  value: number | null;
+  price: number | null;
+  geoMean200d: number | null;
+  updatedAt: string;
+};
+
+export type TwoYearMaMultiplierData = {
+  value: number | null;
+  price: number | null;
+  ma730d: number | null;
+  band5x: number | null;
+  updatedAt: string;
+};
+
+export type RsiHeatmapRow = {
+  symbol: string;
+  rsi14: number;
+};
+
+export type LongShortRow = {
+  symbol: string;
+  longShortRatio: number;
+};
+
+export type MarketPulse = {
+  confidence: number | null;
+  hotCount: number;
+  totalCount: number;
+  classification: string;
+  updatedAt: string | null;
+};
+
+export type DcaResult = {
+  investedTotal: number;
+  currentValue: number;
+  roiPercent: number;
+  btcAccumulated: number;
+  purchaseCount: number;
+  averageCost: number;
+};

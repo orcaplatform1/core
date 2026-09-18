@@ -440,23 +440,44 @@ export class CryptoToolsService {
     return this.cache.getJson<AltcoinSeasonData>(CACHE_KEYS.altcoinSeason);
   }
 
-  // ---------- BTC/ETH Spot ETF net akışları (SoSoValue) ----------
+  // ---------- BTC/ETH Spot ETF net akışları (SoSoValue, yoksa BGeometrics'e düşer) ----------
 
   private async fetchEtfFlow(symbol: 'BTC' | 'ETH'): Promise<EtfFlowRow[] | null> {
     const apiKey = process.env.SOSOVALUE_API_KEY;
-    if (!apiKey) return null;
+    if (apiKey) {
+      try {
+        const url = `https://openapi.sosovalue.com/openapi/v1/etfs/summary-history?symbol=${symbol}&country_code=US&limit=14`;
+        const res = await fetch(url, { headers: { 'x-soso-api-key': apiKey } });
+        if (res.ok) {
+          const body = await res.json();
+          const rows = body?.data ?? [];
+          if (rows.length > 0) {
+            return rows.map((r: any) => ({
+              date: r.date,
+              netFlow: r.total_net_inflow,
+              cumulativeNetFlow: r.cum_net_inflow,
+              totalNetAssets: r.total_net_assets,
+            }));
+          }
+        }
+      } catch {
+        // SoSoValue basarisizsa BGeometrics fallback'ine dus
+      }
+    }
+
+    // BGeometrics sadece BTC ETF verisi sunuyor (ETH icin karsiligi yok) - anahtarsiz.
+    // Frontend zaten sadece en guncel satiri (data.btc[0]) kullaniyor (bkz.
+    // crypto-tools-section.tsx EtfFlowCard) - toplu/sayfalanmis liste endpoint'inin
+    // belirsiz seklini denemek yerine tek satirlik /last cagrisi yeterli ve saglam.
+    if (symbol !== 'BTC') return null;
     try {
-      const url = `https://openapi.sosovalue.com/openapi/v1/etfs/summary-history?symbol=${symbol}&country_code=US&limit=14`;
-      const res = await fetch(url, { headers: { 'x-soso-api-key': apiKey } });
+      const res = await fetch('https://api.bitcoin-data.com/v1/etf-flow-btc/last', {
+        headers: { Accept: 'application/json' },
+      });
       if (!res.ok) return null;
-      const body = await res.json();
-      const rows = body?.data ?? [];
-      return rows.map((r: any) => ({
-        date: r.date,
-        netFlow: r.total_net_inflow,
-        cumulativeNetFlow: r.cum_net_inflow,
-        totalNetAssets: r.total_net_assets,
-      }));
+      const r = await res.json();
+      const netFlow = parseFloat(r?.etfFlow ?? '0') || 0;
+      return [{ date: r.d, netFlow, cumulativeNetFlow: netFlow, totalNetAssets: 0 }];
     } catch {
       return null;
     }

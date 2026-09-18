@@ -10,6 +10,7 @@ import { BistToolsService } from './bist-tools.service';
 import { OnchainToolsService } from './onchain-tools.service';
 import { OrderFlowToolsService } from './order-flow-tools.service';
 import { OrderFlowHeatmapService } from './order-flow-heatmap.service';
+import { CycleIndicatorsService } from './cycle-indicators.service';
 
 @Module({
   imports: [BullModule.registerQueue({ name: 'public-tools' })],
@@ -22,6 +23,7 @@ import { OrderFlowHeatmapService } from './order-flow-heatmap.service';
     OnchainToolsService,
     OrderFlowToolsService,
     OrderFlowHeatmapService,
+    CycleIndicatorsService,
     PublicToolsProcessor,
     PublicToolsScheduler,
   ],

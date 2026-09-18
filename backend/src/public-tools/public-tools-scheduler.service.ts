@@ -30,9 +30,17 @@ export class PublicToolsScheduler implements OnModuleInit {
       'refresh-altcoin-season',
       'refresh-etf-flows',
       'refresh-onchain',
+      'refresh-cycle-cbbi',
+      'refresh-cycle-rsi-heatmap',
+      'refresh-cycle-long-short',
     ]) {
       await this.queue.add(name, {}, JOB_OPTS);
     }
+    // NOT: refresh-cycle-snapshot / -macro / -exchange-flows kasıtlı olarak açılışta
+    // tetiklenmiyor. bitcoin-data.com ücretsiz katmanı IP başına saatte 10 istekle
+    // sınırlı (bkz. cycle-indicators.service.ts) — bu üç batch kendi cron saatlerini
+    // (02:00/03:00/04:00) bekler, ilk cron'a kadar ilgili kartlar "veri yükleniyor"
+    // kalır (uygulamadaki mevcut fallback UX ile tutarlı).
   }
 
   @Cron('*/1 * * * *')
@@ -118,5 +126,41 @@ export class PublicToolsScheduler implements OnModuleInit {
   @Cron('*/10 * * * *')
   async queueOnchain() {
     await this.queue.add('refresh-onchain', {}, JOB_OPTS);
+  }
+
+  // ---------- Döngü göstergeleri ----------
+
+  // CBBI — anahtarsız, gözlemlenen bir rate limit yok, 8 saatte bir yeterli
+  // (kaynak veri günlük güncelleniyor).
+  @Cron('0 */8 * * *')
+  async queueCycleCbbi() {
+    await this.queue.add('refresh-cycle-cbbi', {}, JOB_OPTS);
+  }
+
+  // bitcoin-data.com batch'leri: her biri farklı saatte, saatte-10-istek bütçesinin
+  // altında kalacak şekilde (bkz. cycle-indicators.service.ts başındaki not).
+  @Cron('0 2 * * *')
+  async queueCycleSnapshot() {
+    await this.queue.add('refresh-cycle-snapshot', {}, JOB_OPTS);
+  }
+
+  @Cron('0 3 * * *')
+  async queueCycleMacro() {
+    await this.queue.add('refresh-cycle-macro', {}, JOB_OPTS);
+  }
+
+  @Cron('0 4 * * *')
+  async queueCycleExchangeFlows() {
+    await this.queue.add('refresh-cycle-exchange-flows', {}, JOB_OPTS);
+  }
+
+  @Cron('*/15 * * * *')
+  async queueCycleRsiHeatmap() {
+    await this.queue.add('refresh-cycle-rsi-heatmap', {}, JOB_OPTS);
+  }
+
+  @Cron('*/15 * * * *')
+  async queueCycleLongShort() {
+    await this.queue.add('refresh-cycle-long-short', {}, JOB_OPTS);
   }
 }

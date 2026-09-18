@@ -2,6 +2,7 @@ import { ToolsNav } from "@/components/tools/tools-nav";
 
 const CRYPTO_NAV_ITEMS = [
   { label: "Genel Bakış", href: "/tools/crypto" },
+  { label: "Döngü Göstergeleri", href: "/tools/crypto/cycle", badge: "YENİ" },
   { label: "Kripto Takvim", href: "/tools/crypto/calendar" },
   { label: "ICO'lar", href: "/tools/crypto/ico" },
   { label: "Airdrop'lar", href: "/tools/crypto/airdrops" },
