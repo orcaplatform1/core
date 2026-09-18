@@ -41,21 +41,30 @@ export class SubscriptionsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requesterId?: string, requesterRole?: string) {
     const sub = await this.prisma.subscription.findUnique({ where: { id } });
 
     if (!sub) {
       throw new NotFoundException('Abonelik bulunamadı.');
     }
 
+    // Guvenlik: payments.service.ts findOne'da uygulanan ayni IDOR koruma deseni.
+    if (requesterRole !== 'SUPER_ADMIN' && sub.userId !== requesterId) {
+      throw new NotFoundException('Abonelik bulunamadı.');
+    }
+
     return sub;
   }
 
-  async cancel(id: string) {
+  async cancel(id: string, requesterId?: string, requesterRole?: string) {
     const sub = await this.prisma.subscription.findUnique({ where: { id } });
 
     if (!sub) {
       throw new BadRequestException('Abonelik bulunamadı.');
+    }
+
+    if (requesterRole !== 'SUPER_ADMIN' && sub.userId !== requesterId) {
+      throw new NotFoundException('Abonelik bulunamadı.');
     }
 
     const updated = await this.prisma.subscription.update({

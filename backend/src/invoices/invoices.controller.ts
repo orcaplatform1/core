@@ -25,7 +25,8 @@ export class InvoicesController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.invoicesService.findOne(id);
+  findOne(@Req() req: Request, @Param('id') id: string) {
+    const requester = req.user as any;
+    return this.invoicesService.findOne(id, requester.id, requester.role);
   }
 }

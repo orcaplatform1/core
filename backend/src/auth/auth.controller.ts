@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import { Throttle } from '@nestjs/throttler';
 
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -39,6 +40,10 @@ export class AuthController {
     return this.authService.health();
   }
 
+  // Global throttle (100 req/dk/IP) kimlik doğrulama uçları için brute-force'a
+  // karşı yetersiz kalıyordu - hesap kilitleme mekanizması da yok. Buraya özel,
+  // daha sıkı bir limit eklendi.
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { token, refreshToken, user } = await this.authService.register(dto);
@@ -46,6 +51,7 @@ export class AuthController {
     return { user };
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const ip = req.ip || '';
@@ -94,11 +100,13 @@ export class AuthController {
     return this.authService.getMyDevices(userId);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('password-reset/request')
   requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
     return this.authService.requestPasswordReset(dto.email);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('password-reset/confirm')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.newPassword);

@@ -50,9 +50,15 @@ export class InvoicesService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requesterId?: string, requesterRole?: string) {
     const invoice = await this.prisma.invoice.findUnique({ where: { id } });
     if (!invoice) throw new NotFoundException('Fatura bulunamadı.');
+    // Guvenlik: payments.service.ts findOne'da daha once duzeltilen ayni IDOR -
+    // herhangi bir giris yapmis kullanici, sahibi olmadigi bir faturayi id ile
+    // dogrudan cekebiliyordu. Artik sadece faturanin sahibi veya SUPER_ADMIN gorebilir.
+    if (requesterRole !== 'SUPER_ADMIN' && invoice.userId !== requesterId) {
+      throw new NotFoundException('Fatura bulunamadı.');
+    }
     return invoice;
   }
 }
