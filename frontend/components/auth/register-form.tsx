@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/auth/password-input";
 import { AuthShell } from "@/components/layout/auth-shell";
+import { ConsentGate } from "@/components/auth/consent-gate";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,8 @@ export function RegisterForm() {
     }
   }, [isLoading, user, router]);
   const [step, setStep] = useState<"basics" | "gender">("basics");
+  const [termsOk, setTermsOk] = useState(false);
+  const [kvkkOk, setKvkkOk] = useState(false);
   const {
     register,
     handleSubmit,
@@ -67,6 +70,10 @@ export function RegisterForm() {
   };
 
   const onSubmit = async (values: RegisterFormValues) => {
+    if (!termsOk || !kvkkOk) {
+      toast.error("Devam etmek için Kullanım Koşulları ve KVKK Aydınlatma Metni'ni okuyup kabul etmelisin.");
+      return;
+    }
     try {
       await registerUser({
         fullName: values.fullName,
@@ -278,6 +285,14 @@ export function RegisterForm() {
               {errors.gender && (
                 <span className="text-body-xs text-danger">{errors.gender.message}</span>
               )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <ConsentGate slug="terms-of-service" title="Kullanım Koşulları" label="'nı okudum, anladım ve kabul ediyorum." accepted={termsOk} onAccept={() => setTermsOk(true)} />
+              <ConsentGate slug="kvkk" title="KVKK Aydınlatma Metni" label="'ni okudum ve anladım." accepted={kvkkOk} onAccept={() => setKvkkOk(true)} />
+              <p className="text-help text-muted-foreground">
+                Elle işaretlenemez. Her iki metni de açın, en alta kadar okuyup &quot;Okudum, anladım, kabul ediyorum&quot;a basın; kutucuklar otomatik işaretlenecektir.
+              </p>
             </div>
 
             <div className="flex gap-3 mt-2">
