@@ -221,24 +221,32 @@ export class CycleIndicatorsService {
 
   async refreshMacro(): Promise<void> {
     try {
-      const [rainbow, terminal, m2, macro, ssr, seasonality] = await Promise.all([
+      // NOT: m2global/last bitcoin-data.com'un ücretli planında (403 INVALID_TOKEN,
+      // subscription required) — istemiyoruz, boşa günlük kotayı (15 istek/gün) yer.
+      const [rainbow, terminal, macro, ssr, seasonality] = await Promise.all([
         this.safeFetchJson<any>(`${BD_BASE}/rainbow-chart/last`),
         this.safeFetchJson<any>(`${BD_BASE}/terminal-price/last`),
-        this.safeFetchJson<any>(`${BD_BASE}/m2global/last`),
         this.safeFetchJson<any>(`${BD_BASE}/bitcoin-macro-index/last`),
         this.safeFetchJson<any>(`${BD_BASE}/ssr/last`),
-        this.safeFetchJson<any>(`${BD_BASE}/seasonality-monthly`),
+        this.safeFetchJson<any[]>(`${BD_BASE}/seasonality-monthly`),
       ]);
+
+      const seasonalityMonthly = Array.isArray(seasonality)
+        ? seasonality.reduce<Record<string, number>>((acc, row) => {
+            if (row?.monthName != null && typeof row.avgReturn === 'number') acc[row.monthName] = row.avgReturn;
+            return acc;
+          }, {})
+        : null;
 
       const payload: CycleMacro = {
         rainbow: rainbow
           ? { price: rainbow.priceUsd ?? null, bandIndex: rainbow.bandIndex ?? null, bandLabel: rainbow.bandLabel ?? null }
           : null,
         terminalPrice: terminal?.terminalPrice ?? null,
-        m2global: m2?.m2global != null ? parseFloat(m2.m2global) : null,
+        m2global: null,
         macroScore: macro?.macroScore ?? null,
         ssr: ssr?.ssrStablecoin ?? null,
-        seasonalityMonthly: seasonality && typeof seasonality === 'object' ? seasonality : null,
+        seasonalityMonthly: seasonalityMonthly && Object.keys(seasonalityMonthly).length > 0 ? seasonalityMonthly : null,
         updatedAt: new Date().toISOString(),
       };
       await this.cache.setJson(CACHE_KEYS.macro, payload, 3600 * 30);
@@ -255,19 +263,18 @@ export class CycleIndicatorsService {
 
   async refreshExchangeFlowsAndPriceSeries(): Promise<void> {
     try {
-      const [netflow, reserve, inflow, outflow, priceSeries] = await Promise.all([
-        this.safeFetchJson<any>(`${BD_BASE}/exchange-netflow-btc/last`),
-        this.safeFetchJson<any>(`${BD_BASE}/exchange-reserve-btc/last`),
-        this.safeFetchJson<any>(`${BD_BASE}/exchange-inflow-usd/last`),
-        this.safeFetchJson<any>(`${BD_BASE}/exchange-outflow-usd/last`),
-        this.safeFetchJson<any[]>(`${BD_BASE}/btc-price`),
-      ]);
+      // NOT: exchange-netflow-btc / exchange-reserve-btc / exchange-inflow-usd /
+      // exchange-outflow-usd bitcoin-data.com'un ücretli planında (403 INVALID_TOKEN,
+      // subscription required) — mevcut planla asla veri dönmeyecekler, o yüzden
+      // artık çağırmıyoruz (boşa günlük kotayı, 15 istek/gün, tüketiyorlardı).
+      // Kartlar abonelik alınana kadar "Veri yükleniyor" gösterecek.
+      const priceSeries = await this.safeFetchJson<any[]>(`${BD_BASE}/btc-price`);
 
       const flows: ExchangeFlows = {
-        netflowBtc: netflow?.exchangeNetflowBtc ?? null,
-        reserveBtc: reserve?.exchangeReserveBtc ?? null,
-        inflowUsd: inflow?.exchangeInflowUsd ?? null,
-        outflowUsd: outflow?.exchangeOutflowUsd ?? null,
+        netflowBtc: null,
+        reserveBtc: null,
+        inflowUsd: null,
+        outflowUsd: null,
         updatedAt: new Date().toISOString(),
       };
       await this.cache.setJson(CACHE_KEYS.exchangeFlows, flows, 3600 * 30);
